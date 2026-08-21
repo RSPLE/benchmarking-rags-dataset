@@ -146,11 +146,12 @@ def run_resumable_benchmark(
     evaluate_question: EvaluationHandler,
     *,
     dataset_path: Path = DEFAULT_DATASET,
-    output_dir: Path | str = "results",
+    output_dir: Path | str | None = None,
 ) -> dict[str, int]:
     """Run pending/failed questions sequentially and checkpoint each attempt."""
     dataset_path = dataset_path.resolve()
-    output_dir = Path(output_dir).resolve()
+    configured_output = output_dir or os.getenv("BENCHMARK_OUTPUT_DIR", "results")
+    output_dir = Path(configured_output).resolve()
     checkpoint_path = output_dir / "checkpoint.json"
     results_path = output_dir / "results.csv"
     questions = _load_dataset(dataset_path)

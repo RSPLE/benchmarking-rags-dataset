@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+RAGS_ROOT = ROOT / "rags"
 PROJECTS = {
     "context-rag": "RAG vetorial clássico com contexto restrito",
     "graph-rag": "busca vetorial + grafo NetworkX extraído por LLM",
@@ -47,7 +48,7 @@ def run_project(project: str, provider: str | None) -> int:
     if provider:
         env["LLM_PROVIDER"] = provider
 
-    project_dir = ROOT / project
+    project_dir = RAGS_ROOT / project
     command = [
         *uv_command(),
         "run",
@@ -92,7 +93,7 @@ def run_api(provider: str | None, host: str, port: int) -> int:
     env = os.environ.copy()
     if provider:
         env["LLM_PROVIDER"] = provider
-    project_dir = ROOT / "knowledge-enhanced-rag"
+    project_dir = RAGS_ROOT / "knowledge-enhanced-rag"
     command = [
         *uv_command(),
         "run",
@@ -112,6 +113,16 @@ def run_api(provider: str | None, host: str, port: int) -> int:
         env=env,
         check=False,
     ).returncode
+
+
+def run_dashboard(detach: bool) -> int:
+    docker = shutil.which("docker")
+    if not docker:
+        raise SystemExit("Docker nao encontrado. Instale Docker Desktop para abrir o dashboard.")
+    command = [docker, "compose", "up", "--build"]
+    if detach:
+        command.append("--detach")
+    return subprocess.run(command, cwd=ROOT, check=False).returncode
 
 
 def show_projects() -> None:
@@ -146,9 +157,9 @@ def doctor() -> int:
             errors += 1
 
     for project in PROJECTS:
-        docs_dir = ROOT / project / "docs"
+        docs_dir = RAGS_ROOT / project / "docs"
         if project == "knowledge-enhanced-rag":
-            docs_dir = ROOT / project / "data" / "apostilas"
+            docs_dir = RAGS_ROOT / project / "data" / "apostilas"
         count = len(list(docs_dir.glob("*.pdf"))) if docs_dir.exists() else 0
         print(f"[INFO] {project}: {count} PDF(s) local(is)")
 
@@ -188,6 +199,16 @@ def build_parser() -> argparse.ArgumentParser:
     api_parser.add_argument("--provider", choices=("openrouter", "openai"))
     api_parser.add_argument("--host", default="127.0.0.1")
     api_parser.add_argument("--port", default=8000, type=int)
+
+    dashboard_parser = subparsers.add_parser(
+        "dashboard",
+        help="constroi e inicia o dashboard e os runners Docker",
+    )
+    dashboard_parser.add_argument(
+        "--detach",
+        action="store_true",
+        help="executa os containers em segundo plano",
+    )
     return parser
 
 
@@ -209,6 +230,8 @@ def main() -> int:
         return run_all(args.provider)
     if args.command == "api":
         return run_api(args.provider, args.host, args.port)
+    if args.command == "dashboard":
+        return run_dashboard(args.detach)
     return 2
 
 
