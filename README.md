@@ -118,19 +118,25 @@ Verificar chaves e quantidade de PDFs:
 uv run python main.py doctor
 ```
 
-Executar um benchmark:
+Executar ou retomar um RAG:
 
 ```bash
 uv run python main.py run self-rag
-uv run python main.py run context-rag
-uv run python main.py run graph-rag
 ```
 
-Executar ou retomar todos os RAGs sequencialmente, cada um em seu ambiente isolado:
+Executar dois ou mais RAGs, na ordem informada:
 
 ```bash
-uv run python main.py run-all
+uv run python main.py run context-rag hybrid-rag self-rag
 ```
+
+Executar ou retomar os seis RAGs sequencialmente, cada um em seu ambiente isolado:
+
+```bash
+uv run python main.py run all
+```
+
+O comando anterior `uv run python main.py run-all` continua disponível como alias.
 
 Selecionar OpenAI apenas para uma execução:
 

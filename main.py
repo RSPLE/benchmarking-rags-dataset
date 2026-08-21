@@ -61,9 +61,18 @@ def run_project(project: str, provider: str | None) -> int:
     return subprocess.run(command, cwd=project_dir, env=env, check=False).returncode
 
 
-def run_all(provider: str | None) -> int:
+def resolve_projects(requested: list[str]) -> list[str]:
+    """Resolve the CLI selection while preserving the requested order."""
+    if "all" in requested:
+        if len(requested) != 1:
+            raise ValueError("'all' deve ser usado sozinho, sem nomes de RAG adicionais")
+        return list(PROJECTS)
+    return list(dict.fromkeys(requested))
+
+
+def run_projects(projects: list[str], provider: str | None) -> int:
     failures: list[str] = []
-    for project in PROJECTS:
+    for project in projects:
         print(f"\n{'=' * 72}\nPipeline: {project}\n{'=' * 72}")
         if run_project(project, provider) != 0:
             failures.append(project)
@@ -71,6 +80,11 @@ def run_all(provider: str | None) -> int:
         print(f"\nPipelines incompletos: {', '.join(failures)}")
         return 1
     return 0
+
+
+def run_all(provider: str | None) -> int:
+    """Backward-compatible alias for running all pipelines."""
+    return run_projects(list(PROJECTS), provider)
 
 
 def run_api(provider: str | None, host: str, port: int) -> int:
@@ -151,8 +165,17 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("list", help="lista pipelines e dataset")
     subparsers.add_parser("doctor", help="valida chaves, provedores e corpora")
 
-    run_parser = subparsers.add_parser("run", help="executa um pipeline de benchmark")
-    run_parser.add_argument("project", choices=sorted(PROJECTS))
+    run_parser = subparsers.add_parser(
+        "run",
+        help="executa um, varios ou todos os pipelines de benchmark",
+    )
+    run_parser.add_argument(
+        "projects",
+        nargs="+",
+        choices=["all", *sorted(PROJECTS)],
+        metavar="RAG",
+        help="um ou mais nomes de pipeline, ou 'all' para executar os seis",
+    )
     run_parser.add_argument("--provider", choices=("openrouter", "openai"))
 
     all_parser = subparsers.add_parser(
@@ -169,14 +192,19 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    args = build_parser().parse_args()
+    parser = build_parser()
+    args = parser.parse_args()
     if args.command in {None, "list"}:
         show_projects()
         return 0
     if args.command == "doctor":
         return doctor()
     if args.command == "run":
-        return run_project(args.project, args.provider)
+        try:
+            projects = resolve_projects(args.projects)
+        except ValueError as exc:
+            parser.error(str(exc))
+        return run_projects(projects, args.provider)
     if args.command == "run-all":
         return run_all(args.provider)
     if args.command == "api":

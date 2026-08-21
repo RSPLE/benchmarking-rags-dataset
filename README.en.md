@@ -104,13 +104,14 @@ uv run python main.py list
 # Check provider keys and local PDF counts
 uv run python main.py doctor
 
-# Run or resume one benchmark
+# Run or resume one RAG
 uv run python main.py run self-rag
-uv run python main.py run context-rag
-uv run python main.py run graph-rag
 
-# Run or resume every RAG sequentially in isolated environments
-uv run python main.py run-all
+# Run two or more RAGs in the requested order
+uv run python main.py run context-rag hybrid-rag self-rag
+
+# Run or resume all six RAGs sequentially in isolated environments
+uv run python main.py run all
 
 # Override the LLM provider for one run
 uv run python main.py run hybrid-rag --provider openai
@@ -118,6 +119,8 @@ uv run python main.py run hybrid-rag --provider openai
 # Start the Knowledge-Enhanced RAG API
 uv run python main.py api --host 127.0.0.1 --port 8000
 ```
+
+The previous `uv run python main.py run-all` command remains available as an alias.
 
 FastAPI documentation is then available at `http://127.0.0.1:8000/docs`.
 
