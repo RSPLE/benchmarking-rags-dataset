@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import { ArrowIcon, ClockIcon, PlayIcon, RefreshIcon } from "../components/Icons";
+import { normalizePipelines } from "../catalog";
 import { StatusBadge } from "../components/StatusBadge";
 import { formatDuration, totalDuration } from "../format";
 import { useRags } from "../hooks/useRags";
@@ -15,16 +16,17 @@ function actionLabel(item: RagPipeline) {
 
 export function PipelinesPage() {
   const { items, loading, error, refresh } = useRags();
+  const pipelines = useMemo(() => normalizePipelines(items), [items]);
   const [selected, setSelected] = useState<RagPipeline | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const activeCount = useMemo(
-    () => items.filter((item) => ["queued", "running"].includes(item.runner.state)).length,
-    [items],
+    () => pipelines.filter((item) => ["queued", "running"].includes(item.runner.state)).length,
+    [pipelines],
   );
   const completedCount = useMemo(
-    () => items.filter((item) => item.result.success === item.result.total).length,
-    [items],
+    () => pipelines.filter((item) => item.result.success === item.result.total).length,
+    [pipelines],
   );
 
   async function execute(item: RagPipeline) {
@@ -66,7 +68,7 @@ export function PipelinesPage() {
       </header>
 
       <section className="summary-strip" aria-label="Resumo dos pipelines">
-        <div><strong>{items.filter((item) => item.runner.available).length}/6</strong><span>Runners disponíveis</span></div>
+        <div><strong>{pipelines.filter((item) => item.runner.available).length}/6</strong><span>Runners disponíveis</span></div>
         <div><strong>{activeCount}</strong><span>Em execução</span></div>
         <div><strong>{completedCount}/6</strong><span>Concluídos</span></div>
         <div><strong>90</strong><span>Perguntas por RAG</span></div>
@@ -79,7 +81,7 @@ export function PipelinesPage() {
       </section>
 
       <div className={`pipeline-grid ${loading ? "is-loading" : ""}`} aria-busy={loading}>
-        {items.map((item, index) => {
+        {pipelines.map((item, index) => {
           const isActive = ["queued", "running"].includes(item.runner.state);
           const isComplete = item.result.success === item.result.total;
           return (
