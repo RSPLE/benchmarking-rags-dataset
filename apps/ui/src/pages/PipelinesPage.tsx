@@ -1,19 +1,11 @@
 import { useMemo, useState } from "react";
 
-import { PlayIcon, RefreshIcon } from "../components/Icons";
+import { ArrowIcon, ClockIcon, PlayIcon, RefreshIcon } from "../components/Icons";
 import { StatusBadge } from "../components/StatusBadge";
+import { formatDuration, totalDuration } from "../format";
 import { useRags } from "../hooks/useRags";
 import { cancelRag, startRag } from "../services/api";
 import type { RagPipeline } from "../types";
-
-function effectiveState(item: RagPipeline) {
-  if (!item.runner.available) return "offline" as const;
-  if (item.runner.state === "idle" && item.result.failed > 0) return "failed" as const;
-  if (item.runner.state === "idle" && item.result.success === item.result.total) {
-    return "succeeded" as const;
-  }
-  return item.runner.state;
-}
 
 function actionLabel(item: RagPipeline) {
   if (item.result.failed > 0) return "Retomar falhas";
@@ -64,9 +56,9 @@ export function PipelinesPage() {
     <div className="page-container">
       <header className="page-header">
         <div>
-          <p className="eyebrow">Benchmark workspace</p>
+          <p className="eyebrow">Workspace de avaliação</p>
           <h1>Pipelines RAG</h1>
-          <p>Execute, acompanhe e retome cada estratégia de avaliação isoladamente.</p>
+          <p>Execute cada estratégia, acompanhe o tempo e retome somente as perguntas que falharam.</p>
         </div>
         <button className="button button-secondary" onClick={() => void refresh()}>
           <RefreshIcon /> Atualizar
@@ -74,91 +66,71 @@ export function PipelinesPage() {
       </header>
 
       <section className="summary-strip" aria-label="Resumo dos pipelines">
-        <div><strong>6</strong><span>Pipelines</span></div>
+        <div><strong>{items.filter((item) => item.runner.available).length}/6</strong><span>Runners disponíveis</span></div>
         <div><strong>{activeCount}</strong><span>Em execução</span></div>
-        <div><strong>{completedCount}</strong><span>Concluídos</span></div>
+        <div><strong>{completedCount}/6</strong><span>Concluídos</span></div>
         <div><strong>90</strong><span>Perguntas por RAG</span></div>
       </section>
 
       {(error || actionError) && <div className="alert">{actionError ?? error}</div>}
 
       <section className="section-heading">
-        <div>
-          <h2>Jobs disponíveis</h2>
-          <p>Cada job usa seu próprio ambiente uv dentro de um container.</p>
-        </div>
+        <div><h2>RAGs disponíveis</h2><p>Ambientes uv independentes e estado salvo pergunta a pergunta.</p></div>
       </section>
 
-      {loading && items.length === 0 ? (
-        <div className="empty-state">Carregando runners...</div>
-      ) : (
-        <div className="pipeline-grid">
-          {items.map((item, index) => {
-            const state = effectiveState(item);
-            const isActive = ["queued", "running"].includes(item.runner.state);
-            const isComplete = item.result.success === item.result.total;
-            return (
-              <article className="pipeline-card" key={item.id}>
-                <div className="pipeline-card-top">
-                  <span className="job-number">JOB {String(index + 1).padStart(2, "0")}</span>
-                  <StatusBadge state={state} />
-                </div>
-                <h3>{item.name}</h3>
-                <p className="pipeline-description">{item.description}</p>
-                <div className="progress-row">
-                  <span>Progresso</span>
-                  <strong>{item.result.success}/{item.result.total}</strong>
-                </div>
-                <div className="progress-track" aria-label={`${item.result.progress}% concluído`}>
-                  <span style={{ width: `${item.result.progress}%` }} />
-                </div>
-                <div className="pipeline-counts">
-                  <span><i className="dot-success" />{item.result.success} sucesso</span>
-                  <span><i className="dot-failed" />{item.result.failed} falha</span>
-                  <span>{item.result.pending} pendente</span>
-                </div>
-                <div className="pipeline-actions">
-                  {isActive ? (
-                    <button
-                      className="button button-danger"
-                      disabled={pendingAction === item.id}
-                      onClick={() => void cancel(item)}
-                    >
-                      Cancelar
-                    </button>
-                  ) : (
-                    <button
-                      className="button button-primary"
-                      disabled={!item.runner.available || isComplete || pendingAction === item.id}
-                      onClick={() => void execute(item)}
-                    >
-                      <PlayIcon /> {isComplete ? "Concluído" : actionLabel(item)}
-                    </button>
-                  )}
-                  <button className="button button-ghost" onClick={() => setSelected(item)}>
-                    Ver logs
+      <div className={`pipeline-grid ${loading ? "is-loading" : ""}`} aria-busy={loading}>
+        {items.map((item, index) => {
+          const isActive = ["queued", "running"].includes(item.runner.state);
+          const isComplete = item.result.success === item.result.total;
+          return (
+            <article className={`pipeline-card pipeline-accent-${index + 1}`} key={item.id}>
+              <span className="card-accent" />
+              <div className="pipeline-card-top">
+                <span className="job-number">RAG {String(index + 1).padStart(2, "0")}</span>
+                <StatusBadge state={item.display_state} />
+              </div>
+              <h3>{item.name}</h3>
+              <p className="pipeline-description">{item.description}</p>
+              <p className="state-reason"><span aria-hidden="true">i</span>{item.state_reason}</p>
+              <div className="progress-row">
+                <span>Dataset processado</span><strong>{item.result.progress.toFixed(1)}%</strong>
+              </div>
+              <div className="progress-track" aria-label={`${item.result.progress}% concluído`}>
+                <span style={{ width: `${item.result.progress}%` }} />
+              </div>
+              <div className="pipeline-counts">
+                <span><i className="dot-success" />{item.result.success} ok</span>
+                <span><i className="dot-failed" />{item.result.failed} falhas</span>
+                <span>{item.result.pending} restantes</span>
+                <span className="pipeline-duration"><ClockIcon />Tempo: {formatDuration(totalDuration(item))}</span>
+              </div>
+              <div className="pipeline-actions">
+                {isActive ? (
+                  <button className="button button-danger" disabled={pendingAction === item.id} onClick={() => void cancel(item)}>Cancelar</button>
+                ) : (
+                  <button
+                    className="button button-primary"
+                    disabled={!item.runner.available || isComplete || pendingAction === item.id}
+                    onClick={() => void execute(item)}
+                  >
+                    <PlayIcon /> {isComplete ? "Concluído" : actionLabel(item)}
                   </button>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
+                )}
+                <button className="button button-ghost" onClick={() => setSelected(item)}>Logs <ArrowIcon /></button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
 
       {selected && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setSelected(null)}>
-          <section
-            className="log-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Logs de ${selected.name}`}
-            onMouseDown={(event) => event.stopPropagation()}
-          >
+          <section className="log-modal" role="dialog" aria-modal="true" aria-label={`Logs de ${selected.name}`} onMouseDown={(event) => event.stopPropagation()}>
             <div className="modal-header">
-              <div><span>Log do job</span><h2>{selected.name}</h2></div>
+              <div><span>Saída do container</span><h2>{selected.name}</h2></div>
               <button onClick={() => setSelected(null)} aria-label="Fechar">×</button>
             </div>
-            <pre>{selected.runner.logs.length ? selected.runner.logs.join("\n") : "Nenhum log disponível."}</pre>
+            <pre>{selected.runner.logs.length ? selected.runner.logs.join("\n") : "Nenhum log disponível. O pipeline ainda não foi executado."}</pre>
           </section>
         </div>
       )}

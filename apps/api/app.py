@@ -133,12 +133,61 @@ async def runner_state(project: str) -> dict[str, Any]:
         return {"available": False, "state": "offline", "logs": []}
 
 
+def display_state(runner: Mapping[str, Any], result: Mapping[str, Any]) -> str:
+    if not runner.get("available"):
+        return "offline"
+    state = str(runner.get("state", "idle"))
+    if state in {"queued", "running"}:
+        return state
+    if result.get("failed", 0) > 0 or state == "failed":
+        return "failed"
+    if result.get("total", 0) > 0 and result.get("success") == result.get("total"):
+        return "succeeded"
+    return state
+
+
+def state_reason(runner: Mapping[str, Any], result: Mapping[str, Any]) -> str:
+    state = display_state(runner, result)
+    if state == "offline":
+        return "O container deste RAG não respondeu à verificação de saúde."
+    if state == "queued":
+        return "Execução aceita; o container está preparando o processo."
+    if state == "running":
+        return "Dataset em processamento, uma pergunta por vez."
+    if state == "succeeded":
+        return "Todas as perguntas foram concluídas; nenhuma será repetida."
+    if state == "failed":
+        logs = "\n".join(str(line) for line in runner.get("logs", []))
+        if runner.get("returncode") in {143, -15} or "Cancelamento solicitado" in logs:
+            return "Execução cancelada manualmente; nenhuma pergunta concluída será repetida."
+        failures = int(result.get("failed", 0) or 0)
+        if failures:
+            return f"{failures} pergunta(s) falharam e podem ser retomadas sem repetir sucessos."
+        for line in reversed(runner.get("logs", [])):
+            message = str(line).strip()
+            if "OPENROUTER_API_KEY" in message and "nao encontrada" in message:
+                return "Falha de configuração: OPENROUTER_API_KEY não foi encontrada no .env da raiz."
+            if message.startswith("RuntimeError:"):
+                return f"Falha de configuração: {message.removeprefix('RuntimeError:').strip()}"
+        return f"A execução terminou com código {runner.get('returncode', 'desconhecido')}; consulte os logs."
+    if result.get("success", 0):
+        return "Execução parcial salva; ao retomar, sucessos serão preservados."
+    return "Pronto para iniciar; este RAG ainda não foi executado."
+
+
 async def rag_payload(project: str) -> dict[str, Any]:
     runner, result = await asyncio.gather(
         runner_state(project),
         asyncio.to_thread(checkpoint_summary, project),
     )
-    return {"id": project, **RAGS[project], "runner": runner, "result": result}
+    return {
+        "id": project,
+        **RAGS[project],
+        "display_state": display_state(runner, result),
+        "state_reason": state_reason(runner, result),
+        "runner": runner,
+        "result": result,
+    }
 
 
 app = FastAPI(title="RAG Benchmark Dashboard API", version="0.1.0")

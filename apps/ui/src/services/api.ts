@@ -1,4 +1,5 @@
 import type { RagPipeline } from "../types";
+import { normalizePipelines } from "../catalog";
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 
@@ -14,9 +15,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function fetchRags(): Promise<RagPipeline[]> {
-  const payload = await request<{ items: RagPipeline[] }>("/api/rags");
-  return payload.items;
+export async function fetchRags(signal?: AbortSignal): Promise<RagPipeline[]> {
+  const payload = await request<{ items: RagPipeline[] }>("/api/rags", { signal });
+  return normalizePipelines(payload.items);
 }
 
 export async function startRag(project: string): Promise<void> {

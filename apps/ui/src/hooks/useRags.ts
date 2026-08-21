@@ -1,22 +1,30 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import { EMPTY_PIPELINES } from "../catalog";
 import { fetchRags } from "../services/api";
 import type { RagPipeline } from "../types";
 
 export function useRags(refreshInterval = 2500) {
-  const [items, setItems] = useState<RagPipeline[]>([]);
+  const [items, setItems] = useState<RagPipeline[]>(EMPTY_PIPELINES);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const requestId = useRef(0);
 
   const refresh = useCallback(async (silent = false) => {
+    const currentRequest = ++requestId.current;
     if (!silent) setLoading(true);
     try {
-      setItems(await fetchRags());
-      setError(null);
+      const nextItems = await fetchRags();
+      if (currentRequest === requestId.current) {
+        setItems(nextItems);
+        setError(null);
+      }
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Não foi possível carregar os RAGs.");
+      if (currentRequest === requestId.current) {
+        setError(reason instanceof Error ? reason.message : "Não foi possível carregar os RAGs.");
+      }
     } finally {
-      if (!silent) setLoading(false);
+      if (!silent && currentRequest === requestId.current) setLoading(false);
     }
   }, []);
 

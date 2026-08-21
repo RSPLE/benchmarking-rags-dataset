@@ -26,23 +26,77 @@ MAX_LOG_LINES = int(os.getenv("RUNNER_MAX_LOG_LINES", "1200"))
 state_lock = threading.Lock()
 process_lock = threading.Lock()
 current_process: subprocess.Popen[str] | None = None
-run_state: dict[str, Any] = {
-    "rag": RAG_NAME,
-    "state": "idle",
-    "started_at": None,
-    "finished_at": None,
-    "returncode": None,
-    "logs": deque(maxlen=MAX_LOG_LINES),
-}
 
 
 def now() -> str:
     return datetime.now(UTC).isoformat()
 
 
+def elapsed_seconds(started_at: str | None, finished_at: str | None = None) -> float:
+    if not started_at:
+        return 0.0
+    try:
+        start = datetime.fromisoformat(started_at)
+        end = datetime.fromisoformat(finished_at) if finished_at else datetime.now(UTC)
+    except (TypeError, ValueError):
+        return 0.0
+    return round(max((end - start).total_seconds(), 0.0), 2)
+
+
+def initial_state() -> dict[str, Any]:
+    state: dict[str, Any] = {
+        "rag": RAG_NAME,
+        "state": "idle",
+        "started_at": None,
+        "finished_at": None,
+        "returncode": None,
+        "duration_seconds": 0.0,
+        "total_duration_seconds": 0.0,
+        "logs": deque(maxlen=MAX_LOG_LINES),
+    }
+    target = RESULTS_DIR / "runner.json"
+    try:
+        persisted = json.loads(target.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return state
+
+    for key in state:
+        if key != "logs" and key in persisted:
+            state[key] = persisted[key]
+    state["logs"].extend(persisted.get("logs", []))
+    if state["state"] in {"queued", "running"}:
+        finished_at = now()
+        duration = elapsed_seconds(state.get("started_at"), finished_at)
+        state.update(
+            state="failed",
+            finished_at=finished_at,
+            returncode=-1,
+            duration_seconds=duration,
+            total_duration_seconds=round(
+                float(state.get("total_duration_seconds") or 0.0) + duration,
+                2,
+            ),
+        )
+        state["logs"].append("Execução interrompida pela reinicialização do container.")
+        try:
+            target.write_text(
+                json.dumps({**state, "logs": list(state["logs"])}, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+        except OSError:
+            pass
+    return state
+
+
+run_state = initial_state()
+
+
 def snapshot() -> dict[str, Any]:
     with state_lock:
-        return {**run_state, "logs": list(run_state["logs"])}
+        payload = {**run_state, "logs": list(run_state["logs"])}
+        if run_state["state"] == "running":
+            payload["duration_seconds"] = elapsed_seconds(run_state.get("started_at"))
+        return payload
 
 
 def append_log(line: str) -> None:
@@ -80,6 +134,7 @@ def execute() -> None:
             started_at=now(),
             finished_at=None,
             returncode=None,
+            duration_seconds=0.0,
         )
         run_state["logs"].clear()
     append_log(f"$ {' '.join(command)}")
@@ -108,11 +163,18 @@ def execute() -> None:
     finally:
         with process_lock:
             current_process = None
+    finished_at = now()
     with state_lock:
+        duration = elapsed_seconds(run_state.get("started_at"), finished_at)
         run_state.update(
             state="succeeded" if returncode == 0 else "failed",
-            finished_at=now(),
+            finished_at=finished_at,
             returncode=returncode,
+            duration_seconds=duration,
+            total_duration_seconds=round(
+                float(run_state.get("total_duration_seconds") or 0.0) + duration,
+                2,
+            ),
         )
     persist_state()
 
@@ -122,6 +184,7 @@ def start_run() -> bool:
         if run_state["state"] in {"queued", "running"}:
             return False
         run_state["state"] = "queued"
+        run_state["finished_at"] = None
     threading.Thread(target=execute, name=f"{RAG_NAME}-benchmark", daemon=True).start()
     return True
 

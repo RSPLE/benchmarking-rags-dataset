@@ -39,3 +39,35 @@ def test_missing_checkpoint_is_pending(tmp_path, monkeypatch):
 
     assert summary["pending"] == 90
     assert summary["progress"] == 0.0
+
+
+def test_idle_reason_explains_that_pipeline_has_not_run():
+    runner = {"available": True, "state": "idle", "logs": []}
+    result = {"total": 90, "success": 0, "failed": 0}
+
+    assert dashboard.display_state(runner, result) == "idle"
+    assert "ainda não foi executado" in dashboard.state_reason(runner, result)
+
+
+def test_cancelled_reason_is_explicit():
+    runner = {
+        "available": True,
+        "state": "failed",
+        "returncode": 143,
+        "logs": ["Cancelamento solicitado pelo dashboard."],
+    }
+    result = {"total": 90, "success": 0, "failed": 0}
+
+    assert "cancelada manualmente" in dashboard.state_reason(runner, result)
+
+
+def test_missing_openrouter_key_reason_is_explicit():
+    runner = {
+        "available": True,
+        "state": "failed",
+        "returncode": 1,
+        "logs": ["RuntimeError: OPENROUTER_API_KEY nao encontrada para o provedor openrouter."],
+    }
+    result = {"total": 90, "success": 0, "failed": 0}
+
+    assert "OPENROUTER_API_KEY" in dashboard.state_reason(runner, result)

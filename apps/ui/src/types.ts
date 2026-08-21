@@ -6,6 +6,8 @@ export interface RunnerStatus {
   started_at?: string | null;
   finished_at?: string | null;
   returncode?: number | null;
+  duration_seconds?: number;
+  total_duration_seconds?: number;
   logs: string[];
 }
 
@@ -24,6 +26,8 @@ export interface RagPipeline {
   id: string;
   name: string;
   description: string;
+  display_state: RunnerState;
+  state_reason: string;
   runner: RunnerStatus;
   result: BenchmarkResult;
 }

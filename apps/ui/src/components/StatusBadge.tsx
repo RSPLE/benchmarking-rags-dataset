@@ -1,8 +1,8 @@
 import type { RunnerState } from "../types";
 
 const labels: Record<RunnerState, string> = {
-  idle: "Aguardando",
-  queued: "Na fila",
+  idle: "Pronto",
+  queued: "Preparando",
   running: "Executando",
   succeeded: "Concluído",
   failed: "Com falhas",
