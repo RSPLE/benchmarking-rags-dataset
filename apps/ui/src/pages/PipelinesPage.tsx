@@ -83,7 +83,7 @@ export function PipelinesPage() {
           const isActive = ["queued", "running"].includes(item.runner.state);
           const isComplete = item.result.success === item.result.total;
           return (
-            <article className={`pipeline-card pipeline-accent-${index + 1}`} key={item.id}>
+            <article className="pipeline-card" key={item.id}>
               <span className="card-accent" />
               <div className="pipeline-card-top">
                 <span className="job-number">RAG {String(index + 1).padStart(2, "0")}</span>

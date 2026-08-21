@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { NavLink } from "react-router-dom";
 
-import { PipelineIcon, ResultsIcon } from "./Icons";
+import { DashboardIcon, PipelineIcon, ResultsIcon } from "./Icons";
 
 export function AppShell({ children }: PropsWithChildren) {
   return (
@@ -15,6 +15,7 @@ export function AppShell({ children }: PropsWithChildren) {
         <nav className="nav-list" aria-label="Navegação principal">
           <NavLink to="/" end><PipelineIcon />Pipelines</NavLink>
           <NavLink to="/results"><ResultsIcon />Resultados</NavLink>
+          <NavLink to="/dashboard"><DashboardIcon />Dashboard</NavLink>
         </nav>
         <div className="environment-state">
           <span />
