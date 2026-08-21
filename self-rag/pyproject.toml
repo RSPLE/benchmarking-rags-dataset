@@ -1,0 +1,21 @@
+[project]
+name = "self-rag-benchmark"
+version = "0.1.0"
+description = "Self-critique RAG benchmark"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "chromadb",
+    "datasets",
+    "langchain",
+    "langchain-community",
+    "langchain-openai>=1.1.11",
+    "langchain-text-splitters",
+    "langsmith",
+    "openai",
+    "pypdf",
+    "python-dotenv",
+    "ragas>=0.4.3",
+]
+
+[tool.uv]
+package = false

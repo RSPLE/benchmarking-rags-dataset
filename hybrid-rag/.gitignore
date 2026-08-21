@@ -1,0 +1,5 @@
+.venv
+.env
+/chroma_langchain_db
+/chroma_hybrid_db_openai
+results*

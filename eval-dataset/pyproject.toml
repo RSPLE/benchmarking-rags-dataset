@@ -1,0 +1,9 @@
+[project]
+name = "rag-evaluation-dataset"
+version = "0.1.0"
+description = "Static 90-question evaluation dataset"
+requires-python = ">=3.11,<3.14"
+dependencies = []
+
+[tool.uv]
+package = false

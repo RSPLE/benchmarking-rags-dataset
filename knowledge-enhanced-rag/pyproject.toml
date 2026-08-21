@@ -1,0 +1,25 @@
+[project]
+name = "knowledge-enhanced-rag-benchmark"
+version = "0.1.0"
+description = "Vector and curated Neo4j knowledge-enhanced RAG benchmark"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "chromadb",
+    "datasets",
+    "fastapi",
+    "langchain",
+    "langchain-community",
+    "langchain-openai>=1.1.11",
+    "langchain-text-splitters",
+    "langsmith",
+    "neo4j",
+    "openai",
+    "pydantic",
+    "pypdf",
+    "python-dotenv",
+    "ragas>=0.4.3",
+    "uvicorn[standard]",
+]
+
+[tool.uv]
+package = false

@@ -1,0 +1,21 @@
+.env
+.venv/
+**/.env
+**/.venv/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.idea/
+.vscode/
+
+# Generated vector indexes and benchmark outputs
+**/chroma*/
+**/*.sqlite3
+**/results*/
+**/rag_benchmark_chart.png
+
+# Source PDFs are local-only unless redistribution rights are confirmed.
+**/docs/**/*.pdf
+**/data/apostilas/**/*.pdf

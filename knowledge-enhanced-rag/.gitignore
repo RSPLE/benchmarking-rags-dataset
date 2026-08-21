@@ -1,0 +1,28 @@
+# Ambiente virtual Python
+.venv/
+venv/
+env/
+
+# Bytecode Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Variáveis de ambiente (contém chaves secretas)
+.env
+
+# Índices gerados localmente
+data/faiss_index/
+chroma_knowledge_db_openai/
+
+# PDFs das apostilas (não versionar arquivos grandes)
+data/apostilas/*.pdf
+
+# Arquivos de IDE e sistema
+.idea/
+.vscode/
+*.DS_Store
+
+# ChromaDB
+chroma_langchain_db/
+results*

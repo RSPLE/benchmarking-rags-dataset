@@ -1,0 +1,10 @@
+*venv*
+*sixth*
+
+.env
+.vscode
+.idea
+__pycache__
+chroma_context_db
+results*
+docs_backup
