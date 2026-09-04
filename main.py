@@ -112,43 +112,6 @@ def run_all(provider: str | None, questions: int | None = None) -> int:
     return run_projects(list(PROJECTS), provider, questions)
 
 
-def run_api(provider: str | None, host: str, port: int) -> int:
-    load_environment()
-    env = os.environ.copy()
-    if provider:
-        env["LLM_PROVIDER"] = provider
-    project_dir = RAGS_ROOT / "knowledge-enhanced-rag"
-    command = [
-        *uv_command(),
-        "run",
-        "--project",
-        str(project_dir),
-        "--locked",
-        "uvicorn",
-        "app:app",
-        "--host",
-        host,
-        "--port",
-        str(port),
-    ]
-    return subprocess.run(
-        command,
-        cwd=project_dir,
-        env=env,
-        check=False,
-    ).returncode
-
-
-def run_dashboard(detach: bool) -> int:
-    docker = shutil.which("docker")
-    if not docker:
-        raise SystemExit("Docker nao encontrado. Instale Docker Desktop para abrir o dashboard.")
-    command = [docker, "compose", "up", "--build"]
-    if detach:
-        command.append("--detach")
-    return subprocess.run(command, cwd=ROOT, check=False).returncode
-
-
 def show_projects() -> None:
     print("Pipelines disponiveis:")
     for name, description in PROJECTS.items():
@@ -235,20 +198,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="tenta no maximo X perguntas ainda nao concluidas por RAG",
     )
 
-    api_parser = subparsers.add_parser("api", help="inicia a API do Knowledge-Enhanced RAG")
-    api_parser.add_argument("--provider", choices=("openrouter", "openai"))
-    api_parser.add_argument("--host", default="127.0.0.1")
-    api_parser.add_argument("--port", default=8000, type=int)
-
-    dashboard_parser = subparsers.add_parser(
-        "dashboard",
-        help="constroi e inicia o dashboard e os runners Docker",
-    )
-    dashboard_parser.add_argument(
-        "--detach",
-        action="store_true",
-        help="executa os containers em segundo plano",
-    )
     return parser
 
 
@@ -268,10 +217,6 @@ def main() -> int:
         return run_projects(projects, args.provider, args.questions)
     if args.command == "run-all":
         return run_all(args.provider, args.questions)
-    if args.command == "api":
-        return run_api(args.provider, args.host, args.port)
-    if args.command == "dashboard":
-        return run_dashboard(args.detach)
     return 2
 
 

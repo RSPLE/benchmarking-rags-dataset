@@ -11,12 +11,10 @@ Monorepo para comparar seis arquiteturas de Retrieval-Augmented Generation (RAG)
 | `rags/context-rag/` | RAG clássico | top-5 por similaridade vetorial; resposta restrita ao contexto |
 | `rags/graph-rag/` | Graph RAG experimental | Chroma + grafo `networkx` extraído por LLM; agente LangGraph |
 | `rags/hybrid-rag/` | RAG híbrido | BM25 (peso 0,4) + Chroma (peso 0,6) |
-| `rags/knowledge-enhanced-rag/` | Knowledge-Enhanced RAG | Chroma + grafo pedagógico curado em Neo4j; inclui API FastAPI |
+| `rags/knowledge-enhanced-rag/` | Knowledge-Enhanced RAG | Chroma + grafo pedagógico curado em Neo4j |
 | `rags/memory-augmented-rag/` | RAG com memória | agente LangGraph com `MemorySaver` e ferramenta de recuperação |
 | `rags/self-rag/` | Self-RAG simplificado | geração, autocrítica binária e até um refinamento |
 | `eval-dataset/` | Dataset compartilhado | 90 itens (`Q001`–`Q090`) com pergunta, resposta e fonte |
-| `apps/ui/` | Dashboard React | execução, logs, progresso e comparação visual |
-| `apps/api/` | API do dashboard | agrega runners, checkpoints e downloads CSV |
 
 Os projetos preservam suas implementações e notebooks para facilitar inspeção e comparação. A instalação, o provedor de modelos, o dataset e a política de execução são compartilhados pela raiz.
 
@@ -45,6 +43,18 @@ O valor de `X` é aplicado **a cada RAG selecionado**. Portanto, selecionar trê
 3. perguntas já concluídas nunca são executadas novamente.
 
 `--questions` limita tentativas, e não sucessos. Se um lote de 10 tiver duas falhas, a rodada termina após as 10 tentativas, com oito novas linhas no CSV e duas entradas no JSON de erros. Na próxima rodada, essas duas falhas serão tentadas antes de novos itens.
+
+### Exemplo concreto: lote inicial de 10
+
+| Resultado do primeiro lote | Estado salvo | Próxima execução sem `--questions` |
+|---|---|---|
+| As 10 perguntas tiveram sucesso | 10 sucessos e 80 pendentes | ignora as 10 concluídas e executa somente as 80 pendentes |
+| 8 tiveram sucesso e 2 falharam | 8 sucessos, 2 falhas e 80 pendentes | ignora os 8 sucessos, tenta primeiro as 2 falhas e depois as 80 pendentes |
+| As 10 falharam | 10 falhas e 80 pendentes | tenta novamente as 10 falhas e depois segue para as 80 pendentes |
+
+Uma falha não interrompe imediatamente o lote: ela é registrada e o RAG continua até atingir o limite de tentativas daquela rodada. Ao selecionar vários RAGs, o orquestrador também continua para o próximo pipeline; ao final, retorna código `1` se qualquer RAG teve falhas na rodada.
+
+Se a segunda execução também usar `--questions 10`, as falhas consomem primeiro as vagas desse novo lote. Por exemplo, com duas falhas anteriores, a rodada tentará essas duas e depois até oito perguntas pendentes. Sem a flag, não há limite de lote e todo o conjunto ainda não concluído é tentado.
 
 ### Persistência dos resultados
 
@@ -78,13 +88,13 @@ O `results.csv` contém somente perguntas concluídas com sucesso. O `errors.jso
 
 Quando uma pergunta é concluída em uma nova tentativa, sua entrada desaparece do `errors.json` e seu resultado passa a constar uma única vez no CSV. Se o processo for encerrado enquanto uma pergunta estiver com estado `running`, ela será marcada como `InterruptedRun` e retomada na próxima execução.
 
-Ao executar localmente, os artefatos ficam em `rags/<pipeline>/results/`. Nos containers, ficam em `/results/<pipeline>/` dentro do volume Docker `benchmark-results`. Para reiniciar uma avaliação do zero, arquive o diretório completo do pipeline — checkpoint, CSV e JSON de erros devem permanecer juntos.
+Os artefatos ficam em `rags/<pipeline>/results/`. Para reiniciar uma avaliação do zero, arquive o diretório completo do pipeline — checkpoint, CSV e JSON de erros devem permanecer juntos.
 
 ## Requisitos e instalação com uv
 
 - Python 3.11, 3.12 ou 3.13 para execução local;
 - [`uv`](https://docs.astral.sh/uv/);
-- Docker Desktop com Docker Compose para o dashboard conteinerizado;
+- Docker Desktop com Docker Compose apenas se você quiser executar um Neo4j local em container;
 - chave do OpenRouter ou da OpenAI;
 - Neo4j apenas para o `knowledge-enhanced-rag` quando o grafo for usado;
 - PDFs próprios ou com autorização de redistribuição para formar os corpora locais.
@@ -95,7 +105,7 @@ cd benchmarking-rags-dataset
 uv sync
 ```
 
-O `pyproject.toml` e o `uv.lock` da raiz contêm somente o orquestrador. Cada diretório em `rags/` tem seu próprio `pyproject.toml`, `uv.lock` e `.venv`, criados sob demanda pelo `main.py`. A API também usa `apps/api/pyproject.toml` e `apps/api/uv.lock`. Não há arquivos `requirements.txt`. Essa separação permite que um pipeline evolua suas bibliotecas sem alterar o ambiente dos demais.
+O `pyproject.toml` e o `uv.lock` da raiz contêm somente o orquestrador. Cada diretório em `rags/` tem seu próprio `pyproject.toml`, `uv.lock` e `.venv`, criados sob demanda pelo `main.py`. Não há arquivos `requirements.txt`. Essa separação permite que um pipeline evolua suas bibliotecas sem alterar o ambiente dos demais.
 
 Crie a configuração local:
 
@@ -152,40 +162,26 @@ rags/self-rag/docs/
 
 Cada pipeline cria seu próprio índice Chroma na primeira execução. Índices, resultados, segredos e ambientes virtuais estão no `.gitignore`.
 
-## Dashboard e containers
+## Neo4j local opcional
 
-O dashboard segue uma interface operacional minimalista. A página **Pipelines** possui um job por RAG, botão de execução/retomada, progresso por pergunta, duração e logs. A página **Resultados** compara as médias RAGAS e permite baixar o CSV de cada pipeline. A página **Dashboard** apresenta barras e radar das métricas, heatmap por pipeline e a relação entre tokens e latência.
-
-Prepare o `.env` da raiz e os corpora locais, depois inicie toda a infraestrutura:
-
-Para usar o Neo4j incluído no Compose, ajuste o bloco correspondente no `.env` antes de subir os containers:
+Os benchmarks são controlados exclusivamente pela CLI. Docker não é necessário para os cinco RAGs que não usam Neo4j. Para executar o `knowledge-enhanced-rag` com o Neo4j local incluído no Compose, ajuste o `.env`:
 
 ```env
-NEO4J_URI=bolt://neo4j:7687
+NEO4J_URI=bolt://127.0.0.1:7687
 NEO4J_USERNAME=neo4j
 NEO4J_PASSWORD=uma-senha-local-segura
 ```
 
-Essa URI usa o nome do serviço na rede Docker. O endereço exibido pelo Neo4j Browser no host pode usar `127.0.0.1:7687`, mas ele não deve ser copiado para o runner. Um volume `neo4j-data` já inicializado conserva a senha usada na primeira inicialização; nesse caso, mantenha essa senha no `.env` ou recrie o banco conscientemente.
+Inicie somente o banco:
 
 ```bash
-uv run python main.py dashboard --detach
+docker compose up --detach neo4j
 ```
 
-O comando equivale a `docker compose up --build --detach`. Depois da construção inicial:
-
-- dashboard: `http://localhost:8080`;
-- documentação da API do dashboard: `http://localhost:8001/docs`;
-- Neo4j Browser local: `http://localhost:7474`.
-
-Cada RAG possui uma imagem e um runner isolado. As dependências Python ficam nos containers; somente Docker, os PDFs e o `.env` compartilhado permanecem necessários no host. Checkpoints, CSVs e JSONs de erro ficam no volume `benchmark-results`, os índices Chroma no volume `rag-cache` e o banco local no volume `neo4j-data`. Todos sobrevivem a `docker compose down`. A interface oferece download do CSV; o `errors.json` permanece no volume e seus erros também aparecem no estado e nos logs do pipeline.
-
-Por padrão, os botões da interface retomam todo o restante do dataset. Para controlar exatamente o tamanho de cada lote com `--questions`, utilize a CLI descrita abaixo.
-
-Para acompanhar ou encerrar a infraestrutura:
+O banco fica disponível para a CLI em `127.0.0.1:7687`. O volume `neo4j-data` conserva os dados e a senha usada na primeira inicialização; se ele já existir, mantenha essa senha no `.env`. Para acompanhar ou encerrar apenas o banco:
 
 ```bash
-docker compose logs -f
+docker compose logs -f neo4j
 docker compose down
 ```
 
@@ -251,14 +247,6 @@ Selecionar OpenAI apenas para uma execução:
 uv run python main.py run hybrid-rag --provider openai
 ```
 
-Iniciar a API do Knowledge-Enhanced RAG:
-
-```bash
-uv run python main.py api --host 127.0.0.1 --port 8000
-```
-
-A documentação interativa ficará em `http://127.0.0.1:8000/docs`.
-
 ## Fluxos de execução recomendados
 
 Processar o dataset em lotes de 10 perguntas:
@@ -296,16 +284,11 @@ Para cada pergunta, o RAGAS calcula `faithfulness`, `answer_relevancy`, `context
 ├── main.py                  # CLI única do monorepo
 ├── benchmark_runner.py      # checkpoint e retomada por pergunta
 ├── rag_provider.py          # OpenRouter/OpenAI compartilhado
-├── docker-compose.yml       # UI, API, seis runners e Neo4j
-├── docker/                  # imagens da API e dos runners
+├── docker-compose.yml       # Neo4j local opcional
 ├── pyproject.toml
 ├── uv.lock                 # somente dependências do orquestrador
 ├── .env.example
 ├── eval-dataset/
-├── apps/
-│   ├── api/                 # FastAPI + uv
-│   ├── runner/              # serviço HTTP interno dos containers
-│   └── ui/                  # React + Vite + nginx
 └── rags/
     ├── context-rag/
     ├── graph-rag/
@@ -329,10 +312,9 @@ Cada diretório de pipeline contém ainda seu próprio `pyproject.toml` e `uv.lo
 
 - **Checkpoint incompatível:** acontece quando o conteúdo do dataset muda. Arquive o diretório de resultados do pipeline e inicie uma avaliação nova; não combine resultados de versões diferentes do dataset.
 - **Chave ausente:** execute `uv run python main.py doctor` e confira o `.env` da raiz. Os seis RAGs compartilham esse arquivo.
-- **Neo4j em Docker:** use `NEO4J_URI=bolt://neo4j:7687` para o serviço da rede do Compose. `localhost` ou `127.0.0.1` dentro do runner apontam para o próprio container, não para o Neo4j.
+- **Neo4j em Docker:** como os benchmarks rodam no host pela CLI, use `NEO4J_URI=bolt://127.0.0.1:7687` no `.env`.
 - **Neo4j Aura:** use a URI `neo4j+s://...` fornecida pela instância e as credenciais correspondentes. Não misture a senha do banco local persistido no volume com a senha da instância Aura.
 - **Modelo de embeddings alterado:** use outro `CHROMA_PERSIST_DIR` ou recrie conscientemente o índice; modelos com dimensões distintas não devem compartilhar a mesma coleção.
-- **Resultados Docker não aparecem em `rags/`:** a execução conteinerizada grava no volume `benchmark-results`; a execução local grava em `rags/<pipeline>/results/`.
 
 ## Testes de desenvolvimento
 
