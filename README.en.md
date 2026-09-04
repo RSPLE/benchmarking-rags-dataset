@@ -25,11 +25,56 @@ The original implementations and notebooks remain available for inspection. Inst
 Every pipeline processes the dataset once, one question at a time. After every attempt, the runner atomically updates:
 
 - `rags/<pipeline>/results/checkpoint.json`: status, attempts, errors, and result for each ID when running locally;
-- `rags/<pipeline>/results/results.csv`: successful questions with generated answer, RAGAS metrics, latency, and tokens.
+- `rags/<pipeline>/results/results.csv`: cumulative successful rows without duplicate IDs across batches;
+- `rags/<pipeline>/results/errors.json`: current failures with ID, question, attempt, type, message, output, and traceback.
 
 On the next run, successful items are skipped. Failed, interrupted (`running`), and pending items are retried. The checkpoint also stores the dataset SHA-256 and refuses to combine results if the dataset changes.
 
 For example, if only `Q037` fails in Self-RAG, running the same command again processes `Q037` without paying for the 89 successful questions again.
+
+`--questions X` limits how many unresolved questions each selected RAG attempts in the current run. Repeating the command advances through the dataset in batches while preserving earlier successes in the same CSV. Previous failures are retried first; pending items then continue in dataset order. Omitting the flag processes the entire remaining dataset.
+
+`X` applies **to each selected RAG**. Selecting three RAGs with `--questions 10` therefore allows up to 30 attempts in total: no more than 10 per pipeline. Selection is deterministic, and each run processes:
+
+1. previously recorded failures, in dataset order;
+2. pending questions, also in dataset order;
+3. never any question already completed successfully.
+
+`--questions` limits attempts, not successes. If two questions fail in a batch of 10, that run finishes after 10 attempts with eight new CSV rows and two error entries. The next run retries those failures before moving on to new questions.
+
+### Result persistence
+
+`checkpoint.json` is the source of truth. Instead of blindly appending lines, the runner atomically rebuilds `results.csv` from checkpoint successes after every attempt. This preserves dataset order, prevents duplicate IDs, and reduces the chance of a partial CSV after interruption.
+
+`results.csv` contains successful questions only. `errors.json` contains only currently unresolved failures:
+
+```json
+{
+  "version": 1,
+  "project": "self-rag",
+  "dataset": "/path/to/eval-dataset/qa_dataset_90.json",
+  "dataset_sha256": "dataset-sha256",
+  "updated_at": "2026-09-04T12:00:04+00:00",
+  "count": 1,
+  "errors": [
+    {
+      "id": "Q037",
+      "question": "Question being evaluated",
+      "attempts": 2,
+      "started_at": "2026-09-04T12:00:00+00:00",
+      "finished_at": "2026-09-04T12:00:04+00:00",
+      "error_type": "RuntimeError",
+      "message": "original exception message",
+      "output": "RuntimeError: original exception message",
+      "traceback": "Complete failure traceback"
+    }
+  ]
+}
+```
+
+After a successful retry, the entry is removed from `errors.json` and added exactly once to the CSV. If the process stops while a question is marked `running`, that item becomes an `InterruptedRun` and is retried on the next invocation.
+
+Local artifacts live under `rags/<pipeline>/results/`. Container runs write to `/results/<pipeline>/` in the `benchmark-results` Docker volume. To start an evaluation from scratch, archive the pipeline's complete result directory so the checkpoint, CSV, and error JSON stay together.
 
 ## Requirements and uv installation
 
@@ -100,9 +145,19 @@ Each pipeline creates its own Chroma index on first run. Indexes, results, secre
 
 ## Dashboard and containers
 
-The dashboard uses a minimal operational interface inspired by the Smart project. The **Pipelines** page provides one job per RAG with run/resume controls, per-question progress, failure counts, and logs. The **Results** page compares RAGAS averages and downloads each pipeline's CSV.
+The dashboard uses a minimal operational interface. The **Pipelines** page provides one job per RAG with run/resume controls, per-question progress, duration, and logs. The **Results** page compares RAGAS averages and downloads each pipeline's CSV. The **Dashboard** page provides metric bar and radar charts, a per-pipeline heatmap, and a token-versus-latency view.
 
 Prepare the root `.env` and local corpora, then start the complete stack:
+
+To use the Neo4j service included in Compose, update its block in `.env` before starting the containers:
+
+```env
+NEO4J_URI=bolt://neo4j:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=a-secure-local-password
+```
+
+This URI uses the Docker network service name. Neo4j Browser on the host may display `127.0.0.1:7687`, but that address must not be copied into the runner configuration. An initialized `neo4j-data` volume retains the password from its first startup; keep that password in `.env` or deliberately recreate the database.
 
 ```bash
 uv run python main.py dashboard --detach
@@ -114,7 +169,9 @@ This is equivalent to `docker compose up --build --detach`. After the initial bu
 - dashboard API documentation: `http://localhost:8001/docs`;
 - local Neo4j Browser: `http://localhost:7474`.
 
-Each RAG has a separate image and runner. Python dependencies stay inside containers; only Docker, the PDFs, and the shared root `.env` are required on the host. Checkpoints and CSVs live in `benchmark-results`, Chroma indexes in `rag-cache`, and the local graph in `neo4j-data`. All three volumes survive `docker compose down`; CSVs can be downloaded from the UI.
+Each RAG has a separate image and runner. Python dependencies stay inside containers; only Docker, the PDFs, and the shared root `.env` are required on the host. Checkpoints, CSVs, and error JSON files live in `benchmark-results`, Chroma indexes in `rag-cache`, and the local graph in `neo4j-data`. All three volumes survive `docker compose down`. The UI downloads CSV files; `errors.json` remains in the volume while its failures are also reflected in pipeline state and logs.
+
+By default, dashboard buttons resume the entire remaining dataset. Use the CLI below when an exact batch size must be selected with `--questions`.
 
 ```bash
 docker compose logs -f
@@ -133,11 +190,20 @@ uv run python main.py doctor
 # Run or resume one RAG
 uv run python main.py run self-rag
 
+# Run only the next 10 unresolved questions
+uv run python main.py run self-rag --questions 10
+
 # Run two or more RAGs in the requested order
 uv run python main.py run context-rag hybrid-rag self-rag
 
+# Run a batch of 15 questions in each selected RAG
+uv run python main.py run context-rag hybrid-rag self-rag --questions 15
+
 # Run or resume all six RAGs sequentially in isolated environments
 uv run python main.py run all
+
+# Run the next 5 questions in each of the six RAGs
+uv run python main.py run all --questions 5
 
 # Override the LLM provider for one run
 uv run python main.py run hybrid-rag --provider openai
@@ -147,8 +213,30 @@ uv run python main.py api --host 127.0.0.1 --port 8000
 ```
 
 The previous `uv run python main.py run-all` command remains available as an alias.
+`--limit` is an alias for `--questions`. The limit applies independently to every selected RAG; it is not divided among them.
+
+A successful batch exits with code `0`, even when the selected limit leaves pending questions. The command exits with code `1` when one or more questions attempted in that run fail. This makes partial successful batches safe to use in CI scripts.
 
 FastAPI documentation is then available at `http://127.0.0.1:8000/docs`.
+
+## Recommended execution flows
+
+Process the dataset in batches of 10:
+
+```bash
+uv run python main.py run self-rag --questions 10
+# Repeat until the summary reports 90 successes and no pending questions.
+```
+
+Resume after a failure, cancellation, or restart by running the same command:
+
+```bash
+uv run python main.py run self-rag --questions 10
+```
+
+No offset is required. The checkpoint skips successes, retries failures first, and continues from the next pending item. Do not edit only the CSV to change progress; `checkpoint.json` holds the authoritative state.
+
+For valid comparisons, keep the generation model, embedding model, documents, and remaining `.env` settings equal across pipelines. `--provider` overrides the LLM provider for that invocation only; embeddings remain controlled by `EMBEDDING_PROVIDER`.
 
 ## Dataset and metrics
 
@@ -189,6 +277,24 @@ Each pipeline directory also contains its own `pyproject.toml` and `uv.lock`. `/
 - Memory-Augmented RAG keeps in-process memory; benchmark questions remain isolated for fair comparison.
 - Knowledge-Enhanced RAG uses a curated Neo4j graph; the other pipelines do not require Neo4j.
 - Comparisons are meaningful only when models, corpora, and parameters are controlled across pipelines.
+
+## Common problems
+
+- **Incompatible checkpoint:** the dataset content changed. Archive that pipeline's result directory and begin a new evaluation; do not combine different dataset versions.
+- **Missing API key:** run `uv run python main.py doctor` and inspect the root `.env`, which is shared by all six RAGs.
+- **Neo4j in Docker:** use `NEO4J_URI=bolt://neo4j:7687` for the Compose network service. `localhost` and `127.0.0.1` inside a runner refer to that runner container, not Neo4j.
+- **Neo4j Aura:** use the instance-provided `neo4j+s://...` URI and matching credentials. Do not mix the password of the local persistent database with Aura credentials.
+- **Changed embedding model:** choose another `CHROMA_PERSIST_DIR` or deliberately rebuild the index; different vector dimensions must not share a collection.
+- **Docker results are absent under `rags/`:** container runs use the `benchmark-results` volume, while local runs use `rags/<pipeline>/results/`.
+
+## Development checks
+
+```bash
+uv run python -m unittest discover -s tests -v
+uv run ruff check main.py benchmark_runner.py tests
+```
+
+The suite covers one/many/all RAG selection, limit validation, incremental runs without duplicate rows, failure-first resumption, and removal of recovered entries from `errors.json`.
 
 ## License
 

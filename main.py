@@ -21,6 +21,16 @@ PROJECTS = {
 }
 
 
+def positive_integer(value: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("deve ser um inteiro positivo") from exc
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("deve ser um inteiro positivo")
+    return parsed
+
+
 def load_environment() -> None:
     try:
         from dotenv import load_dotenv
@@ -42,11 +52,17 @@ def uv_command() -> list[str]:
     return [sys.executable, "-m", "uv"]
 
 
-def run_project(project: str, provider: str | None) -> int:
+def run_project(project: str, provider: str | None, questions: int | None = None) -> int:
     load_environment()
     env = os.environ.copy()
     if provider:
         env["LLM_PROVIDER"] = provider
+    if questions is not None:
+        env["BENCHMARK_QUESTION_LIMIT"] = str(questions)
+    else:
+        # No flag on the root CLI always means the complete remaining dataset,
+        # even if the parent shell happens to define this runner-only variable.
+        env.pop("BENCHMARK_QUESTION_LIMIT", None)
 
     project_dir = RAGS_ROOT / project
     command = [
@@ -58,7 +74,11 @@ def run_project(project: str, provider: str | None) -> int:
         "python",
         "main.py",
     ]
-    print(f"Executando {project} com LLM_PROVIDER={env.get('LLM_PROVIDER', 'openrouter')}")
+    scope = f"ate {questions} pergunta(s)" if questions is not None else "dataset completo"
+    print(
+        f"Executando {project} com LLM_PROVIDER={env.get('LLM_PROVIDER', 'openrouter')} "
+        f"| escopo: {scope}"
+    )
     return subprocess.run(command, cwd=project_dir, env=env, check=False).returncode
 
 
@@ -71,11 +91,15 @@ def resolve_projects(requested: list[str]) -> list[str]:
     return list(dict.fromkeys(requested))
 
 
-def run_projects(projects: list[str], provider: str | None) -> int:
+def run_projects(
+    projects: list[str],
+    provider: str | None,
+    questions: int | None = None,
+) -> int:
     failures: list[str] = []
     for project in projects:
         print(f"\n{'=' * 72}\nPipeline: {project}\n{'=' * 72}")
-        if run_project(project, provider) != 0:
+        if run_project(project, provider, questions) != 0:
             failures.append(project)
     if failures:
         print(f"\nPipelines incompletos: {', '.join(failures)}")
@@ -83,9 +107,9 @@ def run_projects(projects: list[str], provider: str | None) -> int:
     return 0
 
 
-def run_all(provider: str | None) -> int:
+def run_all(provider: str | None, questions: int | None = None) -> int:
     """Backward-compatible alias for running all pipelines."""
-    return run_projects(list(PROJECTS), provider)
+    return run_projects(list(PROJECTS), provider, questions)
 
 
 def run_api(provider: str | None, host: str, port: int) -> int:
@@ -188,12 +212,28 @@ def build_parser() -> argparse.ArgumentParser:
         help="um ou mais nomes de pipeline, ou 'all' para executar os seis",
     )
     run_parser.add_argument("--provider", choices=("openrouter", "openai"))
+    run_parser.add_argument(
+        "--questions",
+        "--limit",
+        dest="questions",
+        type=positive_integer,
+        metavar="X",
+        help="tenta no maximo X perguntas ainda nao concluidas por RAG",
+    )
 
     all_parser = subparsers.add_parser(
         "run-all",
         help="executa ou retoma todos os pipelines, um apos o outro",
     )
     all_parser.add_argument("--provider", choices=("openrouter", "openai"))
+    all_parser.add_argument(
+        "--questions",
+        "--limit",
+        dest="questions",
+        type=positive_integer,
+        metavar="X",
+        help="tenta no maximo X perguntas ainda nao concluidas por RAG",
+    )
 
     api_parser = subparsers.add_parser("api", help="inicia a API do Knowledge-Enhanced RAG")
     api_parser.add_argument("--provider", choices=("openrouter", "openai"))
@@ -225,9 +265,9 @@ def main() -> int:
             projects = resolve_projects(args.projects)
         except ValueError as exc:
             parser.error(str(exc))
-        return run_projects(projects, args.provider)
+        return run_projects(projects, args.provider, args.questions)
     if args.command == "run-all":
-        return run_all(args.provider)
+        return run_all(args.provider, args.questions)
     if args.command == "api":
         return run_api(args.provider, args.host, args.port)
     if args.command == "dashboard":
