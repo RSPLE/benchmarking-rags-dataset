@@ -16,6 +16,7 @@ from typing import Any
 REPOSITORY_ROOT = Path(__file__).resolve().parent
 DEFAULT_DATASET = REPOSITORY_ROOT / "eval-dataset" / "qa_dataset_90.json"
 CHECKPOINT_VERSION = 1
+ERRORS_VERSION = 1
 
 QuestionHandler = Callable[[Mapping[str, Any]], Mapping[str, Any]]
 EvaluationHandler = Callable[[Mapping[str, Any]], Mapping[str, Any]]
@@ -140,19 +141,107 @@ def _write_results_csv(
     os.replace(temporary, path)
 
 
+def _split_error(state: Mapping[str, Any]) -> tuple[str, str]:
+    error_type = str(state.get("error_type") or "Error")
+    message = str(state.get("error_message") or "")
+    if message:
+        return error_type, message
+
+    legacy_error = str(state.get("error") or "Erro sem mensagem.")
+    if ": " in legacy_error:
+        legacy_type, legacy_message = legacy_error.split(": ", 1)
+        return legacy_type, legacy_message
+    return error_type, legacy_error
+
+
+def _write_errors_json(
+    path: Path,
+    questions: list[dict[str, Any]],
+    checkpoint: Mapping[str, Any],
+) -> None:
+    items = checkpoint.get("items", {})
+    errors: list[dict[str, Any]] = []
+    for question in questions:
+        state = items.get(str(question["id"]), {})
+        if state.get("status") != "failed":
+            continue
+        error_type, message = _split_error(state)
+        errors.append(
+            {
+                "id": str(question["id"]),
+                "question": question["question"],
+                "attempts": int(state.get("attempts", 0)),
+                "started_at": state.get("started_at"),
+                "finished_at": state.get("finished_at"),
+                "error_type": error_type,
+                "message": message,
+                "output": str(state.get("error") or f"{error_type}: {message}"),
+                "traceback": state.get("traceback"),
+            }
+        )
+
+    _atomic_json(
+        path,
+        {
+            "version": ERRORS_VERSION,
+            "project": checkpoint.get("project"),
+            "dataset": checkpoint.get("dataset"),
+            "dataset_sha256": checkpoint.get("dataset_sha256"),
+            "updated_at": checkpoint.get("updated_at"),
+            "count": len(errors),
+            "errors": errors,
+        },
+    )
+
+
+def _question_limit(configured: int | None) -> int | None:
+    if configured is None:
+        value = os.getenv("BENCHMARK_QUESTION_LIMIT", "").strip()
+        if not value:
+            return None
+        try:
+            configured = int(value)
+        except ValueError as exc:
+            raise ValueError("BENCHMARK_QUESTION_LIMIT deve ser um inteiro positivo") from exc
+    if configured <= 0:
+        raise ValueError("O limite de perguntas deve ser um inteiro positivo")
+    return configured
+
+
+def _recover_interrupted_questions(checkpoint: dict[str, Any]) -> bool:
+    recovered = False
+    for state in checkpoint.get("items", {}).values():
+        if state.get("status") != "running":
+            continue
+        message = "A execução anterior foi interrompida antes de concluir esta pergunta."
+        state.update(
+            status="failed",
+            finished_at=_now(),
+            error_type="InterruptedRun",
+            error_message=message,
+            error=f"InterruptedRun: {message}",
+        )
+        recovered = True
+    return recovered
+
+
 def run_resumable_benchmark(
     project: str,
     answer_question: QuestionHandler,
     evaluate_question: EvaluationHandler,
     *,
     dataset_path: Path = DEFAULT_DATASET,
-    output_dir: Path | str = "results",
+    output_dir: Path | str | None = None,
+    question_limit: int | None = None,
 ) -> dict[str, int]:
-    """Run pending/failed questions sequentially and checkpoint each attempt."""
+    """Run up to ``question_limit`` unresolved questions and persist each attempt."""
     dataset_path = dataset_path.resolve()
-    output_dir = Path(output_dir).resolve()
+    question_limit = _question_limit(question_limit)
+    configured_output = output_dir or os.getenv("BENCHMARK_OUTPUT_DIR", "results")
+    output_dir = Path(configured_output).resolve()
     checkpoint_path = output_dir / "checkpoint.json"
     results_path = output_dir / "results.csv"
+    errors_path = output_dir / "errors.json"
     questions = _load_dataset(dataset_path)
     dataset_sha256 = _dataset_hash(dataset_path)
     checkpoint = _load_checkpoint(
@@ -163,19 +252,42 @@ def run_resumable_benchmark(
     )
     states = checkpoint["items"]
 
+    if _recover_interrupted_questions(checkpoint):
+        checkpoint["updated_at"] = _now()
+        _atomic_json(checkpoint_path, checkpoint)
+
+    _write_results_csv(results_path, questions, checkpoint)
+    _write_errors_json(errors_path, questions, checkpoint)
+
     successful = sum(1 for state in states.values() if state.get("status") == "success")
+    limit_description = str(question_limit) if question_limit is not None else "dataset completo"
     print(
         f"Dataset: {len(questions)} perguntas | concluidas: {successful} | "
-        f"checkpoint: {checkpoint_path}"
+        f"limite desta rodada: {limit_description} | checkpoint: {checkpoint_path}"
     )
 
-    for position, question in enumerate(questions, start=1):
+    attempted = 0
+    run_success = 0
+    run_failed = 0
+    positions = {str(question["id"]): index for index, question in enumerate(questions, start=1)}
+    failed_questions = [
+        question
+        for question in questions
+        if states.get(str(question["id"]), {}).get("status") == "failed"
+    ]
+    pending_questions = [
+        question
+        for question in questions
+        if states.get(str(question["id"]), {}).get("status") not in {"success", "failed"}
+    ]
+    for question in [*failed_questions, *pending_questions]:
         question_id = str(question["id"])
+        position = positions[question_id]
         previous = states.get(question_id, {})
-        if previous.get("status") == "success":
-            print(f"[{position}/{len(questions)}] {question_id}: sucesso existente, ignorando.")
-            continue
+        if question_limit is not None and attempted >= question_limit:
+            break
 
+        attempted += 1
         attempts = int(previous.get("attempts", 0)) + 1
         states[question_id] = {
             "status": "running",
@@ -201,19 +313,25 @@ def run_resumable_benchmark(
             states[question_id].update(
                 status="failed",
                 finished_at=_now(),
-                error="Execucao interrompida pelo usuario.",
+                error_type="KeyboardInterrupt",
+                error_message="Execucao interrompida pelo usuario.",
+                error="KeyboardInterrupt: Execucao interrompida pelo usuario.",
             )
             checkpoint["updated_at"] = _now()
             _atomic_json(checkpoint_path, checkpoint)
             _write_results_csv(results_path, questions, checkpoint)
+            _write_errors_json(errors_path, questions, checkpoint)
             raise
         except Exception as exc:  # noqa: BLE001 - isolate failures per question
             states[question_id].update(
                 status="failed",
                 finished_at=_now(),
+                error_type=type(exc).__name__,
+                error_message=str(exc),
                 error=f"{type(exc).__name__}: {exc}",
                 traceback=traceback.format_exc(),
             )
+            run_failed += 1
             print(f"  FALHA: {type(exc).__name__}: {exc}")
         else:
             states[question_id].update(
@@ -222,12 +340,16 @@ def run_resumable_benchmark(
                 error=None,
                 result=result,
             )
+            states[question_id].pop("error_type", None)
+            states[question_id].pop("error_message", None)
             states[question_id].pop("traceback", None)
+            run_success += 1
             print("  SUCESSO: checkpoint atualizado.")
 
         checkpoint["updated_at"] = _now()
         _atomic_json(checkpoint_path, checkpoint)
         _write_results_csv(results_path, questions, checkpoint)
+        _write_errors_json(errors_path, questions, checkpoint)
 
     counts = {"success": 0, "failed": 0, "pending": 0}
     for question in questions:
@@ -236,8 +358,14 @@ def run_resumable_benchmark(
             status = "pending"
         counts[status] += 1
     print(
-        "Resumo: "
+        f"Rodada: {attempted} tentativa(s), {run_success} sucesso(s), "
+        f"{run_failed} falha(s). Resumo acumulado: "
         f"{counts['success']} sucesso(s), {counts['failed']} falha(s), "
         f"{counts['pending']} pendente(s)."
+    )
+    counts.update(
+        attempted=attempted,
+        run_success=run_success,
+        run_failed=run_failed,
     )
     return counts

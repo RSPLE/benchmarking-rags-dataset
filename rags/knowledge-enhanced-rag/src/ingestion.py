@@ -18,7 +18,7 @@ from rag_settings import build_embeddings, get_chroma_settings
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DEFAULT_DOCS_DIR = BASE_DIR.parent / "data" / "apostilas"
+DEFAULT_DOCS_DIR = BASE_DIR / "data" / "apostilas"
 APOSTILAS_DIR = Path(os.getenv("DOCS_DIR", str(DEFAULT_DOCS_DIR))).resolve()
 
 PERSIST_DIR, CHROMA_COLLECTION_NAME = get_chroma_settings(

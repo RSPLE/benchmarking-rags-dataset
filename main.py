@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+RAGS_ROOT = ROOT / "rags"
 PROJECTS = {
     "context-rag": "RAG vetorial clássico com contexto restrito",
     "graph-rag": "busca vetorial + grafo NetworkX extraído por LLM",
@@ -18,6 +19,16 @@ PROJECTS = {
     "memory-augmented-rag": "agente RAG com memória conversacional",
     "self-rag": "RAG com autocrítica e uma etapa de refinamento",
 }
+
+
+def positive_integer(value: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("deve ser um inteiro positivo") from exc
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("deve ser um inteiro positivo")
+    return parsed
 
 
 def load_environment() -> None:
@@ -41,13 +52,19 @@ def uv_command() -> list[str]:
     return [sys.executable, "-m", "uv"]
 
 
-def run_project(project: str, provider: str | None) -> int:
+def run_project(project: str, provider: str | None, questions: int | None = None) -> int:
     load_environment()
     env = os.environ.copy()
     if provider:
         env["LLM_PROVIDER"] = provider
+    if questions is not None:
+        env["BENCHMARK_QUESTION_LIMIT"] = str(questions)
+    else:
+        # No flag on the root CLI always means the complete remaining dataset,
+        # even if the parent shell happens to define this runner-only variable.
+        env.pop("BENCHMARK_QUESTION_LIMIT", None)
 
-    project_dir = ROOT / project
+    project_dir = RAGS_ROOT / project
     command = [
         *uv_command(),
         "run",
@@ -57,7 +74,11 @@ def run_project(project: str, provider: str | None) -> int:
         "python",
         "main.py",
     ]
-    print(f"Executando {project} com LLM_PROVIDER={env.get('LLM_PROVIDER', 'openrouter')}")
+    scope = f"ate {questions} pergunta(s)" if questions is not None else "dataset completo"
+    print(
+        f"Executando {project} com LLM_PROVIDER={env.get('LLM_PROVIDER', 'openrouter')} "
+        f"| escopo: {scope}"
+    )
     return subprocess.run(command, cwd=project_dir, env=env, check=False).returncode
 
 
@@ -70,11 +91,15 @@ def resolve_projects(requested: list[str]) -> list[str]:
     return list(dict.fromkeys(requested))
 
 
-def run_projects(projects: list[str], provider: str | None) -> int:
+def run_projects(
+    projects: list[str],
+    provider: str | None,
+    questions: int | None = None,
+) -> int:
     failures: list[str] = []
     for project in projects:
         print(f"\n{'=' * 72}\nPipeline: {project}\n{'=' * 72}")
-        if run_project(project, provider) != 0:
+        if run_project(project, provider, questions) != 0:
             failures.append(project)
     if failures:
         print(f"\nPipelines incompletos: {', '.join(failures)}")
@@ -82,36 +107,9 @@ def run_projects(projects: list[str], provider: str | None) -> int:
     return 0
 
 
-def run_all(provider: str | None) -> int:
+def run_all(provider: str | None, questions: int | None = None) -> int:
     """Backward-compatible alias for running all pipelines."""
-    return run_projects(list(PROJECTS), provider)
-
-
-def run_api(provider: str | None, host: str, port: int) -> int:
-    load_environment()
-    env = os.environ.copy()
-    if provider:
-        env["LLM_PROVIDER"] = provider
-    project_dir = ROOT / "knowledge-enhanced-rag"
-    command = [
-        *uv_command(),
-        "run",
-        "--project",
-        str(project_dir),
-        "--locked",
-        "uvicorn",
-        "app:app",
-        "--host",
-        host,
-        "--port",
-        str(port),
-    ]
-    return subprocess.run(
-        command,
-        cwd=project_dir,
-        env=env,
-        check=False,
-    ).returncode
+    return run_projects(list(PROJECTS), provider, questions)
 
 
 def show_projects() -> None:
@@ -146,9 +144,9 @@ def doctor() -> int:
             errors += 1
 
     for project in PROJECTS:
-        docs_dir = ROOT / project / "docs"
+        docs_dir = RAGS_ROOT / project / "docs"
         if project == "knowledge-enhanced-rag":
-            docs_dir = ROOT / project / "data" / "apostilas"
+            docs_dir = RAGS_ROOT / project / "data" / "apostilas"
         count = len(list(docs_dir.glob("*.pdf"))) if docs_dir.exists() else 0
         print(f"[INFO] {project}: {count} PDF(s) local(is)")
 
@@ -177,17 +175,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="um ou mais nomes de pipeline, ou 'all' para executar os seis",
     )
     run_parser.add_argument("--provider", choices=("openrouter", "openai"))
+    run_parser.add_argument(
+        "--questions",
+        "--limit",
+        dest="questions",
+        type=positive_integer,
+        metavar="X",
+        help="tenta no maximo X perguntas ainda nao concluidas por RAG",
+    )
 
     all_parser = subparsers.add_parser(
         "run-all",
         help="executa ou retoma todos os pipelines, um apos o outro",
     )
     all_parser.add_argument("--provider", choices=("openrouter", "openai"))
+    all_parser.add_argument(
+        "--questions",
+        "--limit",
+        dest="questions",
+        type=positive_integer,
+        metavar="X",
+        help="tenta no maximo X perguntas ainda nao concluidas por RAG",
+    )
 
-    api_parser = subparsers.add_parser("api", help="inicia a API do Knowledge-Enhanced RAG")
-    api_parser.add_argument("--provider", choices=("openrouter", "openai"))
-    api_parser.add_argument("--host", default="127.0.0.1")
-    api_parser.add_argument("--port", default=8000, type=int)
     return parser
 
 
@@ -204,11 +214,9 @@ def main() -> int:
             projects = resolve_projects(args.projects)
         except ValueError as exc:
             parser.error(str(exc))
-        return run_projects(projects, args.provider)
+        return run_projects(projects, args.provider, args.questions)
     if args.command == "run-all":
-        return run_all(args.provider)
-    if args.command == "api":
-        return run_api(args.provider, args.host, args.port)
+        return run_all(args.provider, args.questions)
     return 2
 
 

@@ -1,0 +1,18 @@
+services:
+  neo4j:
+    image: neo4j:5-community
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: ${NEO4J_USERNAME:-neo4j}/${NEO4J_PASSWORD:-benchmarking-rags}
+    ports:
+      - "127.0.0.1:7687:7687"
+    volumes:
+      - neo4j-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u ${NEO4J_USERNAME:-neo4j} -p ${NEO4J_PASSWORD:-benchmarking-rags} 'RETURN 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  neo4j-data:

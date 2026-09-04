@@ -5,7 +5,7 @@ import time
 from dotenv import load_dotenv
 from itertools import count
 
-REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
@@ -450,7 +450,7 @@ def main():
         answer_question,
         evaluate_question,
     )
-    if counts["failed"] or counts["pending"]:
+    if counts["run_failed"]:
         raise SystemExit(1)
 
 

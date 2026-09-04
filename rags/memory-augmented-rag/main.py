@@ -203,5 +203,5 @@ if __name__ == "__main__":
         answer_question,
         evaluate_question,
     )
-    if counts["failed"] or counts["pending"]:
+    if counts["run_failed"]:
         raise SystemExit(1)

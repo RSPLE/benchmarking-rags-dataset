@@ -1,35 +1,36 @@
-"""
-Script de avaliação RAGAS para o KE-RAG.
+import os
 
-Executa as test_queries predefinidas de forma automática e retorna
-as métricas: faithfulness, answer_relevancy, context_precision, context_recall.
-
-Uso: python main.py  (executar a partir da pasta knowledge-enhanced-rag/)
-"""
-
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+from langchain_community.vectorstores import Chroma
+from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
+from langchain_community.retrievers import BM25Retriever
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_classic.retrievers import EnsembleRetriever
+from langsmith import traceable
 
 from rag_settings import (
+    build_callback_config,
     build_embeddings,
+    build_llm,
     build_ragas_llm,
     configure_environment,
+    extract_response_text,
     finish_usage_tracker,
+    get_chroma_settings,
+    get_int_env,
     run_ragas,
     salvar,
     start_usage_tracker,
 )
 from benchmark_runner import run_resumable_benchmark
 
-configure_environment("benchmark-knowledge-enhanced-rag")
+configure_environment("benchmark-hybrid-rag")
 
-from src.knowledge_graph import KnowledgeGraph
-from src.chatbot import Chatbot
-from src.ingestion import load_or_create_index
-
-from langsmith import traceable
+DOCS_DIR = os.getenv("DOCS_DIR", "./docs/")
+PERSIST_DIR, CHROMA_COLLECTION_NAME = get_chroma_settings(
+    "./chroma_hybrid_db_openai",
+    "hybrid_collection_openai",
+)
+RETRIEVER_K = get_int_env("RETRIEVER_K", 3)
 
 test_queries = [
     # FÁCEIS
@@ -65,40 +66,95 @@ ground_truths = [
 ]
 
 
-@traceable(name="ke-rag-query", run_type="chain")
-def ke_rag_traced(chatbot, query, callbacks=None):
-    return chatbot.chat(query, callbacks=callbacks)
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
 
 
-def evaluate_ke_rag():
-    print("Inicializando KE-RAG...")
-
-    load_or_create_index()
-
-    try:
-        knowledge_graph = KnowledgeGraph()
-    except Exception as e:
-        print(f"Aviso: Knowledge Graph indisponivel ({e}). Continuando sem KG.")
-        knowledge_graph = None
-
-    chatbot = Chatbot(knowledge_graph=knowledge_graph)
-
+def build_hybrid_retriever():
     embeddings = build_embeddings()
 
+    loader = DirectoryLoader(DOCS_DIR, glob="**/*.pdf", loader_cls=PyPDFLoader)
+    docs = loader.load()
+
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=800,
+        chunk_overlap=100,
+        add_start_index=True,
+    )
+    all_splits = text_splitter.split_documents(docs)
+    print(f"Split doc into {len(all_splits)} sub-documents.")
+
+    vector_store = Chroma(
+        collection_name=CHROMA_COLLECTION_NAME,
+        embedding_function=embeddings,
+        persist_directory=PERSIST_DIR,
+    )
+
+    if vector_store._collection.count() == 0:
+        batch_size = 500
+        print(f"Adicionando {len(all_splits)} documentos ao Chroma em batches...")
+
+        for i in range(0, len(all_splits), batch_size):
+            batch = all_splits[i : i + batch_size]
+            vector_store.add_documents(documents=batch)
+            print(f"  {min(i + batch_size, len(all_splits))}/{len(all_splits)} chunks adicionados")
+
+        print("Ingestão concluída!")
+    else:
+        print(
+            "Coleção existente encontrada com "
+            f"{vector_store._collection.count()} documentos. Pulando ingestão."
+        )
+
+    vector_retriever = vector_store.as_retriever(search_kwargs={"k": RETRIEVER_K})
+    bm25_retriever = BM25Retriever.from_documents(all_splits, k=RETRIEVER_K)
+
+    hybrid_retriever = EnsembleRetriever(
+        retrievers=[bm25_retriever, vector_retriever],
+        weights=[0.4, 0.6],
+    )
+
+    return hybrid_retriever, embeddings, vector_store
+
+
+@traceable(name="hybrid-rag-query", run_type="chain")
+def hybrid_rag(query, retriever, llm, callbacks=None):
+    context_docs = retriever.invoke(query)
+    contexts = [doc.page_content for doc in context_docs]
+    context = format_docs(context_docs)
+
+    prompt = f"""Você é um assistente útil. Use o contexto abaixo para responder a pergunta.
+Se não souber a resposta com base no contexto, diga que não sabe.
+
+Contexto:
+{context}
+
+Pergunta:
+{query}
+
+Resposta:"""
+
+    answer = extract_response_text(llm.invoke(prompt, config=build_callback_config(callbacks)))
+    return answer, contexts
+
+
+def main():
+    hybrid_retriever, embeddings, vector_store = build_hybrid_retriever()
+    print(f"Vectorstore pronto: {vector_store._collection.count()} chunks indexados.")
+    answer_llm = build_llm()
     eval_llm = build_ragas_llm()
 
     def answer_question(item):
-        retrieval = chatbot.retriever.retrieve(item["question"])
-        contexts = [doc.page_content for doc in retrieval["docs"]]
         tracker, started_at = start_usage_tracker()
-        chat_result = ke_rag_traced(
-            chatbot,
+        answer, contexts = hybrid_rag(
             item["question"],
+            hybrid_retriever,
+            answer_llm,
             callbacks=[tracker],
         )
         ragas_item = {
             "question": item["question"],
-            "answer": chat_result["answer"],
+            "answer": answer,
             "contexts": contexts,
             "ground_truth": item["ground_truth"],
         }
@@ -110,13 +166,13 @@ def evaluate_ke_rag():
         return result.iloc[0].to_dict()
 
     counts = run_resumable_benchmark(
-        "knowledge-enhanced-rag",
+        "hybrid-rag",
         answer_question,
         evaluate_question,
     )
-    if counts["failed"] or counts["pending"]:
+    if counts["run_failed"]:
         raise SystemExit(1)
 
 
 if __name__ == "__main__":
-    evaluate_ke_rag()
+    main()
