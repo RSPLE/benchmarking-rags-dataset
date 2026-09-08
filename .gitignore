@@ -17,8 +17,3 @@ tests/.runtime/
 **/*.sqlite3
 **/results*/
 **/rag_benchmark_chart.png
-
-# Source PDFs are local-only unless redistribution rights are confirmed.
-**/docs/**/*.pdf
-**/data/apostilas/**/*.pdf
-corpus/**/*.pdf

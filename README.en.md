@@ -179,21 +179,23 @@ docker compose down
 
 ## Usage
 
-Prepare one corpus for every pipeline:
+## Step-by-step execution
 
-Place the PDFs in `corpus/` at the repository root. Nested subdirectories are also supported.
-
-```bash
-uv run python main.py prepare-corpus ./corpus --clean
-```
-
-The command searches recursively for PDFs and copies them to the six ingestion directories. To prepare the corpus and start the benchmark in one command:
+1. Place the PDFs directly in each RAG's `docs/` directory. For `knowledge-enhanced-rag`, use `data/apostilas/`.
+2. Configure the key and model in `.env`.
+3. Run the script. It validates the PDFs, runs `uv sync`, checks the configuration, and starts all six pipelines:
 
 ```bash
-uv run python main.py run all --corpus ./corpus --clean-corpus --questions 1
+bash scripts/run_benchmark.sh
 ```
 
-`--clean-corpus` removes old PDFs from the destination directories before copying. Vector indexing then happens automatically when each pipeline runs.
+The script tests one question per pipeline by default. To test another batch size:
+
+```bash
+QUESTIONS=10 bash scripts/run_benchmark.sh
+```
+
+Ingestion happens automatically while each pipeline starts. The pipeline loads the PDFs, splits the text into chunks, generates embeddings, and writes the Chroma index before processing questions.
 
 ```bash
 # List the available pipelines

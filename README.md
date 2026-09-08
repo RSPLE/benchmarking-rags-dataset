@@ -188,21 +188,23 @@ docker compose down
 
 ## Uso
 
-Preparar um corpus único para todos os pipelines:
+## Execução passo a passo
 
-Coloque os PDFs em `corpus/` na raiz do repositório. Subpastas também são aceitas.
-
-```bash
-uv run python main.py prepare-corpus ./corpus --clean
-```
-
-O comando procura PDFs recursivamente e os copia para os seis diretórios de ingestão. Para preparar o corpus e iniciar os testes em uma única chamada:
+1. Coloque os PDFs diretamente na pasta `docs/` de cada RAG. Para o `knowledge-enhanced-rag`, use `data/apostilas/`.
+2. Configure a chave e o modelo no `.env`.
+3. Execute o script, que valida os PDFs, roda `uv sync`, verifica a configuração e inicia os seis pipelines:
 
 ```bash
-uv run python main.py run all --corpus ./corpus --clean-corpus --questions 1
+bash scripts/run_benchmark.sh
 ```
 
-O parâmetro `--clean-corpus` remove PDFs antigos dos diretórios de destino antes da cópia. A indexação vetorial acontece automaticamente durante a execução de cada pipeline.
+Por padrão, o script testa uma pergunta por pipeline. Para testar outro lote:
+
+```bash
+QUESTIONS=10 bash scripts/run_benchmark.sh
+```
+
+A ingestão ocorre automaticamente durante a inicialização de cada pipeline. O pipeline carrega os PDFs, divide o texto em chunks, gera embeddings e grava o índice Chroma antes de processar as perguntas.
 
 Listar pipelines:
 
