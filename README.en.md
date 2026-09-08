@@ -177,6 +177,45 @@ docker compose logs -f neo4j
 docker compose down
 ```
 
+Recommended order for testing `knowledge-enhanced-rag` with local Neo4j:
+
+```bash
+docker compose up --detach neo4j
+uv run python main.py doctor
+uv run python main.py run knowledge-enhanced-rag --questions 3
+```
+
+### Hosted Neo4j
+
+To use Neo4j Aura or another hosted instance, do not run `docker compose`. Create the hosted database, copy the credentials provided by the service, and configure `.env`:
+
+```env
+NEO4J_URI=neo4j+s://your-id.databases.neo4j.io
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=your_password
+```
+
+Then run the benchmark directly:
+
+```bash
+uv run python main.py run knowledge-enhanced-rag --questions 3
+```
+
+`doctor` only checks that the variables exist; the actual connection is validated when the pipeline starts. The benchmark connects to the graph but does not populate it automatically. To build the curated graph before the benchmark, start the API in one terminal:
+
+```bash
+cd rags/knowledge-enhanced-rag
+uv run python app.py
+```
+
+In another terminal, from the repository root, run:
+
+```bash
+curl -X POST http://127.0.0.1:8000/build-graph
+```
+
+Then stop the API and run the benchmark command. If the graph is not configured or is empty, `knowledge-enhanced-rag` can still use Chroma vector search alone.
+
 ## Usage
 
 ## Step-by-step execution
@@ -196,6 +235,26 @@ QUESTIONS=10 bash scripts/run_benchmark.sh
 ```
 
 Ingestion happens automatically while each pipeline starts. The pipeline loads the PDFs, splits the text into chunks, generates embeddings, and writes the Chroma index before processing questions.
+
+To test each RAG individually with up to three questions:
+
+```bash
+uv run python main.py run context-rag --questions 3
+uv run python main.py run graph-rag --questions 3
+uv run python main.py run hybrid-rag --questions 3
+uv run python main.py run knowledge-enhanced-rag --questions 3
+uv run python main.py run memory-augmented-rag --questions 3
+uv run python main.py run self-rag --questions 3
+```
+
+Before testing, check the configuration and PDF counts:
+
+```bash
+uv sync
+uv run python main.py doctor
+```
+
+`uv sync` installs dependencies but does not ingest documents. Ingestion happens when each RAG starts. Each RAG has its own Chroma index and stores results in `rags/<pipeline>/results/`.
 
 ```bash
 # List the available pipelines

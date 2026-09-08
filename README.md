@@ -186,6 +186,45 @@ docker compose logs -f neo4j
 docker compose down
 ```
 
+Ordem recomendada para testar o `knowledge-enhanced-rag` com Neo4j local:
+
+```bash
+docker compose up --detach neo4j
+uv run python main.py doctor
+uv run python main.py run knowledge-enhanced-rag --questions 3
+```
+
+### Neo4j hospedado
+
+Para usar Neo4j Aura ou outra instância hospedada, não execute `docker compose`. Crie o banco hospedado, copie as credenciais fornecidas pelo serviço e configure o `.env`:
+
+```env
+NEO4J_URI=neo4j+s://seu-id.databases.neo4j.io
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=sua_senha
+```
+
+Depois execute diretamente o benchmark:
+
+```bash
+uv run python main.py run knowledge-enhanced-rag --questions 3
+```
+
+O `doctor` verifica apenas se as variáveis existem; a conexão real é validada quando o pipeline inicia. O benchmark conecta ao grafo, mas não o popula automaticamente. Para construir o grafo curado antes do benchmark, inicie a API em um terminal:
+
+```bash
+cd rags/knowledge-enhanced-rag
+uv run python app.py
+```
+
+Em outro terminal, na raiz do projeto, execute:
+
+```bash
+curl -X POST http://127.0.0.1:8000/build-graph
+```
+
+Depois encerre a API e rode o comando do benchmark. Se o grafo não for configurado ou estiver vazio, o `knowledge-enhanced-rag` ainda pode usar somente a busca vetorial do Chroma.
+
 ## Uso
 
 ## Execução passo a passo
@@ -205,6 +244,26 @@ QUESTIONS=10 bash scripts/run_benchmark.sh
 ```
 
 A ingestão ocorre automaticamente durante a inicialização de cada pipeline. O pipeline carrega os PDFs, divide o texto em chunks, gera embeddings e grava o índice Chroma antes de processar as perguntas.
+
+Para testar cada RAG individualmente com até três perguntas:
+
+```bash
+uv run python main.py run context-rag --questions 3
+uv run python main.py run graph-rag --questions 3
+uv run python main.py run hybrid-rag --questions 3
+uv run python main.py run knowledge-enhanced-rag --questions 3
+uv run python main.py run memory-augmented-rag --questions 3
+uv run python main.py run self-rag --questions 3
+```
+
+Antes dos testes, confirme a configuração e a quantidade de PDFs:
+
+```bash
+uv sync
+uv run python main.py doctor
+```
+
+O `uv sync` instala dependências, mas não faz a ingestão. A ingestão é feita quando o RAG é iniciado. Cada RAG possui seu próprio índice Chroma e seus resultados ficam em `rags/<pipeline>/results/`.
 
 Listar pipelines:
 
