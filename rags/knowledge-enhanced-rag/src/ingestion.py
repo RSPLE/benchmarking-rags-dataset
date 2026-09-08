@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 
 from langchain_community.document_loaders import PyPDFDirectoryLoader
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from rag_settings import build_embeddings, get_chroma_settings

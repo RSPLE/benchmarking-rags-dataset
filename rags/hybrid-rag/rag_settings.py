@@ -16,7 +16,7 @@ from datasets import Dataset
 from dotenv import load_dotenv
 from langchain_core.callbacks import BaseCallbackHandler
 from ragas import RunConfig, evaluate
-from ragas.metrics import (
+from ragas.metrics.collections import (
     answer_relevancy,
     context_precision,
     context_recall,

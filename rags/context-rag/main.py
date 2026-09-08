@@ -16,10 +16,15 @@ ensure_ragas_langchain_compat()
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 
 from ragas import evaluate
-from ragas.metrics import faithfulness, answer_relevancy, context_precision, context_recall
+from ragas.metrics.collections import (
+    faithfulness,
+    answer_relevancy,
+    context_precision,
+    context_recall,
+)
 from datasets import Dataset
 
 from langsmith import traceable

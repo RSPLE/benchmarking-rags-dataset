@@ -150,7 +150,7 @@ Para usar somente OpenAI, defina ambos os provedores como `openai`. Ao trocar o 
 
 ## Corpora locais
 
-Os PDFs não são publicados por este monorepo. Além de evitar um repositório excessivamente grande, isso impede redistribuição sem licença comprovada. Coloque documentos que você tem direito de usar nestes diretórios:
+Os PDFs estão presentes nas seguintes pastas:
 
 ```text
 rags/context-rag/docs/
@@ -173,10 +173,10 @@ NEO4J_USERNAME=neo4j
 NEO4J_PASSWORD=uma-senha-local-segura
 ```
 
-Inicie somente o banco:
+Inicie o banco:
 
 ```bash
-docker compose up --detach neo4j
+docker compose up -d
 ```
 
 O banco fica disponível para a CLI em `127.0.0.1:7687`. O volume `neo4j-data` conserva os dados e a senha usada na primeira inicialização; se ele já existir, mantenha essa senha no `.env`. Para acompanhar ou encerrar apenas o banco:
@@ -229,6 +229,16 @@ Depois encerre a API e rode o comando do benchmark. Se o grafo não for configur
 
 ## Execução passo a passo
 
+Antes dos testes, confirme a configuração e a quantidade de PDFs:
+
+```bash
+uv sync
+uv run python main.py doctor
+```
+
+O `uv sync` instala dependências, mas não faz a ingestão. A ingestão é feita quando o RAG é iniciado. Cada RAG possui seu próprio índice Chroma e seus resultados ficam em `rags/<pipeline>/results/`.
+
+
 1. Coloque os PDFs diretamente na pasta `docs/` de cada RAG. Para o `knowledge-enhanced-rag`, use `data/apostilas/`.
 2. Configure a chave e o modelo no `.env`.
 3. Execute o script, que valida os PDFs, roda `uv sync`, verifica a configuração e inicia os seis pipelines:
@@ -255,15 +265,6 @@ uv run python main.py run knowledge-enhanced-rag --questions 3
 uv run python main.py run memory-augmented-rag --questions 3
 uv run python main.py run self-rag --questions 3
 ```
-
-Antes dos testes, confirme a configuração e a quantidade de PDFs:
-
-```bash
-uv sync
-uv run python main.py doctor
-```
-
-O `uv sync` instala dependências, mas não faz a ingestão. A ingestão é feita quando o RAG é iniciado. Cada RAG possui seu próprio índice Chroma e seus resultados ficam em `rags/<pipeline>/results/`.
 
 Listar pipelines:
 

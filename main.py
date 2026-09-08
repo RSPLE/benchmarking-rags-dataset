@@ -55,6 +55,8 @@ def uv_command() -> list[str]:
 def run_project(project: str, provider: str | None, questions: int | None = None) -> int:
     load_environment()
     env = os.environ.copy()
+    # Each RAG owns an isolated uv project environment.
+    env.pop("VIRTUAL_ENV", None)
     if provider:
         env["LLM_PROVIDER"] = provider
     if questions is not None:

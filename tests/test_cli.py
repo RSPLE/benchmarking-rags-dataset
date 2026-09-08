@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import contextlib
 import io
+import os
 import unittest
+from unittest.mock import patch
 
 import main as cli
 
@@ -18,6 +20,17 @@ class CliTests(unittest.TestCase):
     def test_run_all_accepts_limit_alias(self) -> None:
         args = cli.build_parser().parse_args(["run-all", "--limit", "5"])
         self.assertEqual(args.questions, 5)
+
+    def test_project_runner_does_not_forward_parent_virtualenv(self) -> None:
+        completed = type("Completed", (), {"returncode": 0})()
+        with (
+            patch.dict(os.environ, {"VIRTUAL_ENV": "/tmp/parent-venv"}, clear=False),
+            patch.object(cli.subprocess, "run", return_value=completed) as run,
+        ):
+            self.assertEqual(cli.run_project("context-rag", None, 1), 0)
+
+        child_environment = run.call_args.kwargs["env"]
+        self.assertNotIn("VIRTUAL_ENV", child_environment)
 
     def test_question_limit_rejects_zero(self) -> None:
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
