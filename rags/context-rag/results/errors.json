@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "project": "context-rag",
+  "dataset": "/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/eval-dataset/qa_dataset_90.json",
+  "dataset_sha256": "b913c60394272fa4c0237cd8f86c584bd495efa25f5af18e105c38246154deca",
+  "updated_at": "2026-09-08T21:26:56.976898+00:00",
+  "count": 1,
+  "errors": [
+    {
+      "id": "Q001",
+      "question": "What does 'programming logic' mean in simple words?",
+      "attempts": 1,
+      "started_at": "2026-09-08T21:24:57.618606+00:00",
+      "finished_at": "2026-09-08T21:26:56.974885+00:00",
+      "error_type": "TypeError",
+      "message": "All metrics must be initialised metric objects, e.g: metrics=[BleuScore(), AspectCritic()]",
+      "output": "TypeError: All metrics must be initialised metric objects, e.g: metrics=[BleuScore(), AspectCritic()]",
+      "traceback": "Traceback (most recent call last):\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/benchmark_runner.py\", line 304, in run_resumable_benchmark\n    evaluation = evaluate_question(ragas_item)\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/main.py\", line 450, in evaluate_question\n    result = run_ragas([ragas_item], eval_llm, embeddings)\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/main.py\", line 374, in run_ragas\n    result = evaluate(\n        dataset,\n    ...<3 lines>...\n        raise_exceptions=True,\n    )\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/_analytics.py\", line 278, in wrapper\n    result = func(*args, **kwargs)\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/evaluation.py\", line 484, in evaluate\n    return run(_async_wrapper())\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/async_utils.py\", line 156, in run\n    return asyncio.run(coro)\n           ~~~~~~~~~~~^^^^^^\n  File \"/var/home/martinianogomes/.local/share/uv/python/cpython-3.13.15-linux-x86_64-gnu/lib/python3.13/asyncio/runners.py\", line 196, in run\n    return runner.run(main)\n           ~~~~~~~~~~^^^^^^\n  File \"/var/home/martinianogomes/.local/share/uv/python/cpython-3.13.15-linux-x86_64-gnu/lib/python3.13/asyncio/runners.py\", line 119, in run\n    return self._loop.run_until_complete(task)\n           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^\n  File \"/var/home/martinianogomes/.local/share/uv/python/cpython-3.13.15-linux-x86_64-gnu/lib/python3.13/asyncio/base_events.py\", line 726, in run_until_complete\n    return future.result()\n           ~~~~~~~~~~~~~^^\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/evaluation.py\", line 457, in _async_wrapper\n    return await aevaluate(\n           ^^^^^^^^^^^^^^^^\n    ...<15 lines>...\n    )\n    ^\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/evaluation.py\", line 133, in aevaluate\n    raise TypeError(\n        \"All metrics must be initialised metric objects, e.g: metrics=[BleuScore(), AspectCritic()]\"\n    )\nTypeError: All metrics must be initialised metric objects, e.g: metrics=[BleuScore(), AspectCritic()]\n"
+    }
+  ]
+}

@@ -15,5 +15,4 @@ tests/.runtime/
 # Generated vector indexes and benchmark outputs
 **/chroma*/
 **/*.sqlite3
-**/results*/
 **/rag_benchmark_chart.png

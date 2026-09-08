@@ -25,4 +25,3 @@ data/apostilas/*.pdf
 
 # ChromaDB
 chroma_langchain_db/
-results*

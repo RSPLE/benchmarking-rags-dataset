@@ -2,4 +2,3 @@
 .venv
 __pycache__
 chroma_memory_db_openai
-results*
