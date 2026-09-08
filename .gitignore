@@ -21,3 +21,4 @@ tests/.runtime/
 # Source PDFs are local-only unless redistribution rights are confirmed.
 **/docs/**/*.pdf
 **/data/apostilas/**/*.pdf
+corpus/**/*.pdf

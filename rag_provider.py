@@ -30,6 +30,17 @@ def _required(variable: str, provider: str) -> str:
     return value
 
 
+def _max_tokens() -> int:
+    value = os.getenv("LLM_MAX_TOKENS", "4096").strip()
+    try:
+        max_tokens = int(value)
+    except ValueError as exc:
+        raise ValueError("LLM_MAX_TOKENS deve ser um inteiro positivo.") from exc
+    if max_tokens <= 0:
+        raise ValueError("LLM_MAX_TOKENS deve ser um inteiro positivo.")
+    return max_tokens
+
+
 def _openrouter_headers() -> dict[str, str]:
     headers: dict[str, str] = {}
     referer = os.getenv("OPENROUTER_HTTP_REFERER", "").strip()
@@ -50,6 +61,7 @@ def build_llm() -> ChatOpenAI:
             "api_key": _required("OPENROUTER_API_KEY", provider),
             "base_url": os.getenv("OPENROUTER_BASE_URL", OPENROUTER_BASE_URL),
             "model": os.getenv("OPENROUTER_MODEL", "~openai/gpt-latest"),
+            "max_tokens": _max_tokens(),
             "temperature": None,
             "use_responses_api": False,
         }
@@ -61,6 +73,7 @@ def build_llm() -> ChatOpenAI:
     kwargs = {
         "api_key": _required("OPENAI_API_KEY", provider),
         "model": os.getenv("OPENAI_MODEL", "gpt-5.5"),
+        "max_tokens": _max_tokens(),
         "temperature": None,
         "use_responses_api": True,
     }

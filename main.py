@@ -19,6 +19,12 @@ PROJECTS = {
     "memory-augmented-rag": "agente RAG com memória conversacional",
     "self-rag": "RAG com autocrítica e uma etapa de refinamento",
 }
+CORPUS_TARGETS = {
+    project: RAGS_ROOT
+    / project
+    / ("data/apostilas" if project == "knowledge-enhanced-rag" else "docs")
+    for project in PROJECTS
+}
 
 
 def positive_integer(value: str) -> int:
@@ -50,6 +56,45 @@ def uv_command() -> list[str]:
     except ImportError as exc:
         raise SystemExit("uv nao encontrado. Instale-o e execute `uv sync` na raiz.") from exc
     return [sys.executable, "-m", "uv"]
+
+
+def pdf_files(directory: Path) -> list[Path]:
+    return sorted(
+        path
+        for path in directory.rglob("*")
+        if path.is_file() and path.suffix.lower() == ".pdf"
+    )
+
+
+def prepare_corpus(source: Path, clean: bool = False) -> int:
+    source = source.expanduser().resolve()
+    if not source.is_dir():
+        raise RuntimeError(f"Pasta de corpus nao encontrada: {source}")
+
+    files = pdf_files(source)
+    if not files:
+        raise RuntimeError(f"Nenhum PDF encontrado em: {source}")
+
+    for target in CORPUS_TARGETS.values():
+        target.mkdir(parents=True, exist_ok=True)
+        if clean and target.resolve() != source:
+            for existing in pdf_files(target):
+                existing.unlink()
+
+        used_names: dict[str, int] = {}
+        for pdf in files:
+            count = used_names.get(pdf.name, 0) + 1
+            used_names[pdf.name] = count
+            if count == 1:
+                filename = pdf.name
+            else:
+                filename = f"{pdf.stem}_{count}{pdf.suffix.lower()}"
+            destination = target / filename
+            if pdf.resolve() != destination.resolve():
+                shutil.copy2(pdf, destination)
+
+    print(f"Corpus preparado: {len(files)} PDF(s) copiado(s) para {len(CORPUS_TARGETS)} pipelines.")
+    return len(files)
 
 
 def run_project(project: str, provider: str | None, questions: int | None = None) -> int:
@@ -95,7 +140,12 @@ def run_projects(
     projects: list[str],
     provider: str | None,
     questions: int | None = None,
+    corpus: Path | None = None,
+    clean_corpus: bool = False,
 ) -> int:
+    if corpus is not None:
+        prepare_corpus(corpus, clean=clean_corpus)
+
     failures: list[str] = []
     for project in projects:
         print(f"\n{'=' * 72}\nPipeline: {project}\n{'=' * 72}")
@@ -107,9 +157,14 @@ def run_projects(
     return 0
 
 
-def run_all(provider: str | None, questions: int | None = None) -> int:
+def run_all(
+    provider: str | None,
+    questions: int | None = None,
+    corpus: Path | None = None,
+    clean_corpus: bool = False,
+) -> int:
     """Backward-compatible alias for running all pipelines."""
-    return run_projects(list(PROJECTS), provider, questions)
+    return run_projects(list(PROJECTS), provider, questions, corpus, clean_corpus)
 
 
 def show_projects() -> None:
@@ -143,11 +198,8 @@ def doctor() -> int:
             print(f"[ERRO] {variable} ausente")
             errors += 1
 
-    for project in PROJECTS:
-        docs_dir = RAGS_ROOT / project / "docs"
-        if project == "knowledge-enhanced-rag":
-            docs_dir = RAGS_ROOT / project / "data" / "apostilas"
-        count = len(list(docs_dir.glob("*.pdf"))) if docs_dir.exists() else 0
+    for project, docs_dir in CORPUS_TARGETS.items():
+        count = len(pdf_files(docs_dir)) if docs_dir.exists() else 0
         print(f"[INFO] {project}: {count} PDF(s) local(is)")
 
     if not os.getenv("NEO4J_URI") or not os.getenv("NEO4J_PASSWORD"):
@@ -162,6 +214,23 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command")
     subparsers.add_parser("list", help="lista pipelines e dataset")
     subparsers.add_parser("doctor", help="valida chaves, provedores e corpora")
+
+    corpus_parser = subparsers.add_parser(
+        "prepare-corpus",
+        help="copia todos os PDFs de uma pasta para os seis pipelines",
+    )
+    corpus_parser.add_argument(
+        "source",
+        nargs="?",
+        type=Path,
+        default=ROOT / "corpus",
+        help="pasta de origem dos PDFs (padrao: ./corpus)",
+    )
+    corpus_parser.add_argument(
+        "--clean",
+        action="store_true",
+        help="remove PDFs existentes nos destinos antes de copiar",
+    )
 
     run_parser = subparsers.add_parser(
         "run",
@@ -183,6 +252,17 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="X",
         help="tenta no maximo X perguntas ainda nao concluidas por RAG",
     )
+    run_parser.add_argument(
+        "--corpus",
+        type=Path,
+        metavar="DIR",
+        help="prepara os PDFs de DIR antes de executar os pipelines",
+    )
+    run_parser.add_argument(
+        "--clean-corpus",
+        action="store_true",
+        help="remove PDFs existentes dos destinos antes de preparar o corpus",
+    )
 
     all_parser = subparsers.add_parser(
         "run-all",
@@ -197,6 +277,17 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="X",
         help="tenta no maximo X perguntas ainda nao concluidas por RAG",
     )
+    all_parser.add_argument(
+        "--corpus",
+        type=Path,
+        metavar="DIR",
+        help="prepara os PDFs de DIR antes de executar os pipelines",
+    )
+    all_parser.add_argument(
+        "--clean-corpus",
+        action="store_true",
+        help="remove PDFs existentes dos destinos antes de preparar o corpus",
+    )
 
     return parser
 
@@ -209,14 +300,37 @@ def main() -> int:
         return 0
     if args.command == "doctor":
         return doctor()
+    if args.command == "prepare-corpus":
+        try:
+            prepare_corpus(args.source, clean=args.clean)
+        except RuntimeError as exc:
+            parser.error(str(exc))
+        return 0
     if args.command == "run":
         try:
             projects = resolve_projects(args.projects)
         except ValueError as exc:
             parser.error(str(exc))
-        return run_projects(projects, args.provider, args.questions)
+        try:
+            return run_projects(
+                projects,
+                args.provider,
+                args.questions,
+                args.corpus,
+                args.clean_corpus,
+            )
+        except RuntimeError as exc:
+            parser.error(str(exc))
     if args.command == "run-all":
-        return run_all(args.provider, args.questions)
+        try:
+            return run_all(
+                args.provider,
+                args.questions,
+                args.corpus,
+                args.clean_corpus,
+            )
+        except RuntimeError as exc:
+            parser.error(str(exc))
     return 2
 
 

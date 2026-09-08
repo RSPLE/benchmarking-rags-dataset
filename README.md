@@ -129,6 +129,7 @@ Configuração mínima:
 LLM_PROVIDER=openrouter
 OPENROUTER_API_KEY=sk-or-v1-...
 OPENROUTER_MODEL=~openai/gpt-latest
+LLM_MAX_TOKENS=4096
 
 EMBEDDING_PROVIDER=openrouter
 OPENROUTER_EMBEDDING_MODEL=openai/text-embedding-3-small
@@ -186,6 +187,22 @@ docker compose down
 ```
 
 ## Uso
+
+Preparar um corpus único para todos os pipelines:
+
+Coloque os PDFs em `corpus/` na raiz do repositório. Subpastas também são aceitas.
+
+```bash
+uv run python main.py prepare-corpus ./corpus --clean
+```
+
+O comando procura PDFs recursivamente e os copia para os seis diretórios de ingestão. Para preparar o corpus e iniciar os testes em uma única chamada:
+
+```bash
+uv run python main.py run all --corpus ./corpus --clean-corpus --questions 1
+```
+
+O parâmetro `--clean-corpus` remove PDFs antigos dos diretórios de destino antes da cópia. A indexação vetorial acontece automaticamente durante a execução de cada pipeline.
 
 Listar pipelines:
 

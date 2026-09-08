@@ -120,6 +120,7 @@ Minimal configuration:
 LLM_PROVIDER=openrouter
 OPENROUTER_API_KEY=sk-or-v1-...
 OPENROUTER_MODEL=~openai/gpt-latest
+LLM_MAX_TOKENS=4096
 
 EMBEDDING_PROVIDER=openrouter
 OPENROUTER_EMBEDDING_MODEL=openai/text-embedding-3-small
@@ -177,6 +178,22 @@ docker compose down
 ```
 
 ## Usage
+
+Prepare one corpus for every pipeline:
+
+Place the PDFs in `corpus/` at the repository root. Nested subdirectories are also supported.
+
+```bash
+uv run python main.py prepare-corpus ./corpus --clean
+```
+
+The command searches recursively for PDFs and copies them to the six ingestion directories. To prepare the corpus and start the benchmark in one command:
+
+```bash
+uv run python main.py run all --corpus ./corpus --clean-corpus --questions 1
+```
+
+`--clean-corpus` removes old PDFs from the destination directories before copying. Vector indexing then happens automatically when each pipeline runs.
 
 ```bash
 # List the available pipelines
