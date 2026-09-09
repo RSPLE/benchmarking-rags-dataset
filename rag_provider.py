@@ -30,15 +30,23 @@ def _required(variable: str, provider: str) -> str:
     return value
 
 
-def _max_tokens() -> int:
-    value = os.getenv("LLM_MAX_TOKENS", "4096").strip()
+def _positive_int(variable: str, default: int) -> int:
+    value = os.getenv(variable, str(default)).strip()
     try:
         max_tokens = int(value)
     except ValueError as exc:
-        raise ValueError("LLM_MAX_TOKENS deve ser um inteiro positivo.") from exc
+        raise ValueError(f"{variable} deve ser um inteiro positivo.") from exc
     if max_tokens <= 0:
-        raise ValueError("LLM_MAX_TOKENS deve ser um inteiro positivo.")
+        raise ValueError(f"{variable} deve ser um inteiro positivo.")
     return max_tokens
+
+
+def _max_tokens(variable: str = "LLM_MAX_TOKENS", default: int = 4096) -> int:
+    return _positive_int(variable, default)
+
+
+def _timeout_seconds() -> int:
+    return _positive_int("LLM_TIMEOUT_SECONDS", 600)
 
 
 def _openrouter_headers() -> dict[str, str]:
@@ -52,7 +60,7 @@ def _openrouter_headers() -> dict[str, str]:
     return headers
 
 
-def build_llm() -> ChatOpenAI:
+def build_llm(max_tokens: int | None = None) -> ChatOpenAI:
     """Build the chat model using OpenRouter (default) or OpenAI directly."""
     provider = _provider("LLM_PROVIDER", "openrouter")
 
@@ -61,7 +69,8 @@ def build_llm() -> ChatOpenAI:
             "api_key": _required("OPENROUTER_API_KEY", provider),
             "base_url": os.getenv("OPENROUTER_BASE_URL", OPENROUTER_BASE_URL),
             "model": os.getenv("OPENROUTER_MODEL", "~openai/gpt-latest"),
-            "max_tokens": _max_tokens(),
+            "max_tokens": max_tokens or _max_tokens(),
+            "timeout": _timeout_seconds(),
             "temperature": None,
             "use_responses_api": False,
         }
@@ -73,7 +82,8 @@ def build_llm() -> ChatOpenAI:
     kwargs = {
         "api_key": _required("OPENAI_API_KEY", provider),
         "model": os.getenv("OPENAI_MODEL", "gpt-5.5"),
-        "max_tokens": _max_tokens(),
+        "max_tokens": max_tokens or _max_tokens(),
+        "timeout": _timeout_seconds(),
         "temperature": None,
         "use_responses_api": True,
     }
@@ -110,7 +120,7 @@ def build_embeddings() -> OpenAIEmbeddings:
 
 def build_ragas_llm() -> LangchainLLMWrapper:
     return LangchainLLMWrapper(
-        build_llm(),
+        build_llm(max_tokens=_max_tokens("RAGAS_MAX_TOKENS", 2048)),
         bypass_n=True,
         bypass_temperature=True,
     )

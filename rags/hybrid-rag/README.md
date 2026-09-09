@@ -112,7 +112,7 @@ Este projeto não usa nenhum grafo de conhecimento.
 - `RETRIEVER_K` (env, default `3`): usado como `k` tanto no retriever BM25 quanto no retriever vetorial.
 - Fusão: `EnsembleRetriever(retrievers=[bm25_retriever, vector_retriever], weights=[0.4, 0.6])` — peso 0.4 para BM25, 0.6 para o vetorial.
 - Sem threshold de similaridade, sem reranking, sem filtros de metadata.
-- `RAGAS_TIMEOUT_SECONDS` (default `600`) e `RAGAS_MAX_WORKERS` (default `4`) configuram um `RunConfig` do RAGAS usado na avaliação (`build_ragas_run_config()`, `rag_settings.py:302-306`) — parâmetros únicos deste projeto entre os utilitários compartilhados.
+- `RAGAS_TIMEOUT_SECONDS` (default `600`) e `RAGAS_MAX_WORKERS` (default `2`) configuram o `RunConfig` compartilhado do RAGAS.
 
 ### Versões das bibliotecas
 
@@ -185,7 +185,7 @@ LANGCHAIN_PROJECT=benchmark-hybrid-rag
 | `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-large` | Modelo de embeddings (retriever vetorial). |
 | `OPENAI_REASONING_EFFORT` | `medium` | Parâmetro `reasoning_effort` do `ChatOpenAI` (Responses API). |
 | `RAGAS_TIMEOUT_SECONDS` | `600` | Timeout do `RunConfig` da avaliação RAGAS. |
-| `RAGAS_MAX_WORKERS` | `4` | Paralelismo do `RunConfig` da avaliação RAGAS. |
+| `RAGAS_MAX_WORKERS` | `2` | Paralelismo do `RunConfig` da avaliação RAGAS. |
 | `DOCS_DIR` | `../docs/` (ver aviso acima) | Pasta com os PDFs a indexar. |
 | `RETRIEVER_K` | `3` | `k` usado por ambos retrievers (BM25 e vetorial) antes da fusão. |
 | `CHROMA_PERSIST_DIR` | `./chroma_hybrid_db_openai` | Diretório de persistência do índice vetorial. |

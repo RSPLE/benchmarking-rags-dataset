@@ -9,7 +9,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
-from ragas_compat import ensure_ragas_langchain_compat
+from ragas_compat import build_ragas_run_config, ensure_ragas_langchain_compat
 
 ensure_ragas_langchain_compat()
 
@@ -19,7 +19,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 
 from ragas import evaluate
-from ragas.metrics.collections import (
+from ragas.metrics import (
     faithfulness,
     answer_relevancy,
     context_precision,
@@ -100,10 +100,7 @@ ground_truths = [
 def extract_response_text(response):
     text = getattr(response, "text", None)
 
-    if callable(text):
-        text = text()
-
-    if text:
+    if isinstance(text, str) and text:
         return text
 
     content = getattr(response, "content", response)
@@ -376,6 +373,7 @@ def run_ragas(ragas_data, llm, embeddings):
         metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
         llm=llm,
         embeddings=embeddings,
+        run_config=build_ragas_run_config(),
         raise_exceptions=True,
     )
 

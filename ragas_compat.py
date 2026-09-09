@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import os
 import sys
 import types
 
@@ -28,3 +29,24 @@ def ensure_ragas_langchain_compat() -> None:
     chat_vertex_ai = type("ChatVertexAI", (), {"__module__": LEGACY_VERTEX_MODULE})
     module.ChatVertexAI = chat_vertex_ai
     sys.modules[LEGACY_VERTEX_MODULE] = module
+
+
+def build_ragas_run_config():
+    """Build shared RAGAS timeout and concurrency settings."""
+    ensure_ragas_langchain_compat()
+    from ragas import RunConfig
+
+    def positive_int(variable: str, default: int) -> int:
+        value = os.getenv(variable, str(default)).strip()
+        try:
+            parsed = int(value)
+        except ValueError as exc:
+            raise ValueError(f"{variable} deve ser um inteiro positivo.") from exc
+        if parsed <= 0:
+            raise ValueError(f"{variable} deve ser um inteiro positivo.")
+        return parsed
+
+    return RunConfig(
+        timeout=positive_int("RAGAS_TIMEOUT_SECONDS", 600),
+        max_workers=positive_int("RAGAS_MAX_WORKERS", 2),
+    )

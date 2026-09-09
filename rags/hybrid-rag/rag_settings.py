@@ -8,15 +8,15 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
-from ragas_compat import ensure_ragas_langchain_compat
+from ragas_compat import build_ragas_run_config, ensure_ragas_langchain_compat
 
 ensure_ragas_langchain_compat()
 
 from datasets import Dataset
 from dotenv import load_dotenv
 from langchain_core.callbacks import BaseCallbackHandler
-from ragas import RunConfig, evaluate
-from ragas.metrics.collections import (
+from ragas import evaluate
+from ragas.metrics import (
     answer_relevancy,
     context_precision,
     context_recall,
@@ -42,26 +42,19 @@ USAGE_COLS = [
 
 EXPORT_COLS = ["question", *METRIC_COLS, *USAGE_COLS]
 
-DEFAULT_RAGAS_TIMEOUT_SECONDS = 600
-DEFAULT_RAGAS_MAX_WORKERS = 4
-
 
 def get_int_env(name, default, minimum=1):
     value = os.getenv(name)
-
     if value is None:
         return default
-
     try:
         parsed_value = int(value)
     except ValueError as exc:
         raise RuntimeError(f"{name} precisa ser um numero inteiro. Valor atual: {value}") from exc
-
     if parsed_value < minimum:
         raise RuntimeError(
             f"{name} precisa ser maior ou igual a {minimum}. Valor atual: {parsed_value}"
         )
-
     return parsed_value
 
 
@@ -87,10 +80,7 @@ def get_chroma_settings(default_persist_dir, default_collection_name):
 def extract_response_text(response):
     text = getattr(response, "text", None)
 
-    if callable(text):
-        text = text()
-
-    if text:
+    if isinstance(text, str) and text:
         return text
 
     content = getattr(response, "content", response)
@@ -263,13 +253,6 @@ def preparar_export_ragas(df):
         )
 
     return df[EXPORT_COLS]
-
-
-def build_ragas_run_config():
-    return RunConfig(
-        timeout=get_int_env("RAGAS_TIMEOUT_SECONDS", DEFAULT_RAGAS_TIMEOUT_SECONDS),
-        max_workers=get_int_env("RAGAS_MAX_WORKERS", DEFAULT_RAGAS_MAX_WORKERS),
-    )
 
 
 def run_ragas(ragas_data, llm, embeddings):

@@ -7,7 +7,7 @@ from langchain_chroma import Chroma
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 from ragas import evaluate
-from ragas.metrics.collections import (
+from ragas.metrics import (
     faithfulness,
     answer_relevancy,
     context_precision,
@@ -67,10 +67,7 @@ def get_openai_api_key():
 def extract_response_text(response):
     text = getattr(response, "text", None)
 
-    if callable(text):
-        text = text()
-
-    if text:
+    if isinstance(text, str) and text:
         return text
 
     content = getattr(response, "content", response)
