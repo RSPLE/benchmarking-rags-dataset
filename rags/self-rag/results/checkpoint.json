@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "project": "self-rag",
+  "dataset": "/home/ramon/Git/GitHub/logibots/benchmarking-rags-dataset/eval-dataset/qa_dataset_90.json",
+  "dataset_sha256": "b913c60394272fa4c0237cd8f86c584bd495efa25f5af18e105c38246154deca",
+  "created_at": "2026-09-09T02:04:03.137251+00:00",
+  "updated_at": "2026-09-09T02:09:54.960794+00:00",
+  "items": {
+    "Q001": {
+      "status": "success",
+      "attempts": 1,
+      "question": "What does 'programming logic' mean in simple words?",
+      "started_at": "2026-09-09T02:04:03.138578+00:00",
+      "finished_at": "2026-09-09T02:09:54.960773+00:00",
+      "error": null,
+      "result": {
+        "answer": "Com base no contexto fornecido, em palavras simples, a **lógica de programação** é o estabelecimento de uma sequência organizada de passos que serão executados por um computador para atingir um objetivo. Ela é essencialmente uma técnica de encadear pensamentos para criar um programa. \n\nO contexto destaca que essa lógica pode ser aplicada de duas formas principais:\n\n1. **De forma procedural (linguagens imperativas e funcionais):** O programador sabe o que quer e diz exatamente ao computador *como* a computação deve ser feita, passo a passo. O computador é tratado como um dispositivo que apenas obedece ordens detalhadas.\n2. **De forma não procedural / declarativa (linguagens de programação lógica, como Prolog):** O programador não descreve *como* o resultado será computado, mas define a *forma* do resultado por meio de uma coleção de fatos e regras. Em vez de ditar os passos exatos, o programador faz perguntas ao sistema, que tenta respondê-las consultando as regras e fatos estabelecidos. \n\n*(Se preferir a resposta em inglês, já que a pergunta foi feita nesse idioma: In simple words, based on the context, \"programming logic\" is the establishment of an organized sequence of steps to be executed by a computer to reach a goal. It can be procedural, where the programmer tells the computer exactly \"how\" to do things step-by-step, or non-procedural/declarative (logic programming), where the programmer just provides facts and rules and asks the system questions, letting it figure out the \"how\" by itself).*",
+        "contexts_count": 5,
+        "question": "What does 'programming logic' mean in simple words?",
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.9324788268515526,
+        "context_precision": 0.249999999975,
+        "context_recall": 1.0,
+        "answer_response_time_seconds": 18.705923,
+        "answer_input_tokens": 2348,
+        "answer_output_tokens": 2678,
+        "answer_total_tokens": 5026
+      }
+    }
+  }
+}

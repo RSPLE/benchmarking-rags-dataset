@@ -1,0 +1,14 @@
+﻿id;question;ground_truth;source_book;answer;contexts_count;faithfulness;answer_relevancy;context_precision;context_recall;answer_response_time_seconds;answer_input_tokens;answer_output_tokens;answer_total_tokens
+Q001;What does 'programming logic' mean in simple words?;It is the correct use of the laws of thought and organized reasoning processes applied to creating computer programs, with the goal of producing valid and coherent solutions that properly solve the proposed problems.;Lógica de programação (André Luiz Villar Forbellone) [Programming Logic];"Olá! Que bom ter você aqui. É uma excelente pergunta e fundamental para o seu início no mundo da computação!
+
+Em palavras bem simples, **lógica de programação** é a **sequência lógica de passos** ou instruções que escrevemos para que o computador consiga executar uma tarefa com sucesso. 
+
+Vou te dar um exemplo prático: imagine que você vai fazer um bolo. Se você disser ao forno para ""assar o bolo"" antes de ""misturar a farinha e os ovos"", não vai dar certo, certo? A receita precisa de uma ordem certa: 1º pegue os ingredientes, 2º misture, 3º asse. 
+
+Com o computador funciona do mesmo jeito! Como ele é uma máquina eletrônica, ele não entende a nossa linguagem natural (como português ou inglês). Ele precisa que as instruções sejam escritas em uma linguagem própria (a linguagem de programação) e, mais importante ainda, que essas instruções estejam em uma **ordem lógica**. Essa organização do passo a passo é o que chamamos de lógica de programação.
+
+Antes mesmo de escrever os códigos no computador, é muito comum fazermos um ""rascunho"" dessa nossa ideia lógica. Na nossa disciplina, vamos aprender a desenhar essa lógica usando algo chamado **fluxograma**, que usa símbolos gráficos para representar cada passo.
+
+**Dica de estudo:** não há pré-requisitos específicos para entender isso, então o próximo passo ideal é **continuar praticando o conceito atual**. Tente pensar no passo a passo de coisas simples que você faz no dia a dia, como escovar os dentes ou fazer um café, e coloque cada ação em ordem!
+
+Você está no caminho certo e fez a pergunta perfeita para começar. Continue assim e, se tiver qualquer outra dúvida, estou aqui para ajudar!";5;0.34615384615384615;0.6865045502575738;0.3333333333;0.0;26.444816;1327;1187;2514

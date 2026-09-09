@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "project": "context-rag",
+  "dataset": "/home/ramon/Git/GitHub/logibots/benchmarking-rags-dataset/eval-dataset/qa_dataset_90.json",
+  "dataset_sha256": "b913c60394272fa4c0237cd8f86c584bd495efa25f5af18e105c38246154deca",
+  "created_at": "2026-09-09T01:23:44.833933+00:00",
+  "updated_at": "2026-09-09T01:29:44.534498+00:00",
+  "items": {
+    "Q001": {
+      "status": "success",
+      "attempts": 1,
+      "question": "What does 'programming logic' mean in simple words?",
+      "started_at": "2026-09-09T01:23:44.835739+00:00",
+      "finished_at": "2026-09-09T01:29:44.534476+00:00",
+      "error": null,
+      "result": {
+        "answer": "Based on the provided context, programming logic can be understood as a technique of chaining thoughts with the intention of achieving a certain objective. It aims at establishing an organized sequence of steps that will be executed by a computer in the form of a program.",
+        "contexts_count": 5,
+        "question": "What does 'programming logic' mean in simple words?",
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.8767909388149256,
+        "context_precision": 0.19999999998,
+        "context_recall": 1.0,
+        "answer_response_time_seconds": 4.970049,
+        "answer_input_tokens": 1139,
+        "answer_output_tokens": 648,
+        "answer_total_tokens": 1787
+      }
+    }
+  }
+}

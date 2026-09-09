@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "project": "memory-augmented-rag",
+  "dataset": "/home/ramon/Git/GitHub/logibots/benchmarking-rags-dataset/eval-dataset/qa_dataset_90.json",
+  "dataset_sha256": "b913c60394272fa4c0237cd8f86c584bd495efa25f5af18e105c38246154deca",
+  "updated_at": "2026-09-09T02:01:41.336334+00:00",
+  "count": 0,
+  "errors": []
+}
