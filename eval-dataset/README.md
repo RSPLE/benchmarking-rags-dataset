@@ -2,6 +2,8 @@
 
 > **Monorepo update:** this dataset is now consumed by all six pipelines through `../benchmark_runner.py`. Each item runs once, successful IDs are checkpointed, and subsequent runs retry only failed or interrupted items. Statements below describing the JSON as not integrated refer to its original standalone release.
 
+> **Language:** `qa_dataset_90.json` is the Brazilian Portuguese (PT-BR) version — it matches the language of the source corpus (all seven books are in Portuguese) and of the answers the pipelines generate. The original English wording is preserved verbatim in `qa_dataset_90.en.json`. Both files share the same `id`, order, and `source_book` values; only `question` and `ground_truth` differ. The benchmark reads `qa_dataset_90.json`.
+
 An expanded set of questions and answers for evaluating metrics (RAGAS) of the sibling RAG
 projects in this repository: `context-rag`, `graph-rag`, `hybrid-rag`, `knowledge-enhanced-rag`,
 `memory-augmented-rag`, and `self-rag`.

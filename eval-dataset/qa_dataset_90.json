@@ -1,542 +1,542 @@
 [
   {
     "id": "Q001",
-    "question": "What does 'programming logic' mean in simple words?",
-    "ground_truth": "It is the correct use of the laws of thought and organized reasoning processes applied to creating computer programs, with the goal of producing valid and coherent solutions that properly solve the proposed problems.",
+    "question": "O que significa 'lógica de programação' em palavras simples?",
+    "ground_truth": "É o uso correto das leis do pensamento e de processos organizados de raciocínio aplicados à criação de programas de computador, com o objetivo de produzir soluções válidas e coerentes que resolvam adequadamente os problemas propostos.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q002",
-    "question": "Does logic exist in our everyday life, outside of computer programming?",
-    "ground_truth": "Yes. Whenever we think, speak, write, or act correctly, we are putting 'order into thought', that is, applying logic; it is not restricted to mathematics or computing, and shows up in simple everyday situations.",
+    "question": "A lógica existe no nosso dia a dia, fora da programação de computadores?",
+    "ground_truth": "Sim. Sempre que pensamos, falamos, escrevemos ou agimos corretamente, estamos colocando 'ordem no pensamento', ou seja, aplicando lógica; ela não se restringe à matemática ou à computação e aparece em situações simples do cotidiano.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q003",
-    "question": "In a very direct way: what is an algorithm?",
-    "ground_truth": "It is a sequence of well-defined, ordered steps aimed at solving a given problem or reaching an expected result, like the steps of a cake recipe.",
+    "question": "De um jeito bem direto: o que é um algoritmo?",
+    "ground_truth": "É uma sequência de passos bem definidos e ordenados que tem por objetivo resolver um determinado problema ou chegar a um resultado esperado, como os passos de uma receita de bolo.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q004",
-    "question": "What are the main ways to represent an algorithm?",
-    "ground_truth": "It can be represented in textual form, writing the steps in plain colloquial language or in structured pseudocode, or in graphical form, such as a flowchart or a Chapin diagram. Each technique has advantages and disadvantages regarding clarity and ease of writing.",
+    "question": "Quais são as principais formas de representar um algoritmo?",
+    "ground_truth": "Pode ser representado de forma textual, escrevendo os passos em linguagem coloquial comum ou em pseudocódigo estruturado, ou de forma gráfica, como um fluxograma ou um diagrama de Chapin. Cada técnica tem vantagens e desvantagens quanto à clareza e à facilidade de escrita.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q005",
-    "question": "What is a variable within an algorithm?",
-    "ground_truth": "It is a piece of data whose value can be changed during the execution of the algorithm, stored in a memory location identified by a name. It is like a labeled drawer that can hold a different object inside it over time.",
+    "question": "O que é uma variável dentro de um algoritmo?",
+    "ground_truth": "É um dado cujo valor pode ser alterado durante a execução do algoritmo, armazenado em uma posição de memória identificada por um nome. É como uma gaveta etiquetada que, ao longo do tempo, pode guardar um objeto diferente dentro de si.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q006",
-    "question": "What rules must an identifier (variable name) follow?",
-    "ground_truth": "It must necessarily start with an alphabetic character, may be followed by other letters or numbers, and must not contain special characters or blank spaces.",
+    "question": "Quais regras um identificador (nome de variável) deve seguir?",
+    "ground_truth": "Ele deve necessariamente começar com um caractere alfabético, pode ser seguido por outras letras ou números e não pode conter caracteres especiais nem espaços em branco.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q007",
-    "question": "What is a constant in an algorithm?",
-    "ground_truth": "It is a piece of data whose value never changes during the execution of the algorithm, staying the same from beginning to end, and also remaining the same across different executions over time.",
+    "question": "O que é uma constante em um algoritmo?",
+    "ground_truth": "É um dado cujo valor nunca muda durante a execução do algoritmo, permanecendo o mesmo do início ao fim e também se mantendo igual em diferentes execuções ao longo do tempo.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q008",
-    "question": "Why do we use double quotes when writing a character-type constant?",
-    "ground_truth": "Double quotes are used to delimit and distinguish character-type constant data from the other primitive types, making it clear in the algorithm where that fixed text begins and ends.",
+    "question": "Por que usamos aspas duplas ao escrever uma constante do tipo caractere?",
+    "ground_truth": "As aspas duplas são usadas para delimitar e distinguir os dados constantes do tipo caractere dos demais tipos primitivos, deixando claro no algoritmo onde aquele texto fixo começa e termina.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q009",
-    "question": "What is the difference between a constant and a variable?",
-    "ground_truth": "A constant always keeps the same value from the start to the end of the algorithm's execution, whereas a variable can have its value changed at any moment during that execution.",
+    "question": "Qual é a diferença entre uma constante e uma variável?",
+    "ground_truth": "Uma constante mantém sempre o mesmo valor do início ao fim da execução do algoritmo, enquanto uma variável pode ter seu valor alterado a qualquer momento durante essa execução.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q010",
-    "question": "Give an example that helps illustrate the difference between a constant and a variable.",
-    "ground_truth": "In calculating the area of a circle, the value of pi is a constant, since it is always the same number regardless of the calculation; the radius, on the other hand, is a variable, because it changes depending on which circle is being considered.",
+    "question": "Dê um exemplo que ajude a ilustrar a diferença entre uma constante e uma variável.",
+    "ground_truth": "No cálculo da área de um círculo, o valor de pi é uma constante, pois é sempre o mesmo número independentemente do cálculo; já o raio é uma variável, porque muda dependendo de qual círculo está sendo considerado.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q011",
-    "question": "What are the primitive data types used in programming logic?",
-    "ground_truth": "There are four: integer (positive, negative, or zero whole numbers), real (numbers with decimal places), character (letters, numbers, and symbols treated as text), and logical (which only admits the values true or false).",
+    "question": "Quais são os tipos de dados primitivos usados na lógica de programação?",
+    "ground_truth": "São quatro: inteiro (números inteiros positivos, negativos ou zero), real (números com casas decimais), caractere (letras, números e símbolos tratados como texto) e lógico (que admite apenas os valores verdadeiro ou falso).",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q012",
-    "question": "What characterizes the logical data type?",
-    "ground_truth": "It is a bistable type of information, meaning it can only take one of two possible states, conventionally represented as true (T) or false (F), like a door that can only be open or closed.",
+    "question": "O que caracteriza o tipo de dado lógico?",
+    "ground_truth": "É um tipo de informação biestável, ou seja, só pode assumir um de dois estados possíveis, convencionalmente representados como verdadeiro (V) ou falso (F), como uma porta que só pode estar aberta ou fechada.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q013",
-    "question": "What is the 'read' command used for in an algorithm?",
-    "ground_truth": "It is the data input command: it receives a value coming from outside the algorithm, such as something typed by the user, and assigns that value to the variable indicated in parentheses.",
+    "question": "Para que serve o comando 'leia' em um algoritmo?",
+    "ground_truth": "É o comando de entrada de dados: recebe um valor vindo de fora do algoritmo, como algo digitado pelo usuário, e atribui esse valor à variável indicada entre parênteses.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q014",
-    "question": "Where does the data that the input command stores in variables come from?",
-    "ground_truth": "It comes from outside the algorithm, such as the keyboard or another input device, similar to ingredients going into a recipe; without this input, the algorithm would have nothing to work with.",
+    "question": "De onde vêm os dados que o comando de entrada armazena nas variáveis?",
+    "ground_truth": "Vêm de fora do algoritmo, como o teclado ou outro dispositivo de entrada, semelhante aos ingredientes que entram em uma receita; sem essa entrada, o algoritmo não teria nada com que trabalhar.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q015",
-    "question": "What is the function of the 'write' command in an algorithm?",
-    "ground_truth": "It is the data output command: it displays the content of an identified variable, showing the user the result or the answer calculated by the algorithm.",
+    "question": "Qual é a função do comando 'escreva' em um algoritmo?",
+    "ground_truth": "É o comando de saída de dados: exibe o conteúdo de uma variável identificada, mostrando ao usuário o resultado ou a resposta calculada pelo algoritmo.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q016",
-    "question": "Can more than one piece of information be displayed in a single 'write' command?",
-    "ground_truth": "Yes, you just need to place several identifiers, expressions, or pieces of text in parentheses separated by commas, as in write('You weigh', W, 'kilograms'), allowing fixed text to be combined with the value of variables.",
+    "question": "É possível exibir mais de uma informação em um único comando 'escreva'?",
+    "ground_truth": "Sim, basta colocar entre parênteses vários identificadores, expressões ou trechos de texto separados por vírgulas, como em escreva(\"Você pesa\", W, \"quilos\"), permitindo combinar texto fixo com o valor de variáveis.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q017",
-    "question": "What are the basic arithmetic operators used in algorithms?",
-    "ground_truth": "They are addition (+), subtraction (-), multiplication (*), and division (/), used to represent the fundamental mathematical operations between numeric constants or variables.",
+    "question": "Quais são os operadores aritméticos básicos usados em algoritmos?",
+    "ground_truth": "São a adição (+), a subtração (-), a multiplicação (*) e a divisão (/), usados para representar as operações matemáticas fundamentais entre constantes ou variáveis numéricas.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q018",
-    "question": "How are exponentiation and root extraction represented in pseudocode, since the symbols ^ and √ are not used?",
-    "ground_truth": "Keywords are used instead: pow(x,y) represents x raised to the power y, and sqrt(x) represents the square root of x.",
+    "question": "Como a potenciação e a radiciação são representadas em pseudocódigo, já que os símbolos ^ e √ não são usados?",
+    "ground_truth": "Em vez disso, usam-se palavras-chave: pot(x,y) representa x elevado a y, e rad(x) representa a raiz quadrada de x.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q019",
-    "question": "What are relational operators used for?",
-    "ground_truth": "They are used to compare two values of the same primitive type, whether constants, variables, or arithmetic expressions, allowing relations such as equality or inequality to be built between them.",
+    "question": "Para que servem os operadores relacionais?",
+    "ground_truth": "Servem para comparar dois valores de um mesmo tipo primitivo, sejam constantes, variáveis ou expressões aritméticas, permitindo construir entre eles relações como igualdade ou desigualdade.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q020",
-    "question": "What type is the result of a comparison made with a relational operator always?",
-    "ground_truth": "It is always a logical value, true or false, depending on whether the tested relation between the two compared values holds or not.",
+    "question": "De que tipo é sempre o resultado de uma comparação feita com um operador relacional?",
+    "ground_truth": "É sempre um valor lógico, verdadeiro ou falso, dependendo de a relação testada entre os dois valores comparados se verificar ou não.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q021",
-    "question": "What are the three basic logical operators and what does each one do?",
-    "ground_truth": "They are not, which inverts the value of a condition (negation); and, which only results true when both operands are true (conjunction); and or, which results true when at least one of the operands is true (disjunction).",
+    "question": "Quais são os três operadores lógicos básicos e o que cada um faz?",
+    "ground_truth": "São o não, que inverte o valor de uma condição (negação); o e, que só resulta verdadeiro quando ambos os operandos são verdadeiros (conjunção); e o ou, que resulta verdadeiro quando pelo menos um dos operandos é verdadeiro (disjunção).",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q022",
-    "question": "In which situation does the logical operator 'and' between two conditions result true?",
-    "ground_truth": "Only when both evaluated conditions are simultaneously true; if either one of them is false, the result of the 'and' will also be false.",
+    "question": "Em que situação o operador lógico 'e' entre duas condições resulta verdadeiro?",
+    "ground_truth": "Somente quando ambas as condições avaliadas são simultaneamente verdadeiras; se qualquer uma delas for falsa, o resultado do 'e' também será falso.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q023",
-    "question": "What does the assignment command do in an algorithm?",
-    "ground_truth": "It gives a value to a variable, storing in it the result of an expression or a constant, as long as the type of that value is compatible with the declared type of the variable.",
+    "question": "O que o comando de atribuição faz em um algoritmo?",
+    "ground_truth": "Fornece um valor a uma variável, armazenando nela o resultado de uma expressão ou uma constante, desde que o tipo desse valor seja compatível com o tipo declarado da variável.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q024",
-    "question": "What must exist on the left-hand side of the assignment symbol?",
-    "ground_truth": "There must be only a single identifier, that is, the name of one variable, since that is where the value calculated on the right-hand side of the expression will be stored.",
+    "question": "O que deve existir do lado esquerdo do símbolo de atribuição?",
+    "ground_truth": "Deve haver apenas um único identificador, ou seja, o nome de uma variável, pois é ali que será armazenado o valor calculado no lado direito da expressão.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q025",
-    "question": "What characterizes the sequential structure of an algorithm?",
-    "ground_truth": "It is when the set of actions in the algorithm is executed one after another, in linear order from top to bottom, following exactly the same order in which the actions were written.",
+    "question": "O que caracteriza a estrutura sequencial de um algoritmo?",
+    "ground_truth": "É quando o conjunto de ações do algoritmo é executado uma após a outra, em ordem linear de cima para baixo, seguindo exatamente a mesma ordem em que as ações foram escritas.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q026",
-    "question": "How are actions usually separated within the sequential structure of an algorithm?",
-    "ground_truth": "By convention, each action is separated from the next by a semicolon (;), signaling that, once it is reached, the next command in the sequence should be executed.",
+    "question": "Como as ações costumam ser separadas dentro da estrutura sequencial de um algoritmo?",
+    "ground_truth": "Por convenção, cada ação é separada da seguinte por um ponto e vírgula (;), sinalizando que, uma vez alcançada, o próximo comando da sequência deve ser executado.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q027",
-    "question": "What is the order of priority among parentheses, arithmetic operators, relational operators, and logical operators in an expression?",
-    "ground_truth": "First the innermost parentheses are resolved, then the arithmetic operators, then the relational operators, and finally the logical operators.",
+    "question": "Qual é a ordem de prioridade entre parênteses, operadores aritméticos, operadores relacionais e operadores lógicos em uma expressão?",
+    "ground_truth": "Primeiro resolvem-se os parênteses mais internos, depois os operadores aritméticos, em seguida os operadores relacionais e, por fim, os operadores lógicos.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q028",
-    "question": "Among the logical operators not, and, and or, which one has the highest priority when resolving an expression?",
-    "ground_truth": "The not operator has the highest priority, followed by and, and lastly or; that is the order in which they are resolved when they appear together in the same logical expression.",
+    "question": "Entre os operadores lógicos não, e e ou, qual tem a maior prioridade na resolução de uma expressão?",
+    "ground_truth": "O operador não tem a maior prioridade, seguido pelo e e, por último, pelo ou; essa é a ordem em que são resolvidos quando aparecem juntos em uma mesma expressão lógica.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q029",
-    "question": "What are the numeric data types used in Python and what is the difference between them?",
-    "ground_truth": "Python works with integers (int), which have no decimal part, and floating-point numbers (float), which do have a decimal part; even a value like 1.0, with a zero in the decimal place, is already considered floating-point.",
+    "question": "Quais são os tipos de dados numéricos usados em Python e qual é a diferença entre eles?",
+    "ground_truth": "Python trabalha com números inteiros (int), que não têm parte decimal, e números de ponto flutuante (float), que têm parte decimal; mesmo um valor como 1.0, com zero na casa decimal, já é considerado de ponto flutuante.",
     "source_book": "Introdução à programação com Python (Nilo Ney Coutinho Menezes) [Introduction to Programming with Python]"
   },
   {
     "id": "Q030",
-    "question": "How does Python represent logical (boolean) values?",
-    "ground_truth": "It uses the logical type, also called boolean, writing True to represent true and False to represent false, always with the first letter capitalized.",
+    "question": "Como Python representa os valores lógicos (booleanos)?",
+    "ground_truth": "Ele usa o tipo lógico, também chamado de booleano, escrevendo True para representar verdadeiro e False para representar falso, sempre com a primeira letra maiúscula.",
     "source_book": "Introdução à programação com Python (Nilo Ney Coutinho Menezes) [Introduction to Programming with Python]"
   },
   {
     "id": "Q031",
-    "question": "How does the simple conditional structure (if-then) work, and when is the command associated with it actually executed?",
-    "ground_truth": "In the simple conditional structure, a command (or block of commands) is only executed when the tested condition is true; if the condition is false, the structure ends without executing anything. When more than one command depends on the condition, that set must be delimited with block start/end markers (such as begin/end), which is not necessary when there is only one command.",
+    "question": "Como funciona a estrutura condicional simples (se-então) e quando o comando associado a ela é de fato executado?",
+    "ground_truth": "Na estrutura condicional simples, um comando (ou bloco de comandos) só é executado quando a condição testada é verdadeira; se a condição for falsa, a estrutura termina sem executar nada. Quando mais de um comando depende da condição, esse conjunto deve ser delimitado por marcadores de início/fim de bloco (como início/fim), o que não é necessário quando há apenas um comando.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q032",
-    "question": "What is the difference between the simple conditional structure and the compound one?",
-    "ground_truth": "In the simple structure there is only one branch (then), which executes an action only when the condition is true, doing nothing if it is false. In the compound structure there are two branches, then and else: if the condition is true the then block is executed, and if it is false the else block is executed, guaranteeing that some action is always taken.",
+    "question": "Qual é a diferença entre a estrutura condicional simples e a composta?",
+    "ground_truth": "Na estrutura simples há apenas um desvio (então), que executa uma ação somente quando a condição é verdadeira, não fazendo nada se ela for falsa. Na estrutura composta há dois desvios, então e senão: se a condição for verdadeira, o bloco do então é executado; se for falsa, o bloco do senão é executado, garantindo que alguma ação seja sempre tomada.",
     "source_book": "Fundamentos da programação de computadores (Ana Fernanda Gomes Ascencio et al.) [Fundamentals of Computer Programming]"
   },
   {
     "id": "Q033",
-    "question": "In a compound selection, what happens if the result of the condition is false?",
-    "ground_truth": "When the result of the evaluated condition is false, the algorithm branches to the block associated with the else clause, executing the sequence of commands (or the single action) intended for that case, instead of the block associated with then, which only runs when the condition is true.",
+    "question": "Em uma seleção composta, o que acontece se o resultado da condição for falso?",
+    "ground_truth": "Quando o resultado da condição avaliada é falso, o algoritmo desvia para o bloco associado à cláusula senão, executando a sequência de comandos (ou a ação única) prevista para esse caso, em vez do bloco associado ao então, que só é executado quando a condição é verdadeira.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q034",
-    "question": "What characterizes a chained conditional structure (else-if), and why is it called heterogeneous when there is no identifiable construction pattern?",
-    "ground_truth": "A chained structure arises when several selections are grouped in sequence, usually because an action should only occur if a broad set of possibilities or combinations of conditions is satisfied, testing a new condition inside the else clause of the previous one. When these chained selections do not follow an identifiable logical construction pattern, the structure is called a heterogeneous chained structure.",
+    "question": "O que caracteriza uma estrutura condicional encadeada (senão-se) e por que ela é chamada de heterogênea quando não há um padrão de construção identificável?",
+    "ground_truth": "Uma estrutura encadeada surge quando várias seleções são agrupadas em sequência, geralmente porque uma ação só deve ocorrer se um amplo conjunto de possibilidades ou combinações de condições for satisfeito, testando uma nova condição dentro da cláusula senão da anterior. Quando essas seleções encadeadas não seguem um padrão lógico de construção identificável, a estrutura é chamada de estrutura encadeada heterogênea.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q035",
-    "question": "How can an algorithm use nested conditional commands (an if inside another) to refine a decision that has already been made, as in classifying a student's passing grade into ranges?",
-    "ground_truth": "A nested conditional command is an if placed inside the true (or false) block of another if, allowing a second decision to be evaluated only after the first condition has already been confirmed. In the example of a student's average, it is first checked whether the student passed (average greater than or equal to 5); only then, inside that block, do new commands check the exact range of the average to print whether the pass was with honors, merit, or distinction, and each nested if needs its own matching closing marker.",
+    "question": "Como um algoritmo pode usar comandos condicionais aninhados (um se dentro de outro) para refinar uma decisão já tomada, como na classificação da nota de aprovação de um aluno em faixas?",
+    "ground_truth": "Um comando condicional aninhado é um se colocado dentro do bloco verdadeiro (ou falso) de outro se, permitindo que uma segunda decisão seja avaliada somente depois de a primeira condição já ter sido confirmada. No exemplo da média de um aluno, verifica-se primeiro se o aluno foi aprovado (média maior ou igual a 5); só então, dentro desse bloco, novos comandos verificam a faixa exata da média para escrever se a aprovação foi com louvor, mérito ou distinção, e cada se aninhado precisa de seu próprio marcador de fechamento correspondente.",
     "source_book": "Algoritmos e Programação de Computadores (Dilermando Junior, Gilberto Nakamiti) [Algorithms and Computer Programming]"
   },
   {
     "id": "Q036",
-    "question": "How does the repetition structure with a pre-test (while) control how many times a section of the algorithm will be executed?",
-    "ground_truth": "The while structure checks the condition before each execution of the command block, repeating it only while that condition remains true. Because of this, if the condition is already false on the first check, the block may not be executed even once, which is the main characteristic of this type of repetition.",
+    "question": "Como a estrutura de repetição com pré-teste (enquanto) controla quantas vezes um trecho do algoritmo será executado?",
+    "ground_truth": "A estrutura enquanto verifica a condição antes de cada execução do bloco de comandos, repetindo-o somente enquanto essa condição permanecer verdadeira. Por causa disso, se a condição já for falsa na primeira verificação, o bloco pode não ser executado nenhuma vez, o que é a principal característica desse tipo de repetição.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q037",
-    "question": "In a while structure, what needs to be done to control the number of repetitions, since this structure does not offer that feature on its own?",
-    "ground_truth": "Since the while structure by itself does not know how many times it has already repeated, it is necessary to create a counter: a variable with a defined initial value, which is incremented on each repetition, and to use that variable in the loop's stopping condition, for example repeating while the counter is less than the desired number of executions.",
+    "question": "Em uma estrutura enquanto, o que é preciso fazer para controlar o número de repetições, já que essa estrutura não oferece esse recurso por si só?",
+    "ground_truth": "Como a estrutura enquanto, sozinha, não sabe quantas vezes já repetiu, é necessário criar um contador: uma variável com um valor inicial definido, que é incrementada a cada repetição, e usar essa variável na condição de parada do laço, por exemplo repetindo enquanto o contador for menor que o número desejado de execuções.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q038",
-    "question": "How does the for repetition structure (with a control variable) work, and what sets it apart from the other repetition structures?",
-    "ground_truth": "The for structure repeats a block of commands a predetermined number of times, using a control variable that receives an initial value, is compared to a final value, and is incremented by a defined step on each execution. Unlike while and repeat, it does not depend on a logical condition evaluated on each pass, but rather on fixed limits established before the loop begins.",
+    "question": "Como funciona a estrutura de repetição para (com variável de controle) e o que a diferencia das outras estruturas de repetição?",
+    "ground_truth": "A estrutura para repete um bloco de comandos um número predeterminado de vezes, usando uma variável de controle que recebe um valor inicial, é comparada a um valor final e é incrementada por um passo definido a cada execução. Diferentemente do enquanto e do repita, ela não depende de uma condição lógica avaliada a cada passagem, mas sim de limites fixos estabelecidos antes de o laço começar.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q039",
-    "question": "What sets the repeat...until structure apart from the other repetition structures regarding when the condition is tested?",
-    "ground_truth": "In the repeat structure, the block of commands is executed first and the condition is only evaluated afterward, at the end of each repetition, continuing the loop until that condition becomes true. Because of this, the block of commands is always executed at least once, even if the condition was already true before the first execution, which does not happen in the while structure.",
+    "question": "O que diferencia a estrutura repita...até das outras estruturas de repetição quanto ao momento em que a condição é testada?",
+    "ground_truth": "Na estrutura repita, o bloco de comandos é executado primeiro e a condição só é avaliada depois, ao final de cada repetição, continuando o laço até que essa condição se torne verdadeira. Por causa disso, o bloco de comandos é sempre executado pelo menos uma vez, mesmo que a condição já fosse verdadeira antes da primeira execução, o que não acontece na estrutura enquanto.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q040",
-    "question": "When a while structure is replaced with a repeat structure to solve the same problem, what needs to change in the condition used?",
-    "ground_truth": "When replacing a while with a repeat while keeping the same logic, the condition used in the repeat must be the negation of the condition that was used in the while, since the while keeps repeating while the condition is true and the repeat keeps repeating until the condition becomes true (that is, it stops when the original condition would be false).",
+    "question": "Quando uma estrutura enquanto é substituída por uma estrutura repita para resolver o mesmo problema, o que precisa mudar na condição usada?",
+    "ground_truth": "Ao substituir um enquanto por um repita mantendo a mesma lógica, a condição usada no repita deve ser a negação da condição que era usada no enquanto, já que o enquanto continua repetindo enquanto a condição é verdadeira e o repita continua repetindo até que a condição se torne verdadeira (ou seja, ele para quando a condição original seria falsa).",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q041",
-    "question": "In a repetition structure, what is a counter and what is it used for inside the loop?",
-    "ground_truth": "A counter is a variable initialized with a starting value (usually zero) that is incremented by a fixed amount, normally 1, on each repetition of the loop. It is used to count how many times the command block has already been executed, allowing, for example, control over when the repetition should stop.",
+    "question": "Em uma estrutura de repetição, o que é um contador e para que ele serve dentro do laço?",
+    "ground_truth": "Um contador é uma variável inicializada com um valor de partida (normalmente zero) que é incrementada por uma quantia fixa, normalmente 1, a cada repetição do laço. Ele serve para contar quantas vezes o bloco de comandos já foi executado, permitindo, por exemplo, controlar quando a repetição deve parar.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q042",
-    "question": "What is the difference between a counter and an accumulator used inside repetition structures?",
-    "ground_truth": "A counter always adds a constant value (usually 1) on each repetition, serving to count how many times the loop executed. An accumulator, on the other hand, adds a value that can vary (such as a grade read from the user) on each repetition, accumulating a running total of these different values across the iterations, which is later used, for example, to calculate an average.",
+    "question": "Qual é a diferença entre um contador e um acumulador usados dentro de estruturas de repetição?",
+    "ground_truth": "Um contador sempre soma um valor constante (normalmente 1) a cada repetição, servindo para contar quantas vezes o laço foi executado. Um acumulador, por outro lado, soma um valor que pode variar (como uma nota lida do usuário) a cada repetição, acumulando um total desses valores diferentes ao longo das iterações, que depois é usado, por exemplo, para calcular uma média.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q043",
-    "question": "Why does an accumulator need to be initialized with zero before entering the repetition loop?",
-    "ground_truth": "The accumulator needs to start at zero because, on each repetition, it will receive the sum of its own previous value plus a newly read or calculated value; if it were not initialized, the first sum would start from an undefined value or memory garbage, invalidating the final accumulated result at the end of the loop.",
+    "question": "Por que um acumulador precisa ser inicializado com zero antes de entrar no laço de repetição?",
+    "ground_truth": "O acumulador precisa começar em zero porque, a cada repetição, ele receberá a soma do seu próprio valor anterior mais um valor recém-lido ou calculado; se não fosse inicializado, a primeira soma partiria de um valor indefinido ou de lixo de memória, invalidando o resultado acumulado final ao término do laço.",
     "source_book": "Fundamentos da programação de computadores (Ana Fernanda Gomes Ascencio et al.) [Fundamentals of Computer Programming]"
   },
   {
     "id": "Q044",
-    "question": "What is an array (one-dimensional composite variable) and how is a specific element inside it accessed?",
-    "ground_truth": "An array is a set of variables of the same type that share the same name (identifier) and are stored sequentially in memory, forming a structure with only one dimension. To access a specific element, the array's name is used followed by an index in brackets, indicating the desired position within the limits defined in the declaration.",
+    "question": "O que é um vetor (variável composta unidimensional) e como um elemento específico dentro dele é acessado?",
+    "ground_truth": "Um vetor é um conjunto de variáveis do mesmo tipo que compartilham o mesmo nome (identificador) e são armazenadas sequencialmente na memória, formando uma estrutura com apenas uma dimensão. Para acessar um elemento específico, usa-se o nome do vetor seguido de um índice entre colchetes, indicando a posição desejada dentro dos limites definidos na declaração.",
     "source_book": "Algoritmos e Programação de Computadores (Dilermando Junior, Gilberto Nakamiti) [Algorithms and Computer Programming]"
   },
   {
     "id": "Q045",
-    "question": "What is the difference between an array's index and the element stored at that position?",
-    "ground_truth": "The index is just the position within the array (equivalent to a building's floor number), while the element is the data actually stored at that position. The two should not be confused: the index only serves to locate where the value is stored, and it is through the index that the content stored at that specific position is manipulated.",
+    "question": "Qual é a diferença entre o índice de um vetor e o elemento armazenado naquela posição?",
+    "ground_truth": "O índice é apenas a posição dentro do vetor (equivalente ao número do andar de um prédio), enquanto o elemento é o dado de fato armazenado naquela posição. Os dois não devem ser confundidos: o índice serve apenas para localizar onde o valor está armazenado, e é por meio do índice que se manipula o conteúdo guardado naquela posição específica.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q046",
-    "question": "How is the total number of elements in an array calculated from the initial and final limits defined in its declaration?",
-    "ground_truth": "The number of elements in an array is given by the difference between the final limit (FL) and the initial limit (IL), adding 1 to the result (FL - IL + 1). The array's positions are identified starting from the initial limit, with unit increments, up to the final limit.",
+    "question": "Como o número total de elementos de um vetor é calculado a partir dos limites inicial e final definidos em sua declaração?",
+    "ground_truth": "O número de elementos de um vetor é dado pela diferença entre o limite final (LF) e o limite inicial (LI), somando 1 ao resultado (LF - LI + 1). As posições do vetor são identificadas a partir do limite inicial, com incrementos unitários, até o limite final.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q047",
-    "question": "What is a matrix (multidimensional composite structure) and what sets it apart from a regular array?",
-    "ground_truth": "While an array needs only one index to locate an element, a matrix is a homogeneous composite structure that needs more than one index for addressing, which is why it is called multidimensional. In a two-dimensional matrix, for example, the first index indicates the row and the second indicates the column of the desired element.",
+    "question": "O que é uma matriz (estrutura composta multidimensional) e o que a diferencia de um vetor comum?",
+    "ground_truth": "Enquanto um vetor precisa de apenas um índice para localizar um elemento, uma matriz é uma estrutura composta homogênea que precisa de mais de um índice para endereçamento, e por isso é chamada de multidimensional. Em uma matriz bidimensional, por exemplo, o primeiro índice indica a linha e o segundo indica a coluna do elemento desejado.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q048",
-    "question": "How is a two-dimensional matrix declared, and how is the total number of elements it can store calculated?",
-    "ground_truth": "A matrix is declared by stating the variable's name followed by the dimensions in brackets, indicating the size of each dimension (for example, how many rows and how many columns) and the type of data stored. The total number of elements is obtained by multiplying the size of each dimension, that is, the number of rows times the number of columns.",
+    "question": "Como uma matriz bidimensional é declarada e como se calcula o número total de elementos que ela pode armazenar?",
+    "ground_truth": "Uma matriz é declarada informando o nome da variável seguido das dimensões entre colchetes, indicando o tamanho de cada dimensão (por exemplo, quantas linhas e quantas colunas) e o tipo de dado armazenado. O número total de elementos é obtido multiplicando o tamanho de cada dimensão, ou seja, o número de linhas pelo número de colunas.",
     "source_book": "Fundamentos da programação de computadores (Ana Fernanda Gomes Ascencio et al.) [Fundamentals of Computer Programming]"
   },
   {
     "id": "Q049",
-    "question": "How can two character strings be concatenated (joined) in an algorithm, and what does this operation produce as a result?",
-    "ground_truth": "Concatenation joins the content of two character strings, forming a third string that contains the characters of the first one followed by those of the second. This operation is usually done through a specific function (such as CONCAT) or through the addition sign itself, which many languages accept as a shortcut for concatenating strings.",
+    "question": "Como duas cadeias de caracteres podem ser concatenadas (unidas) em um algoritmo e o que essa operação produz como resultado?",
+    "ground_truth": "A concatenação junta o conteúdo de duas cadeias de caracteres, formando uma terceira cadeia que contém os caracteres da primeira seguidos pelos da segunda. Essa operação geralmente é feita por meio de uma função específica (como CONCAT) ou pelo próprio sinal de adição, que muitas linguagens aceitam como atalho para concatenar cadeias.",
     "source_book": "Fundamentos da programação de computadores (Ana Fernanda Gomes Ascencio et al.) [Fundamentals of Computer Programming]"
   },
   {
     "id": "Q050",
-    "question": "How is the number of characters (length) stored in a character string found out, and how can it be determined whether one string appears inside another?",
-    "ground_truth": "To obtain a string's length, a function (such as LENGTH) is used that returns the number of characters stored in it. To check whether one string appears inside another, there is a function (such as POS) that returns the starting position where the first string is found within the second, returning zero if it is not found.",
+    "question": "Como se descobre o número de caracteres (comprimento) armazenados em uma cadeia de caracteres e como é possível determinar se uma cadeia aparece dentro de outra?",
+    "ground_truth": "Para obter o comprimento de uma cadeia, usa-se uma função (como LENGTH) que retorna o número de caracteres nela armazenados. Para verificar se uma cadeia aparece dentro de outra, existe uma função (como POS) que retorna a posição inicial em que a primeira cadeia é encontrada dentro da segunda, retornando zero se ela não for encontrada.",
     "source_book": "Fundamentos da programação de computadores (Ana Fernanda Gomes Ascencio et al.) [Fundamentals of Computer Programming]"
   },
   {
     "id": "Q051",
-    "question": "How does the combination of logical operators (and, or, not) with relational operators work in a compound logical expression?",
-    "ground_truth": "In a compound logical expression, each relational operator (such as greater than, less than, or equal to) first produces a true or false result from the comparison between two values; these partial results are then combined using logical operators, where and only results true if both conditions are true, or results true if at least one is true, and not inverts the logical value of a condition.",
+    "question": "Como funciona a combinação de operadores lógicos (e, ou, não) com operadores relacionais em uma expressão lógica composta?",
+    "ground_truth": "Em uma expressão lógica composta, cada operador relacional (como maior que, menor que ou igual a) primeiro produz um resultado verdadeiro ou falso a partir da comparação entre dois valores; esses resultados parciais são então combinados por operadores lógicos, em que o e só resulta verdadeiro se ambas as condições forem verdadeiras, o ou resulta verdadeiro se pelo menos uma for verdadeira, e o não inverte o valor lógico de uma condição.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q052",
-    "question": "What does the modulo operator (division remainder) do, and how can it be used to check whether a number is even or odd?",
-    "ground_truth": "The modulo operator (mod) returns the remainder of the integer division between two numbers, for example 9 mod 4 results in 1. To check whether a number is even or odd, it is enough to calculate the remainder of its division by 2: if the remainder equals zero the number is even, and if it equals 1 the number is odd.",
+    "question": "O que o operador módulo (resto da divisão) faz e como ele pode ser usado para verificar se um número é par ou ímpar?",
+    "ground_truth": "O operador módulo (mod) retorna o resto da divisão inteira entre dois números, por exemplo 9 mod 4 resulta em 1. Para verificar se um número é par ou ímpar, basta calcular o resto da sua divisão por 2: se o resto for igual a zero o número é par, e se for igual a 1 o número é ímpar.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q053",
-    "question": "Why is it necessary to use nested repetition loops (one inside the other) to simulate something like a countdown of minutes and seconds?",
-    "ground_truth": "Since there are two quantities changing in a dependent way (the seconds complete a full cycle before each change of minute), an outer loop is needed to control the minutes and an inner loop to control the seconds, so that the innermost loop completes all of its iterations (for example, 60 values of seconds) for each single iteration of the outer loop.",
+    "question": "Por que é necessário usar laços de repetição aninhados (um dentro do outro) para simular algo como uma contagem regressiva de minutos e segundos?",
+    "ground_truth": "Como há duas grandezas que mudam de forma dependente (os segundos completam um ciclo inteiro antes de cada mudança de minuto), é preciso um laço externo para controlar os minutos e um laço interno para controlar os segundos, de modo que o laço mais interno complete todas as suas iterações (por exemplo, 60 valores de segundos) a cada única iteração do laço externo.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q054",
-    "question": "When nesting two loops to traverse a two-dimensional matrix, how many times in total is the innermost loop executed, and what does that depend on?",
-    "ground_truth": "The innermost loop is executed once for each iteration of the outer loop, so the total number of executions of the inner loop is the product of the number of iterations of the outer loop and the number of iterations of the inner loop in each pass, which corresponds to going through every column for each row of the matrix.",
+    "question": "Ao aninhar dois laços para percorrer uma matriz bidimensional, quantas vezes no total o laço mais interno é executado e do que isso depende?",
+    "ground_truth": "O laço mais interno é executado uma vez para cada iteração do laço externo, então o número total de execuções do laço interno é o produto do número de iterações do laço externo pelo número de iterações do laço interno em cada passagem, o que corresponde a percorrer todas as colunas para cada linha da matriz.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q055",
-    "question": "What happens when a selection structure (if-then-else) is combined with a repetition structure, as in deciding the pass/fail status of several students within the same loop?",
-    "ground_truth": "On each iteration of the loop, the algorithm reads a student's data, calculates their average, and then executes the conditional structure to decide and display whether they passed or failed, repeating this whole process (reading, calculating, and deciding) for each new student until the loop's stopping condition is reached.",
+    "question": "O que acontece quando uma estrutura de seleção (se-então-senão) é combinada com uma estrutura de repetição, como ao decidir a situação de aprovação/reprovação de vários alunos dentro do mesmo laço?",
+    "ground_truth": "A cada iteração do laço, o algoritmo lê os dados de um aluno, calcula sua média e então executa a estrutura condicional para decidir e exibir se ele foi aprovado ou reprovado, repetindo todo esse processo (ler, calcular e decidir) para cada novo aluno até que a condição de parada do laço seja alcançada.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q056",
-    "question": "How does a multiple selection structure (of the switch/case type) used inside a repetition loop work to count occurrences of different categories, such as types of wine read until a terminating value?",
-    "ground_truth": "Inside the loop, for each value read, the multiple selection structure checks which category (case) that value belongs to and increments the counter specific to that category, as well as a general counter; the loop repeats until the terminating value is read, at which point the general counter is adjusted to discount that last reading before calculating the percentage of each category.",
+    "question": "Como funciona uma estrutura de seleção múltipla (do tipo switch/case) usada dentro de um laço de repetição para contar ocorrências de diferentes categorias, como tipos de vinho lidos até um valor de término?",
+    "ground_truth": "Dentro do laço, para cada valor lido, a estrutura de seleção múltipla verifica a qual categoria (caso) aquele valor pertence e incrementa o contador específico dessa categoria, além de um contador geral; o laço se repete até que o valor de término seja lido, momento em que o contador geral é ajustado para descontar essa última leitura antes de calcular o percentual de cada categoria.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q057",
-    "question": "What type of repetition structure is most suitable when it is already known exactly how many times a section of the algorithm should be executed, such as reading the grades of a fixed-size class?",
-    "ground_truth": "When the number of repetitions is known in advance, the most suitable structure is the repetition with a control variable (for), since it already establishes an initial value, a final value, and an increment step defined before the loop begins, without depending on the evaluation of a logical condition at each iteration as happens in while or repeat.",
+    "question": "Que tipo de estrutura de repetição é mais adequado quando já se sabe exatamente quantas vezes um trecho do algoritmo deve ser executado, como ao ler as notas de uma turma de tamanho fixo?",
+    "ground_truth": "Quando o número de repetições é conhecido de antemão, a estrutura mais adequada é a repetição com variável de controle (para), pois ela já estabelece um valor inicial, um valor final e um passo de incremento definidos antes de o laço começar, sem depender da avaliação de uma condição lógica a cada iteração como acontece no enquanto ou no repita.",
     "source_book": "Fundamentos da programação de computadores (Ana Fernanda Gomes Ascencio et al.) [Fundamentals of Computer Programming]"
   },
   {
     "id": "Q058",
-    "question": "In a one-dimensional matrix (array), what is the operational advantage of using this structure instead of declaring several separate simple variables to store a set of related values?",
-    "ground_truth": "Using a one-dimensional matrix, it is possible to store several related values under a single identifier, accessing each of them through an index, instead of having to create and name a different simple variable for each value. This makes loop-based processing easier, since the index can vary automatically on each repetition to sequentially access every position in the structure.",
+    "question": "Em uma matriz unidimensional (vetor), qual é a vantagem operacional de usar essa estrutura em vez de declarar várias variáveis simples separadas para armazenar um conjunto de valores relacionados?",
+    "ground_truth": "Usando uma matriz unidimensional, é possível armazenar vários valores relacionados sob um único identificador, acessando cada um deles por meio de um índice, em vez de ter que criar e nomear uma variável simples diferente para cada valor. Isso facilita o processamento com laços, pois o índice pode variar automaticamente a cada repetição para acessar sequencialmente todas as posições da estrutura.",
     "source_book": "Algoritmos Lógica para desenvolvimento de programação de computadores [Algorithms: Logic for Computer Programming Development]"
   },
   {
     "id": "Q059",
-    "question": "How can lists in Python be traversed using a while loop, and what controls access to each position during that repetition?",
-    "ground_truth": "To traverse a list with while, an index variable is created that starts at zero and is incremented on each repetition, while that variable is less than the size of the list (obtained with the len function); on each iteration, the current index is used to access the corresponding element of the list, advancing position by position until reaching the end.",
+    "question": "Como as listas em Python podem ser percorridas usando um laço while e o que controla o acesso a cada posição durante essa repetição?",
+    "ground_truth": "Para percorrer uma lista com while, cria-se uma variável de índice que começa em zero e é incrementada a cada repetição, enquanto essa variável for menor que o tamanho da lista (obtido com a função len); a cada iteração, o índice atual é usado para acessar o elemento correspondente da lista, avançando posição por posição até chegar ao fim.",
     "source_book": "Introdução à programação com Python (Nilo Ney Coutinho Menezes) [Introduction to Programming with Python]"
   },
   {
     "id": "Q060",
-    "question": "What is the relationship between the len function and the valid indices of a list in Python?",
-    "ground_truth": "The len function returns the number of elements in a list, and since index counting in Python starts at zero, a list's valid indices range from 0 to the value returned by len minus 1. Because of this, comparisons used to traverse the list (such as in a while loop) usually test whether the index is less than the list's len, not less than or equal to it.",
+    "question": "Qual é a relação entre a função len e os índices válidos de uma lista em Python?",
+    "ground_truth": "A função len retorna o número de elementos de uma lista e, como a contagem de índices em Python começa em zero, os índices válidos de uma lista vão de 0 até o valor retornado por len menos 1. Por causa disso, as comparações usadas para percorrer a lista (como em um laço while) geralmente testam se o índice é menor que o len da lista, e não menor ou igual a ele.",
     "source_book": "Introdução à programação com Python (Nilo Ney Coutinho Menezes) [Introduction to Programming with Python]"
   },
   {
     "id": "Q061",
-    "question": "What is the fundamental difference between a procedure and a function as subprograms?",
-    "ground_truth": "Both divert the execution of the main program to perform a specific task, but a function always returns a value to its caller, a value associated with its own name, while a procedure performs the operation and returns no value to the calling point.",
+    "question": "Qual é a diferença fundamental entre um procedimento e uma função como subprogramas?",
+    "ground_truth": "Ambos desviam a execução do programa principal para realizar uma tarefa específica, mas uma função sempre retorna um valor a quem a chamou, um valor associado ao seu próprio nome, enquanto um procedimento realiza a operação e não retorna nenhum valor ao ponto de chamada.",
     "source_book": "Fundamentos da programação de computadores (Ana Fernanda Gomes Ascencio et al.) [Fundamentals of Computer Programming]"
   },
   {
     "id": "Q062",
-    "question": "In Forbellone's module method, what distinguishes a module with an 'action context' from a module with a 'result context'?",
-    "ground_truth": "A module has an action context when its essence is to execute a set of actions that solves part of the problem, without concern for returning a specific value. A module has a result context when its purpose is to calculate and return, through the 'return' command, a single value that becomes associated with the module's own name, requiring compatibility between the type of that value and the type of the variable that receives it.",
+    "question": "No método de módulos de Forbellone, o que distingue um módulo com 'contexto de ação' de um módulo com 'contexto de resultado'?",
+    "ground_truth": "Um módulo tem contexto de ação quando sua essência é executar um conjunto de ações que resolve parte do problema, sem preocupação em retornar um valor específico. Um módulo tem contexto de resultado quando sua finalidade é calcular e retornar, por meio do comando 'retorne', um único valor que passa a ser associado ao próprio nome do módulo, exigindo compatibilidade entre o tipo desse valor e o tipo da variável que o recebe.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q063",
-    "question": "What is the load factor of a hash table, and why is it used as a criterion for resizing the table?",
-    "ground_truth": "The load factor measures the proportion between the number of items stored and the total number of slots in the hash table's underlying array (for example, 2 items in 5 slots gives a load factor of 2/5). When this value gets high, the chance of collisions increases and performance worsens; therefore, once it exceeds a certain threshold (a good rule of thumb is 0.7), a larger array is created, usually double the original size, and all items are reinserted using the hash function, which lowers the load factor and keeps the average execution time close to O(1).",
+    "question": "O que é o fator de carga de uma tabela hash e por que ele é usado como critério para redimensionar a tabela?",
+    "ground_truth": "O fator de carga mede a proporção entre o número de itens armazenados e o número total de posições no vetor subjacente da tabela hash (por exemplo, 2 itens em 5 posições dá um fator de carga de 2/5). Quando esse valor fica alto, a chance de colisões aumenta e o desempenho piora; por isso, quando ele ultrapassa um certo limiar (uma boa regra prática é 0.7), um vetor maior é criado, normalmente com o dobro do tamanho original, e todos os itens são reinseridos usando a função hash, o que reduz o fator de carga e mantém o tempo médio de execução próximo de O(1).",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q064",
-    "question": "In the example with subroutines S2 (parameter by value) and S3 (parameter by reference) from Ascencio et al.'s book, what happens to the main program's global variables X and Y after each call?",
-    "ground_truth": "After calling S2, which receives X and Y by value, the values of the global variables remain unchanged, since the subroutine only modified local copies. After calling S3, which receives the same names by reference, the changes made inside the subroutine are reflected directly in the main program's global variables, because they behave as global variables inside the subroutine.",
+    "question": "No exemplo com as sub-rotinas S2 (parâmetro por valor) e S3 (parâmetro por referência) do livro de Ascencio et al., o que acontece com as variáveis globais X e Y do programa principal após cada chamada?",
+    "ground_truth": "Depois da chamada de S2, que recebe X e Y por valor, os valores das variáveis globais permanecem inalterados, pois a sub-rotina modificou apenas cópias locais. Depois da chamada de S3, que recebe os mesmos nomes por referência, as alterações feitas dentro da sub-rotina são refletidas diretamente nas variáveis globais do programa principal, porque elas se comportam como variáveis globais dentro da sub-rotina.",
     "source_book": "Fundamentos da programação de computadores (Ana Fernanda Gomes Ascencio et al.) [Fundamentals of Computer Programming]"
   },
   {
     "id": "Q065",
-    "question": "In Forbellone's example about variable scope with nested modules, what happens when a variable K is declared both at the beginning of the algorithm (global) and inside an inner module, with the same name?",
-    "ground_truth": "When this name conflict occurs, the module in which the variable was declared locally, as well as the modules hierarchically subordinate to it, always use the local variable, ignoring the global variable of the same name. Modules that do not descend from that module continue to see only the original global variable K.",
+    "question": "No exemplo de Forbellone sobre escopo de variáveis com módulos aninhados, o que acontece quando uma variável K é declarada tanto no início do algoritmo (global) quanto dentro de um módulo interno, com o mesmo nome?",
+    "ground_truth": "Quando ocorre esse conflito de nomes, o módulo em que a variável foi declarada localmente, assim como os módulos hierarquicamente subordinados a ele, sempre usam a variável local, ignorando a variável global de mesmo nome. Os módulos que não descendem desse módulo continuam a enxergar apenas a variável global original K.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q066",
-    "question": "According to Ascencio et al., what is the difference between a local variable and a global variable in an algorithm with subroutines, and what happens to each of them at the end of execution?",
-    "ground_truth": "Local variables are declared inside a subroutine and can only be used within it, being destroyed (losing their content) as soon as the subroutine's execution ends. Global variables are declared outside any subroutine and can be accessed by any part of the program, including the subroutines, being destroyed only when the entire program ends.",
+    "question": "Segundo Ascencio et al., qual é a diferença entre uma variável local e uma variável global em um algoritmo com sub-rotinas, e o que acontece com cada uma delas ao final da execução?",
+    "ground_truth": "As variáveis locais são declaradas dentro de uma sub-rotina e só podem ser usadas dentro dela, sendo destruídas (perdendo seu conteúdo) assim que a execução da sub-rotina termina. As variáveis globais são declaradas fora de qualquer sub-rotina e podem ser acessadas por qualquer parte do programa, inclusive pelas sub-rotinas, sendo destruídas somente quando o programa inteiro termina.",
     "source_book": "Fundamentos da programação de computadores (Ana Fernanda Gomes Ascencio et al.) [Fundamentals of Computer Programming]"
   },
   {
     "id": "Q067",
-    "question": "What is recursion, and why does every recursive function need a base case?",
-    "ground_truth": "Recursion is when a function calls itself to solve a problem, usually reducing it to a smaller version of the same problem. Every recursive function needs a base case, the simplest situation in which the function stops calling itself, because without it the calls would repeat indefinitely, resulting in an infinite loop that never produces a result.",
+    "question": "O que é recursão e por que toda função recursiva precisa de um caso base?",
+    "ground_truth": "Recursão é quando uma função chama a si mesma para resolver um problema, geralmente reduzindo-o a uma versão menor do mesmo problema. Toda função recursiva precisa de um caso base, a situação mais simples em que a função para de chamar a si mesma, porque sem ele as chamadas se repetiriam indefinidamente, resultando em um laço infinito que nunca produz um resultado.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q068",
-    "question": "What is the 'call stack' and how does it relate to recursion?",
-    "ground_truth": "The call stack is the structure the computer uses internally to keep track of the state of each function call that has not yet completed; each new call is pushed onto the top, and when a function returns, its portion is removed from the top, handing execution back to the previous function. In recursive functions, each recursive call creates a new entry on this stack, so a very deep recursion can consume a lot of memory.",
+    "question": "O que é a 'pilha de chamadas' e como ela se relaciona com a recursão?",
+    "ground_truth": "A pilha de chamadas é a estrutura que o computador usa internamente para acompanhar o estado de cada chamada de função que ainda não terminou; cada nova chamada é empilhada no topo e, quando uma função retorna, a sua parte é removida do topo, devolvendo a execução à função anterior. Em funções recursivas, cada chamada recursiva cria uma nova entrada nessa pilha, então uma recursão muito profunda pode consumir muita memória.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q069",
-    "question": "How does the recursive factorial function work, and what is its base case?",
-    "ground_truth": "The recursive factorial function returns 1 when the argument equals 1 (that is the base case), and in any other case returns the argument itself multiplied by the result of the recursive call with the argument minus one. Thus, calculating the factorial of a number is repeatedly reduced to calculating the factorial of a smaller number, until the base case is reached.",
+    "question": "Como funciona a função fatorial recursiva e qual é o seu caso base?",
+    "ground_truth": "A função fatorial recursiva retorna 1 quando o argumento é igual a 1 (esse é o caso base) e, em qualquer outro caso, retorna o próprio argumento multiplicado pelo resultado da chamada recursiva com o argumento menos um. Assim, calcular o fatorial de um número é reduzido repetidamente a calcular o fatorial de um número menor, até que o caso base seja alcançado.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q070",
-    "question": "When calculating the factorial of 3 using the recursive version, what happens on the call stack while the function has not yet returned any value?",
-    "ground_truth": "The call stack accumulates one entry for each call that is still incomplete: first there is the call with argument 3 waiting for the result of the call with argument 2, which in turn waits for the result of the call with argument 1. When that last call reaches the base case and returns 1, the values return by multiplying at each level of the stack until the original call returns the final result, and the stack empties.",
+    "question": "Ao calcular o fatorial de 3 usando a versão recursiva, o que acontece na pilha de chamadas enquanto a função ainda não retornou nenhum valor?",
+    "ground_truth": "A pilha de chamadas acumula uma entrada para cada chamada ainda incompleta: primeiro há a chamada com argumento 3 esperando o resultado da chamada com argumento 2, que por sua vez espera o resultado da chamada com argumento 1. Quando essa última chamada atinge o caso base e retorna 1, os valores voltam multiplicando-se em cada nível da pilha até que a chamada original retorne o resultado final, e a pilha se esvazia.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q071",
-    "question": "How does simple search (linear search) work, and what is its running time in Big O notation?",
-    "ground_truth": "In simple search, the algorithm goes through the list item by item, from beginning to end, comparing each element until it finds the sought value or reaches the end of the list. In the worst case, all n elements need to be checked, so its running time is O(n), growing linearly with the size of the list.",
+    "question": "Como funciona a busca simples (busca linear) e qual é o seu tempo de execução em notação Big O?",
+    "ground_truth": "Na busca simples, o algoritmo percorre a lista item por item, do início ao fim, comparando cada elemento até encontrar o valor procurado ou chegar ao fim da lista. No pior caso, todos os n elementos precisam ser verificados, então o seu tempo de execução é O(n), crescendo linearmente com o tamanho da lista.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q072",
-    "question": "Unlike binary search, does simple search require the list to be sorted in order to work?",
-    "ground_truth": "No. Simple search works on any list, sorted or not, since it only goes through the elements one by one without depending on any prior organization of the data. It is precisely because it does not require sorting that it is slower, O(n), than binary search, O(log n), which can only be used on sorted lists.",
+    "question": "Diferentemente da busca binária, a busca simples exige que a lista esteja ordenada para funcionar?",
+    "ground_truth": "Não. A busca simples funciona em qualquer lista, ordenada ou não, pois apenas percorre os elementos um a um sem depender de nenhuma organização prévia dos dados. É justamente por não exigir ordenação que ela é mais lenta, O(n), do que a busca binária, O(log n), que só pode ser usada em listas ordenadas.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q073",
-    "question": "How does binary search work, and what is its prerequisite regarding the data?",
-    "ground_truth": "Binary search locates an element in a sorted list by comparing the sought value with the middle element; if the sought value is smaller, the search continues only in the lower half, if it is larger, it continues in the upper half, repeating this process and discarding half of the remaining elements at each step. The prerequisite is that the list must be sorted, since without that it is not possible to correctly decide which half to continue searching in.",
+    "question": "Como funciona a busca binária e qual é o seu pré-requisito em relação aos dados?",
+    "ground_truth": "A busca binária localiza um elemento em uma lista ordenada comparando o valor procurado com o elemento do meio; se o valor procurado for menor, a busca continua apenas na metade inferior; se for maior, continua na metade superior, repetindo esse processo e descartando metade dos elementos restantes a cada passo. O pré-requisito é que a lista esteja ordenada, já que sem isso não é possível decidir corretamente em qual metade continuar a busca.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q074",
-    "question": "What is the running time of binary search in Big O notation, and why is it considered much faster than simple search on large lists?",
-    "ground_truth": "Binary search has a running time of O(log n), since the search space is cut in half with each comparison. This makes it much faster than simple search, O(n), as the list grows: searching a list of 4 billion elements would take about 32 comparisons with binary search, versus up to 4 billion comparisons with simple search.",
+    "question": "Qual é o tempo de execução da busca binária em notação Big O e por que ela é considerada muito mais rápida que a busca simples em listas grandes?",
+    "ground_truth": "A busca binária tem tempo de execução O(log n), já que o espaço de busca é cortado pela metade a cada comparação. Isso a torna muito mais rápida que a busca simples, O(n), à medida que a lista cresce: buscar em uma lista de 4 bilhões de elementos levaria cerca de 32 comparações com a busca binária, contra até 4 bilhões de comparações com a busca simples.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q075",
-    "question": "How does the selection sort algorithm work?",
-    "ground_truth": "The algorithm repeatedly scans the elements not yet sorted looking for the smallest value among them and moves it to the next position of the resulting sorted list. This search for the smallest remaining element is repeated until all elements have been selected, forming the final list in ascending order.",
+    "question": "Como funciona o algoritmo de ordenação por seleção?",
+    "ground_truth": "O algoritmo percorre repetidamente os elementos ainda não ordenados procurando o menor valor entre eles e o move para a próxima posição da lista ordenada resultante. Essa busca pelo menor elemento restante é repetida até que todos os elementos tenham sido selecionados, formando a lista final em ordem crescente.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q076",
-    "question": "What is the running time of selection sort, and why does it remain O(n²) even though the number of elements checked on each pass decreases?",
-    "ground_truth": "Finding the smallest element in a list costs O(n), and that operation needs to be repeated n times, once for each position of the final list, resulting in O(n × n), that is, O(n²). Even though fewer elements remain to be checked with each repetition, Big O notation ignores constants such as the average fraction of elements analyzed, so the result is still expressed as O(n²).",
+    "question": "Qual é o tempo de execução da ordenação por seleção e por que ele continua sendo O(n²) mesmo que o número de elementos verificados a cada passagem diminua?",
+    "ground_truth": "Encontrar o menor elemento em uma lista custa O(n), e essa operação precisa ser repetida n vezes, uma para cada posição da lista final, resultando em O(n × n), ou seja, O(n²). Mesmo que restem menos elementos a verificar a cada repetição, a notação Big O ignora constantes como a fração média de elementos analisados, então o resultado ainda é expresso como O(n²).",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q077",
-    "question": "How does the sorting method known as bubble sort work?",
-    "ground_truth": "Bubble sort sorts the list by repeatedly comparing pairs of adjacent elements and swapping them whenever they are out of the desired order. This process of comparing and swapping is repeated by going through the list until no more swaps are needed, that is, until all elements are sorted.",
+    "question": "Como funciona o método de ordenação conhecido como bubble sort?",
+    "ground_truth": "O bubble sort ordena a lista comparando repetidamente pares de elementos adjacentes e trocando-os sempre que estiverem fora da ordem desejada. Esse processo de comparar e trocar é repetido percorrendo a lista até que nenhuma troca seja mais necessária, ou seja, até que todos os elementos estejam ordenados.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q078",
-    "question": "What is the difference in strategy between direct selection sort and bubble sort?",
-    "ground_truth": "In direct selection, the algorithm searches for the smallest element among those remaining and swaps it directly into the correct position, repeating the process for the following positions. In bubble sort, on the other hand, there is no search for the smallest element; instead, the algorithm compares neighboring pairs of elements and swaps them when they are out of order, causing the largest values to gradually move toward the end of the list with each complete pass.",
+    "question": "Qual é a diferença de estratégia entre a ordenação por seleção direta e o bubble sort?",
+    "ground_truth": "Na seleção direta, o algoritmo procura o menor elemento entre os restantes e o troca diretamente para a posição correta, repetindo o processo para as posições seguintes. No bubble sort, por outro lado, não há busca pelo menor elemento; em vez disso, o algoritmo compara pares de elementos vizinhos e os troca quando estão fora de ordem, fazendo com que os maiores valores se desloquem gradualmente para o fim da lista a cada passagem completa.",
     "source_book": "Lógica de programação (André Luiz Villar Forbellone) [Programming Logic]"
   },
   {
     "id": "Q079",
-    "question": "How does quicksort apply the divide-and-conquer strategy to sort an array?",
-    "ground_truth": "Quicksort chooses an element of the array as the pivot and partitions the rest into two subarrays: one with the elements smaller than the pivot and another with the larger ones. It then recursively applies the same process to each subarray until reaching the base case, which is empty arrays or arrays with a single element, and the final combination is done by joining the smaller subarray, the pivot, and the larger subarray, producing a sorted list.",
+    "question": "Como o quicksort aplica a estratégia de dividir para conquistar para ordenar um vetor?",
+    "ground_truth": "O quicksort escolhe um elemento do vetor como pivô e particiona o restante em dois subvetores: um com os elementos menores que o pivô e outro com os maiores. Em seguida, aplica recursivamente o mesmo processo a cada subvetor até chegar ao caso base, que são vetores vazios ou com um único elemento, e a combinação final é feita juntando o subvetor menor, o pivô e o subvetor maior, produzindo uma lista ordenada.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q080",
-    "question": "Why is quicksort usually faster than merge sort in practice, even though both have the same average running time of O(n log n)?",
-    "ground_truth": "Although both have an average running time of O(n log n), quicksort has a smaller multiplicative constant than merge sort, and that constant, normally ignored in Big O notation, starts to matter when two algorithms share the same order of growth. In addition, in practice quicksort tends to behave closer to its average case more often than its worst case, O(n²), which makes it faster in most real-world situations.",
+    "question": "Por que o quicksort costuma ser mais rápido que o merge sort na prática, mesmo que ambos tenham o mesmo tempo médio de execução de O(n log n)?",
+    "ground_truth": "Embora ambos tenham tempo médio de execução O(n log n), o quicksort tem uma constante multiplicativa menor que a do merge sort, e essa constante, normalmente ignorada na notação Big O, passa a importar quando dois algoritmos compartilham a mesma ordem de crescimento. Além disso, na prática o quicksort tende a se comportar mais perto do seu caso médio com mais frequência do que do seu pior caso, O(n²), o que o torna mais rápido na maioria das situações do mundo real.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q081",
-    "question": "What does Big O notation represent, and why does it not measure an algorithm's running time in seconds?",
-    "ground_truth": "Big O notation expresses how an algorithm's running time grows as the size of the input increases, not a time measured in seconds, since actual speed depends on the hardware used. Big O therefore focuses on the growth rate — for example, O(n) means the time grows linearly with the number of elements — allowing algorithms to be compared independently of the machine they run on.",
+    "question": "O que a notação Big O representa e por que ela não mede o tempo de execução de um algoritmo em segundos?",
+    "ground_truth": "A notação Big O expressa como o tempo de execução de um algoritmo cresce à medida que o tamanho da entrada aumenta, e não um tempo medido em segundos, já que a velocidade real depende do hardware usado. Por isso, o Big O foca na taxa de crescimento — por exemplo, O(n) significa que o tempo cresce linearmente com o número de elementos — permitindo comparar algoritmos independentemente da máquina em que são executados.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q082",
-    "question": "Why is the constant that accompanies an algorithm's running time usually ignored in Big O notation, but in some cases can it make a difference?",
-    "ground_truth": "The constant is usually ignored because, when two algorithms have different growth orders in Big O notation, such as O(n) versus O(log n), that difference in growth is far more decisive than any constant, especially for large inputs. However, when two algorithms share the same Big O notation, such as quicksort and merge sort, both O(n log n), the constant starts to make a practical difference, which is why quicksort tends to be faster than merge sort in everyday use.",
+    "question": "Por que a constante que acompanha o tempo de execução de um algoritmo costuma ser ignorada na notação Big O, mas em alguns casos pode fazer diferença?",
+    "ground_truth": "A constante costuma ser ignorada porque, quando dois algoritmos têm ordens de crescimento diferentes em notação Big O, como O(n) versus O(log n), essa diferença de crescimento é muito mais decisiva do que qualquer constante, especialmente para entradas grandes. No entanto, quando dois algoritmos compartilham a mesma notação Big O, como o quicksort e o merge sort, ambos O(n log n), a constante passa a fazer diferença prática, e é por isso que o quicksort tende a ser mais rápido que o merge sort no uso cotidiano.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q083",
-    "question": "What characterizes the stack data structure, and what are its two basic operations?",
-    "ground_truth": "A stack is a LIFO (Last In, First Out) data structure, in which the last element inserted is always the first one to be removed. Its two basic operations are push, which inserts an element onto the top of the stack, and pop, which removes and reads the element at the top.",
+    "question": "O que caracteriza a estrutura de dados pilha e quais são as suas duas operações básicas?",
+    "ground_truth": "Uma pilha é uma estrutura de dados LIFO (Last In, First Out), em que o último elemento inserido é sempre o primeiro a ser removido. Suas duas operações básicas são push, que insere um elemento no topo da pilha, e pop, que remove e lê o elemento do topo.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q084",
-    "question": "In what way is the computer's call stack a practical example of how a LIFO stack works?",
-    "ground_truth": "Every time a function is called, the computer pushes a new entry with that call's state onto the top of the stack; when the function finishes and returns, only the entry at the top is removed, handing execution back to the function that made the most recent call. This behavior, in which the last call made is always the first to finish and be removed, corresponds exactly to the LIFO logic of a stack.",
+    "question": "De que forma a pilha de chamadas do computador é um exemplo prático de como funciona uma pilha LIFO?",
+    "ground_truth": "Toda vez que uma função é chamada, o computador empilha uma nova entrada com o estado dessa chamada no topo da pilha; quando a função termina e retorna, apenas a entrada do topo é removida, devolvendo a execução à função que fez a chamada mais recente. Esse comportamento, em que a última chamada feita é sempre a primeira a terminar e ser removida, corresponde exatamente à lógica LIFO de uma pilha.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q085",
-    "question": "What characterizes the queue data structure, and what are its two basic operations?",
-    "ground_truth": "A queue is a FIFO (First In, First Out) data structure, in which the first element inserted is the first one to be removed, just like a line of people. Its two basic operations are enqueue, which inserts an element at the end of the queue, and dequeue, which removes and reads the element at the front of it.",
+    "question": "O que caracteriza a estrutura de dados fila e quais são as suas duas operações básicas?",
+    "ground_truth": "Uma fila é uma estrutura de dados FIFO (First In, First Out), em que o primeiro elemento inserido é o primeiro a ser removido, assim como uma fila de pessoas. Suas duas operações básicas são enqueue, que insere um elemento no fim da fila, e dequeue, que remove e lê o elemento da frente dela.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q086",
-    "question": "Why does breadth-first search on a graph use a queue, rather than a stack, to hold the elements to be checked?",
-    "ground_truth": "Breadth-first search needs to check connections in the same order in which they were added to the search list, ensuring that first-degree connections are checked before second-degree ones, which is essential for finding the shortest path. Since a queue is FIFO, it preserves this arrival order; a stack, being LIFO, would reverse the order and make the algorithm check the most recently added elements first, which would not guarantee finding the shortest path.",
+    "question": "Por que a busca em largura em um grafo usa uma fila, em vez de uma pilha, para guardar os elementos a serem verificados?",
+    "ground_truth": "A busca em largura precisa verificar as conexões na mesma ordem em que foram adicionadas à lista de busca, garantindo que as conexões de primeiro grau sejam verificadas antes das de segundo grau, o que é essencial para encontrar o caminho mais curto. Como uma fila é FIFO, ela preserva essa ordem de chegada; uma pilha, sendo LIFO, inverteria a ordem e faria o algoritmo verificar primeiro os elementos adicionados mais recentemente, o que não garantiria encontrar o caminho mais curto.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q087",
-    "question": "What is a hash function, and how does it allow a hash table to find a value with O(1) running time?",
-    "ground_truth": "A hash function takes a key (such as a string) and consistently returns the same number for the same input, mapping that key to a position in an underlying array. Since the hash table uses that number as a direct index into the array, it accesses the value associated with the key immediately, without needing to go through the other elements, which guarantees O(1) running time even as the number of stored items increases.",
+    "question": "O que é uma função hash e como ela permite que uma tabela hash encontre um valor com tempo de execução O(1)?",
+    "ground_truth": "Uma função hash recebe uma chave (como uma cadeia de caracteres) e retorna consistentemente o mesmo número para a mesma entrada, mapeando essa chave para uma posição em um vetor subjacente. Como a tabela hash usa esse número como índice direto no vetor, ela acessa o valor associado à chave imediatamente, sem precisar percorrer os demais elementos, o que garante tempo de execução O(1) mesmo à medida que o número de itens armazenados aumenta.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q088",
-    "question": "What is a collision in a hash table, and what is the simplest solution for resolving it?",
-    "ground_truth": "A collision occurs when the hash function maps two different keys to the same slot of the table's underlying array, causing one value to overwrite the other. The simplest solution is, when several keys fall into the same slot, to start a linked list there containing all the items for that slot; the search for a specific key then goes through that small list instead of the entire array, as long as the hash function is good enough to keep those lists short.",
+    "question": "O que é uma colisão em uma tabela hash e qual é a solução mais simples para resolvê-la?",
+    "ground_truth": "Uma colisão ocorre quando a função hash mapeia duas chaves diferentes para a mesma posição do vetor subjacente da tabela, fazendo com que um valor sobrescreva o outro. A solução mais simples é, quando várias chaves caem na mesma posição, iniciar ali uma lista encadeada contendo todos os itens daquela posição; a busca por uma chave específica então percorre essa pequena lista em vez do vetor inteiro, desde que a função hash seja boa o suficiente para manter essas listas curtas.",
     "source_book": "Entendendo Algoritmos (Aditya Y. Bhargava) [Grokking Algorithms]"
   },
   {
     "id": "Q089",
-    "question": "What is a record (heterogeneous data structure), and how does it differ from an array or a matrix?",
-    "ground_truth": "A record is a derived data type that groups together, within a single structure, several fields that can be of different primitive types from one another, such as string, character, integer, and real all at once. This makes it a heterogeneous structure, unlike an array or a matrix, which are homogeneous structures and can only store data of a single type in all of their positions.",
+    "question": "O que é um registro (estrutura de dados heterogênea) e como ele difere de um vetor ou de uma matriz?",
+    "ground_truth": "Um registro é um tipo de dado derivado que agrupa, dentro de uma única estrutura, vários campos que podem ser de tipos primitivos diferentes entre si, como cadeia, caractere, inteiro e real ao mesmo tempo. Isso faz dele uma estrutura heterogênea, diferentemente de um vetor ou de uma matriz, que são estruturas homogêneas e só podem armazenar dados de um único tipo em todas as suas posições.",
     "source_book": "Algoritmos Lógica para desenvolvimento de programação de computadores [Algorithms: Logic for Computer Programming Development]"
   },
   {
     "id": "Q090",
-    "question": "How is a record type declared, and how is a specific field of a variable of that type accessed?",
-    "ground_truth": "The declaration is made with the type command, defining an identifier followed by record, listing each field with its respective primitive type and closing with end_record; then the var command associates a variable with that derived type. To access or assign a specific field of that variable, the notation variable.field is used (for example, STUDENT.NAME or STUDENT.GRADE1), separating the variable's name from the field's name with a period.",
+    "question": "Como um tipo registro é declarado e como um campo específico de uma variável desse tipo é acessado?",
+    "ground_truth": "A declaração é feita com o comando tipo, definindo um identificador seguido de registro, listando cada campo com o seu respectivo tipo primitivo e encerrando com fim_registro; em seguida, o comando var associa uma variável a esse tipo derivado. Para acessar ou atribuir um campo específico dessa variável, usa-se a notação variável.campo (por exemplo, ALUNO.NOME ou ALUNO.NOTA1), separando o nome da variável do nome do campo por um ponto.",
     "source_book": "Algoritmos Lógica para desenvolvimento de programação de computadores [Algorithms: Logic for Computer Programming Development]"
   }
 ]
