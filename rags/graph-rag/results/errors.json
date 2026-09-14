@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "project": "graph-rag",
+  "dataset": "/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/eval-dataset/qa_dataset_90.json",
+  "dataset_sha256": "f3c3cbbfe0a89019e04465a661e7fde982089cd1fb64c36fb37b0dd02b9cea85",
+  "updated_at": "2026-09-11T02:58:20.499425+00:00",
+  "count": 0,
+  "errors": []
+}

@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "project": "graph-rag",
+  "dataset": "/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/eval-dataset/qa_dataset_90.json",
+  "dataset_sha256": "f3c3cbbfe0a89019e04465a661e7fde982089cd1fb64c36fb37b0dd02b9cea85",
+  "created_at": "2026-09-11T00:40:53.832402+00:00",
+  "updated_at": "2026-09-11T02:58:20.499425+00:00",
+  "items": {
+    "Q001": {
+      "status": "success",
+      "attempts": 4,
+      "question": "O que significa 'lógica de programação' em palavras simples?",
+      "started_at": "2026-09-11T02:45:08.592762+00:00",
+      "finished_at": "2026-09-11T02:58:20.499392+00:00",
+      "error": null,
+      "result": {
+        "answer": "## O que é \"Lógica de Programação\" em palavras simples?\n\n**Lógica de programação** é, em essência, **a técnica de organizar o pensamento de forma lógica para criar passos que um computador possa seguir e resolver um problema.**\n\n### Explicando de forma simples:\n\nImagine uma **receita de bolo** 🎂. Você tem:\n\n1. **Ingredientes** (entradas) — o que você fornece\n2. **Modo de preparo** (os passos) — a sequência de instruções\n3. **O bolo pronto** (saída) — o resultado final\n\nA lógica de programação funciona exatamente assim! Ela é a **sequência organizada de passos** que você cria para que o computador transforme **dados de entrada** em **resultados de saída**.\n\n### Conceitos-chave (do grafo de conhecimento):\n\n| Conceito | Significado |\n|---|---|\n| **Lógica** | A ciência que estuda as leis e critérios de validade do pensamento — ou seja, a \"correção do pensamento\" |\n| **Algoritmo** | O conjunto de regras/passos para resolver um problema — comparável a uma receita culinária |\n| **Programa** | O resultado da transformação do algoritmo em algo que o computador executa |\n| **Computador** | A máquina que executa o programa — ele só faz o que você manda, passo a passo |\n\n### Uma analogia do grafo:\n\nO grafo de conhecimento traz uma analogia muito didática:\n\n- 🧑‍🍳 O **mestre-cuca** inventa a receita → o **programador** cria o algoritmo\n- 📜 A **receita** com ingredientes e modo de preparo → o **algoritmo** com entradas e instruções\n- 🍽️ O **prato pronto** servido ao cliente → o **programa** utilizado pelo usuário\n- 👤 O **cliente** que consome o prato → o **usuário** que usa o programa\n\n### Em resumo:\n\n> **Lógica de programação** é a habilidade de **pensar de forma organizada e sequencial** para descrever, passo a passo, como resolver um problema — de um jeito que o computador consiga entender e executar. É como escrever uma **receita** que a máquina vai seguir à risca para chegar ao resultado desejado.\n\nA palavra \"lógica\" vem do termo grego *lógos*, que significa \"linguagem/discurso/pensamento/conhecimento\". Ou seja, lógica é, no fundo, a arte de **ordenar o pensamento** — e a lógica de programação aplica essa arte à criação de programas de computador. 🖥️",
+        "contexts_count": 3,
+        "question": "O que significa 'lógica de programação' em palavras simples?",
+        "faithfulness": 0.3076923076923077,
+        "answer_relevancy": 0.9547234472626478,
+        "context_precision": 0.99999999995,
+        "context_recall": 1.0,
+        "answer_response_time_seconds": 8.518955,
+        "answer_input_tokens": 4745,
+        "answer_output_tokens": 723,
+        "answer_total_tokens": 5468
+      }
+    }
+  }
+}

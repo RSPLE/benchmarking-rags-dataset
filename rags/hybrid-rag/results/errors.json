@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "project": "hybrid-rag",
+  "dataset": "/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/eval-dataset/qa_dataset_90.json",
+  "dataset_sha256": "f3c3cbbfe0a89019e04465a661e7fde982089cd1fb64c36fb37b0dd02b9cea85",
+  "updated_at": "2026-09-11T01:08:47.838647+00:00",
+  "count": 1,
+  "errors": [
+    {
+      "id": "Q001",
+      "question": "O que significa 'lógica de programação' em palavras simples?",
+      "attempts": 1,
+      "started_at": "2026-09-11T00:59:58.468524+00:00",
+      "finished_at": "2026-09-11T01:08:47.838636+00:00",
+      "error_type": "KeyboardInterrupt",
+      "message": "Execucao interrompida pelo usuario.",
+      "output": "KeyboardInterrupt: Execucao interrompida pelo usuario.",
+      "traceback": null
+    }
+  ]
+}
