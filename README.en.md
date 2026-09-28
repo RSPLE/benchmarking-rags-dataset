@@ -319,6 +319,51 @@ For valid comparisons, keep the generation model, embedding model, documents, an
 
 `eval-dataset/qa_dataset_90.json` has 90 objects with a stable `id`, `question`, `ground_truth`, and `source_book`. Each question is evaluated for `faithfulness`, `answer_relevancy`, `context_precision`, and `context_recall`. The CSV also records response time and input, output, and total token counts.
 
+### Where and when RAGAS runs
+
+Evaluation runs automatically through each pipeline's `main.py`, in its own Python environment/`.venv`, when executing a command such as:
+
+```bash
+uv run python main.py run context-rag --questions 10
+```
+
+The root `main.py` starts the pipeline process. Within that process, `run_resumable_benchmark()` from [benchmark_runner.py](benchmark_runner.py) generates an answer through `answer_question()` and then calls `evaluate_question()`. This callback executes `run_ragas([ragas_item], eval_llm, embeddings)` for that question, passing `question`, `answer`, `contexts`, and `ground_truth`. All four metrics are therefore computed after each answer, before recording success in the checkpoint and CSV.
+
+The actual `ragas.evaluate()` call lives in the `run_ragas()` function in these files:
+
+| Pipeline | File that executes the four metrics |
+|---|---|
+| Context RAG | [rags/context-rag/main.py](rags/context-rag/main.py) |
+| Graph RAG | [rags/graph-rag/rag_settings.py](rags/graph-rag/rag_settings.py) |
+| Hybrid RAG | [rags/hybrid-rag/rag_settings.py](rags/hybrid-rag/rag_settings.py) |
+| Knowledge-Enhanced RAG | [rags/knowledge-enhanced-rag/rag_settings.py](rags/knowledge-enhanced-rag/rag_settings.py) |
+| Memory-Augmented RAG | [rags/memory-augmented-rag/rag_settings.py](rags/memory-augmented-rag/rag_settings.py) |
+| Self-RAG | [rags/self-rag/rag_settings.py](rags/self-rag/rag_settings.py) |
+
+All pipelines use the same metric list:
+
+```python
+result = evaluate(
+    dataset,
+    metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
+    llm=llm,
+    embeddings=embeddings,
+    run_config=build_ragas_run_config(),
+    raise_exceptions=True,
+)
+```
+
+| Metric | What it evaluates |
+|---|---|
+| `faithfulness` | Whether claims in the generated answer are supported by the retrieved contexts. |
+| `answer_relevancy` | Whether the generated answer is relevant to the question. |
+| `context_precision` | Whether contexts relevant to the reference answer rank near the top of retrieval results. |
+| `context_recall` | How much of the reference answer is supported by the retrieved contexts. |
+
+RAGAS code runs in the local pipeline process; LLM and embedding calls use the APIs configured in `.env`. The evaluator is created by `build_ragas_llm()` in [rag_provider.py](rag_provider.py), using the same provider and model configured for generation, with its own `RAGAS_MAX_TOKENS` limit. Timeout and concurrency are set through `RAGAS_TIMEOUT_SECONDS` and `RAGAS_MAX_WORKERS` in [ragas_compat.py](ragas_compat.py).
+
+Results are stored in `rags/<pipeline>/results/results.csv`, with one column per metric. The `answer_response_time_seconds` and `answer_*_tokens` columns measure the answer generation stage; they exclude the additional RAGAS evaluation calls.
+
 ## Layout
 
 ```text

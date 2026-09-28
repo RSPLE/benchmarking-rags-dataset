@@ -360,6 +360,51 @@ Antes de uma comparação entre pipelines, mantenha iguais o modelo de geração
 
 Para cada pergunta, o RAGAS calcula `faithfulness`, `answer_relevancy`, `context_precision` e `context_recall`. O CSV também registra `answer_response_time_seconds`, `answer_input_tokens`, `answer_output_tokens` e `answer_total_tokens`.
 
+### Onde e quando o RAGAS é executado
+
+A avaliação é executada automaticamente pelo `main.py` de cada pipeline, no seu próprio ambiente Python/`.venv`, ao rodar um comando como:
+
+```bash
+uv run python main.py run context-rag --questions 10
+```
+
+O `main.py` da raiz inicia o processo do pipeline. Dentro dele, `run_resumable_benchmark()` de [benchmark_runner.py](benchmark_runner.py) gera uma resposta com `answer_question()` e, em seguida, chama `evaluate_question()`. Esse callback executa `run_ragas([ragas_item], eval_llm, embeddings)` para aquela pergunta, passando `question`, `answer`, `contexts` e `ground_truth`. Assim, as quatro métricas são calculadas após cada resposta, antes de registrar o sucesso no checkpoint e no CSV.
+
+A chamada efetiva a `ragas.evaluate()` fica na função `run_ragas()` dos seguintes arquivos:
+
+| Pipeline | Arquivo que executa as quatro métricas |
+|---|---|
+| Context RAG | [rags/context-rag/main.py](rags/context-rag/main.py) |
+| Graph RAG | [rags/graph-rag/rag_settings.py](rags/graph-rag/rag_settings.py) |
+| Hybrid RAG | [rags/hybrid-rag/rag_settings.py](rags/hybrid-rag/rag_settings.py) |
+| Knowledge-Enhanced RAG | [rags/knowledge-enhanced-rag/rag_settings.py](rags/knowledge-enhanced-rag/rag_settings.py) |
+| Memory-Augmented RAG | [rags/memory-augmented-rag/rag_settings.py](rags/memory-augmented-rag/rag_settings.py) |
+| Self-RAG | [rags/self-rag/rag_settings.py](rags/self-rag/rag_settings.py) |
+
+Todos usam a mesma lista de métricas na chamada:
+
+```python
+result = evaluate(
+    dataset,
+    metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
+    llm=llm,
+    embeddings=embeddings,
+    run_config=build_ragas_run_config(),
+    raise_exceptions=True,
+)
+```
+
+| Métrica | O que avalia |
+|---|---|
+| `faithfulness` | Se as afirmações da resposta gerada são sustentadas pelos contextos recuperados. |
+| `answer_relevancy` | Se a resposta gerada é pertinente à pergunta feita. |
+| `context_precision` | Se os contextos relevantes para a resposta de referência aparecem nas primeiras posições da recuperação. |
+| `context_recall` | Quanto da resposta de referência é sustentado pelos contextos recuperados. |
+
+O código do RAGAS roda no processo local do pipeline; as chamadas de LLM e embeddings usam as APIs configuradas no `.env`. O avaliador é criado por `build_ragas_llm()` em [rag_provider.py](rag_provider.py), usando o mesmo provedor e modelo configurados para geração, com limite próprio `RAGAS_MAX_TOKENS`. Timeout e paralelismo são definidos por `RAGAS_TIMEOUT_SECONDS` e `RAGAS_MAX_WORKERS` em [ragas_compat.py](ragas_compat.py).
+
+Os resultados ficam em `rags/<pipeline>/results/results.csv`, com uma coluna para cada métrica. As colunas `answer_response_time_seconds` e `answer_*_tokens` medem a etapa de geração da resposta; não incluem as chamadas adicionais da avaliação RAGAS.
+
 ## Estrutura
 
 ```text
