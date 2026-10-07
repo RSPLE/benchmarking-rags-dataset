@@ -1,8 +1,8 @@
 import os
-from pathlib import Path
 import sys
 import time
 from itertools import count
+from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 if str(REPOSITORY_ROOT) not in sys.path:
@@ -23,8 +23,15 @@ from ragas.metrics import (
     faithfulness,
 )
 
-from rag_provider import build_embeddings, build_llm, build_ragas_llm
-
+from rag_provider import (
+    build_embeddings as build_embeddings,
+)
+from rag_provider import (
+    build_llm as build_llm,
+)
+from rag_provider import (
+    build_ragas_llm as build_ragas_llm,
+)
 
 METRIC_COLS = [
     "faithfulness",
@@ -57,8 +64,8 @@ def configure_environment(project_name):
 
 def get_chroma_settings(default_persist_dir, default_collection_name):
     return (
-        os.getenv("CHROMA_PERSIST_DIR", default_persist_dir),
-        os.getenv("CHROMA_COLLECTION_NAME", default_collection_name),
+        os.getenv("CHROMA_PERSIST_DIR", "./chroma_v2"),
+        os.getenv("CHROMA_COLLECTION_NAME", Path(__file__).parent.name.replace("-", "_")),
     )
 
 
@@ -211,13 +218,12 @@ def finish_usage_tracker(tracker, started_at):
 
 def anexar_metricas_execucao(df, ragas_data):
     usage_by_question = {
-        item["question"]: {col: item.get(col, 0) for col in USAGE_COLS}
-        for item in ragas_data
+        item["question"]: {col: item.get(col, 0) for col in USAGE_COLS} for item in ragas_data
     }
 
     for col in USAGE_COLS:
         df[col] = df["question"].map(
-            lambda question: usage_by_question.get(question, {}).get(col, 0)
+            lambda question, col=col: usage_by_question.get(question, {}).get(col, 0)
         )
 
     return df
@@ -228,19 +234,17 @@ def preparar_export_ragas(df):
 
     missing_cols = [col for col in EXPORT_COLS if col not in df.columns]
     if missing_cols:
-        raise RuntimeError(
-            "Resultado do RAGAS sem colunas esperadas: "
-            f"{', '.join(missing_cols)}"
-        )
+        raise RuntimeError(f"Resultado do RAGAS sem colunas esperadas: {', '.join(missing_cols)}")
 
     null_metrics = df[df[METRIC_COLS].isnull().any(axis=1)]
     if not null_metrics.empty:
         failed_questions = null_metrics["question"].fillna("<pergunta ausente>").tolist()
-        raise RuntimeError(
-            "RAGAS retornou metricas nulas para as perguntas: "
-            f"{failed_questions}"
-        )
+        raise RuntimeError(f"RAGAS retornou metricas nulas para as perguntas: {failed_questions}")
 
+    from benchmark_runner import validate_metrics
+
+    for row in df.to_dict("records"):
+        validate_metrics(row, METRIC_COLS)
     return df[EXPORT_COLS]
 
 

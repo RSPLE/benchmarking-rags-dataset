@@ -16,3 +16,9 @@ tests/.runtime/
 **/chroma*/
 **/*.sqlite3
 **/rag_benchmark_chart.png
+
+resultados/
+tmp/audit-*/
+tmp/*.log
+tmp/*.txt
+*.outbox.db

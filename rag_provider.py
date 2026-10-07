@@ -1,5 +1,3 @@
-"""Shared LLM and embedding provider configuration for every RAG pipeline."""
-
 from __future__ import annotations
 
 import os
@@ -60,17 +58,23 @@ def _openrouter_headers() -> dict[str, str]:
     return headers
 
 
-def build_llm(max_tokens: int | None = None) -> ChatOpenAI:
-    """Build the chat model using OpenRouter (default) or OpenAI directly."""
+def build_llm(max_tokens: int | None = None, *, judge: bool = False) -> ChatOpenAI:
     provider = _provider("LLM_PROVIDER", "openrouter")
+    from benchmark_usage import http_clients
+
+    timeout = _positive_int("RAGAS_TIMEOUT_SECONDS", 600) if judge else _timeout_seconds()
+    clients = http_clients(timeout)
 
     if provider == "openrouter":
         kwargs: dict[str, Any] = {
             "api_key": _required("OPENROUTER_API_KEY", provider),
             "base_url": os.getenv("OPENROUTER_BASE_URL", OPENROUTER_BASE_URL),
-            "model": os.getenv("OPENROUTER_MODEL", "~openai/gpt-latest"),
+            "model": (os.getenv("OPENROUTER_JUDGE_MODEL") if judge else None)
+            or _required("OPENROUTER_MODEL", provider),
             "max_tokens": max_tokens or _max_tokens(),
-            "timeout": _timeout_seconds(),
+            "timeout": timeout,
+            "max_retries": 0,
+            **clients,
             "temperature": None,
             "use_responses_api": False,
         }
@@ -81,9 +85,12 @@ def build_llm(max_tokens: int | None = None) -> ChatOpenAI:
 
     kwargs = {
         "api_key": _required("OPENAI_API_KEY", provider),
-        "model": os.getenv("OPENAI_MODEL", "gpt-5.5"),
+        "model": (os.getenv("OPENAI_JUDGE_MODEL") if judge else None)
+        or os.getenv("OPENAI_MODEL", "gpt-5.5"),
         "max_tokens": max_tokens or _max_tokens(),
-        "timeout": _timeout_seconds(),
+        "timeout": timeout,
+        "max_retries": 0,
+        **clients,
         "temperature": None,
         "use_responses_api": True,
     }
@@ -94,12 +101,17 @@ def build_llm(max_tokens: int | None = None) -> ChatOpenAI:
 
 
 def build_embeddings() -> OpenAIEmbeddings:
-    """Build embeddings independently from the chat provider."""
+    from benchmark_usage import http_clients
+
+    clients = http_clients(_timeout_seconds())
     default_provider = _provider("LLM_PROVIDER", "openrouter")
     provider = _provider("EMBEDDING_PROVIDER", default_provider)
 
     if provider == "openrouter":
         kwargs: dict[str, Any] = {
+            **clients,
+            "max_retries": 0,
+            "check_embedding_ctx_length": False,
             "api_key": _required("OPENROUTER_API_KEY", provider),
             "base_url": os.getenv("OPENROUTER_BASE_URL", OPENROUTER_BASE_URL),
             "model": os.getenv(
@@ -113,6 +125,8 @@ def build_embeddings() -> OpenAIEmbeddings:
         return OpenAIEmbeddings(**kwargs)
 
     return OpenAIEmbeddings(
+        **clients,
+        max_retries=0,
         api_key=_required("OPENAI_API_KEY", provider),
         model=os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-large"),
     )
@@ -120,7 +134,7 @@ def build_embeddings() -> OpenAIEmbeddings:
 
 def build_ragas_llm() -> LangchainLLMWrapper:
     return LangchainLLMWrapper(
-        build_llm(max_tokens=_max_tokens("RAGAS_MAX_TOKENS", 2048)),
+        build_llm(max_tokens=_max_tokens("RAGAS_MAX_TOKENS", 2048), judge=True),
         bypass_n=True,
         bypass_temperature=True,
     )

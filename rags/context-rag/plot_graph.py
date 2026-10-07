@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import os
 import glob
+import os
 from typing import List
 
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
 
 METRIC_COLS = [
     "faithfulness",
@@ -69,7 +69,6 @@ def plot_overall_mean(df_means: pd.DataFrame, save_path: str) -> None:
         "Revocação do contexto",
     ]
 
-    # Ensure order matches METRIC_COLS
     values = [overall.get(m, 0.0) for m in METRIC_COLS]
 
     bars = ax.bar(labels, values, color=["#4c72b0", "#55a868", "#c44e52", "#8172b2"])
@@ -77,7 +76,7 @@ def plot_overall_mean(df_means: pd.DataFrame, save_path: str) -> None:
     ax.set_ylabel("Média (0–1)")
     ax.set_title("Média das métricas RAGAS (agregado em arquivos results/)")
 
-    for rect, v in zip(bars, values):
+    for rect, v in zip(bars, values, strict=True):
         ax.text(rect.get_x() + rect.get_width() / 2, v + 0.02, f"{v:.3f}", ha="center")
 
     fig.tight_layout()

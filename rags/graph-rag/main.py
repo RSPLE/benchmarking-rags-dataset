@@ -1,38 +1,33 @@
-import os
-import uuid
 import json
+import os
 import re
-from typing import List, Dict, Any, TypedDict, Annotated, Optional
+import uuid
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Annotated, Any, Dict, List, Optional, TypedDict
 
 import networkx as nx
-
-from langchain_chroma import Chroma
-from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.tools import tool
-from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.documents import Document
-
-from langgraph.graph import StateGraph, END
-from langgraph.graph.message import add_messages
+from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import END, StateGraph
+from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 from langsmith import traceable
-
 from rag_settings import (
-    build_embeddings,
     build_llm,
-    build_ragas_llm,
     configure_environment,
     extract_response_text,
     finish_usage_tracker,
     get_chroma_settings,
-    run_ragas as avaliar_com_ragas,
-    salvar as salvar_resultados,
     start_usage_tracker,
 )
-from benchmark_runner import run_resumable_benchmark
+
+from benchmark_config import configuration, positive_int
+from benchmark_index import cached_extraction, load_index
+from benchmark_pipeline import execute_pipeline, tool_evidence
+from benchmark_storage import fingerprint
 
 configure_environment("benchmark-graph-rag")
 
@@ -42,47 +37,8 @@ PERSIST_DIR, CHROMA_COLLECTION_NAME = get_chroma_settings(
     "graph_collection_openai",
 )
 
-test_queries = [
-    # FÁCEIS
-    "O que significa ‘lógica de programação’ em palavras simples?",
-    "De um jeito bem direto: o que é um algoritmo?",
-    "Qual é a diferença entre constante e variável?",
-    "Pra que serve o comando ‘leia’ em um algoritmo?",
-    # MÉDIAS
-    "O que é um comando de atribuição e por que o tipo do dado precisa ser compatível com o tipo da variável?",
-    "O que são operadores aritméticos (como +, -, * e /) e pra que eles servem?",
-    "Pra que servem os operadores relacionais numa expressão?",
-    # DIFÍCEIS
-    "O que é uma ‘expressão lógica’?",
-    "Em uma repetição, o que é um contador e como ele é incrementado?",
-    "Como funciona a repetição ‘repita ... até’ e o que ela garante sobre a execução do bloco?",
-]
 
-
-ground_truths = [
-    # FÁCEIS
-    "Lógica de programação é o uso correto das leis do pensamento, da ‘ordem da razão’ e de processos formais de raciocínio e simbolização na programação de computadores, com o objetivo de produzir soluções logicamente válidas e coerentes para resolver problemas.",
-    "Um algoritmo é uma sequência de passos bem definidos que têm por objetivo solucionar um determinado problema.",
-    "Um dado é constante quando não sofre variação durante a execução do algoritmo: seu valor permanece constante do início ao fim (e também em execuções diferentes ao longo do tempo). Já um dado é variável quando pode ser alterado em algum instante durante a execução do algoritmo, ou quando seu valor depende da execução em um certo momento ou circunstância.",
-    "O comando de entrada de dados ‘leia’ é usado para que o algoritmo receba os dados de que precisa: ele tem a finalidade de atribuir o dado fornecido à variável identificada, seguindo a sintaxe leia(identificador) (por exemplo, leia(X) ou leia(A, XPTO, NOTA)).",
-    # MÉDIAS
-    "Um comando de atribuição permite fornecer um valor a uma variável. O tipo do dado atribuído deve ser compatível com o tipo da variável: por exemplo, só se pode atribuir um valor lógico a uma variável declarada como do tipo lógico.",
-    "Operadores aritméticos são o conjunto de símbolos que representam as operações básicas da matemática (por exemplo: + para adição, - para subtração, * para multiplicação e / para divisão). Para potenciação e radiciação, o livro indica o uso das palavras-chave pot e rad.",
-    "Operadores relacionais são usados para realizar comparações entre dois valores de mesmo tipo primitivo. Esses valores podem ser constantes, variáveis ou expressões aritméticas, e esses operadores são comuns na construção de equações.",
-    # DIFÍCEIS
-    "Uma expressão lógica é aquela cujos operadores são lógicos ou relacionais e cujos operandos são relações, variáveis ou constantes do tipo lógico.",
-    "Um contador é um modo de contagem feito com a ajuda de uma variável com um valor inicial, que é incrementada a cada repetição. Incrementar significa somar um valor constante (normalmente 1) a cada repetição.",
-    "A estrutura de repetição ‘repita ... até’ permite que um bloco (ou ação primitiva) seja repetido até que uma determinada condição seja verdadeira. Pela sintaxe da estrutura, o bloco é executado pelo menos uma vez, independentemente da validade inicial da condição.",
-]
-
-llm = build_llm()
-llm_extractor = build_llm()
-embeddings = build_embeddings()
-vector_store = Chroma(
-    collection_name=CHROMA_COLLECTION_NAME,
-    embedding_function=embeddings,
-    persist_directory=PERSIST_DIR,
-)
+llm_extractor = vector_store = llm_with_tools = agent = None
 
 
 @dataclass
@@ -149,7 +105,7 @@ class KnowledgeGraph:
             visited.update(frontier)
             frontier = next_frontier
         visited.update(frontier)
-        return list(visited)
+        return sorted(visited)
 
     def build_context(self, node_ids: List[str]) -> str:
         if not node_ids:
@@ -204,10 +160,7 @@ def extract_entities_from_chunk(chunk: Document) -> Dict:
     response = llm_extractor.invoke(messages)
     raw = extract_response_text(response).strip()
     raw = re.sub(r"```(?:json)?\s*", "", raw).strip().rstrip("`")
-    try:
-        return json.loads(raw)
-    except json.JSONDecodeError:
-        return {"entities": [], "relations": []}
+    return json.loads(raw)
 
 
 def ingest_chunk_into_graph(chunk: Document, extraction: Dict) -> None:
@@ -244,9 +197,11 @@ def ingest_chunk_into_graph(chunk: Document, extraction: Dict) -> None:
             )
 
 
-@tool(response_format="content_and_artifact")
+@tool(
+    response_format="content_and_artifact",
+    description="Recupera chunks de texto relevantes por similaridade semântica.",
+)
 def retrieve_vector_context(query: str):
-    """Recupera chunks de texto relevantes por similaridade semântica."""
     retrieved_docs = vector_store.similarity_search(query, k=3)
     serialized = "\n\n".join(
         f"Source: {doc.metadata}\nContent: {doc.page_content}" for doc in retrieved_docs
@@ -254,9 +209,11 @@ def retrieve_vector_context(query: str):
     return serialized, retrieved_docs
 
 
-@tool(response_format="content_and_artifact")
+@tool(
+    response_format="content_and_artifact",
+    description="Recupera contexto estruturado do grafo de conhecimento: entidades e relações relevantes à query.",
+)
 def retrieve_graph_context(query: str):
-    """Recupera contexto estruturado do grafo de conhecimento: entidades e relações relevantes à query."""
     words = [w.strip('.,;:?!"') for w in query.split() if len(w) > 3]
     relevant_nodes: List[str] = []
     for word in words:
@@ -264,7 +221,7 @@ def retrieve_graph_context(query: str):
         if entity:
             neighbors = knowledge_graph.get_neighbors(entity.id, depth=2)
             relevant_nodes.extend(neighbors)
-    relevant_nodes = list(set(relevant_nodes))[:40]
+    relevant_nodes = sorted(set(relevant_nodes))[:40]
     graph_context = knowledge_graph.build_context(relevant_nodes)
     return graph_context, relevant_nodes
 
@@ -289,9 +246,6 @@ class GraphRAGState(TypedDict):
     messages: Annotated[list, add_messages]
 
 
-llm_with_tools = llm.bind_tools(tools)
-
-
 def agent_node(state: GraphRAGState) -> GraphRAGState:
     messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"]
     response = llm_with_tools.invoke(messages)
@@ -305,17 +259,6 @@ def should_continue(state: GraphRAGState) -> str:
     return END
 
 
-workflow = StateGraph(GraphRAGState)
-workflow.add_node("agent", agent_node)
-workflow.add_node("tools", ToolNode(tools))
-workflow.set_entry_point("agent")
-workflow.add_conditional_edges("agent", should_continue, {"tools": "tools", END: END})
-workflow.add_edge("tools", "agent")
-
-checkpointer = MemorySaver()
-agent = workflow.compile(checkpointer=checkpointer)
-
-
 @traceable(name="graph-rag-query", run_type="chain")
 def query_graph_rag(
     question: str,
@@ -324,7 +267,10 @@ def query_graph_rag(
 ) -> Dict[str, Any]:
     if thread_id is None:
         thread_id = str(uuid.uuid4())
-    config = {"configurable": {"thread_id": thread_id}}
+    config = {
+        "configurable": {"thread_id": thread_id},
+        "recursion_limit": positive_int("BENCHMARK_AGENT_RECURSION_LIMIT", 12),
+    }
 
     if callbacks:
         config["callbacks"] = callbacks
@@ -338,82 +284,62 @@ def query_graph_rag(
     )
     final_event = events[-1]
     answer = extract_response_text(final_event["messages"][-1])
-    retrieved_docs = vector_store.similarity_search(question, k=3)
-    contexts = [doc.page_content for doc in retrieved_docs]
-    return {"question": question, "answer": answer, "contexts": contexts}
+    contexts, evidence = tool_evidence(final_event["messages"])
+    return {
+        "question": question,
+        "answer": answer,
+        "contexts": contexts,
+        "evidence_metadata": evidence,
+    }
 
 
-def run_ragas(ragas_data, llm_eval, embeddings_eval):
-    return avaliar_com_ragas(ragas_data, llm_eval, embeddings_eval)
-
-
-def salvar(df, nome_base="graph-rag"):
-    salvar_resultados(df, nome_base)
-
-
-def main():
-    print(f"Carregando documentos de {DOCS_DIR} ...")
-    loader = DirectoryLoader(path=DOCS_DIR, glob="**/*.pdf", loader_cls=PyPDFLoader)
-    docs = loader.load()
-    print(f"{len(docs)} páginas carregadas")
-
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000, chunk_overlap=200, add_start_index=True
+def prepare():
+    global vector_store, llm_extractor, llm_with_tools, agent, knowledge_graph
+    vector_store, embeddings, all_splits = load_index(
+        DOCS_DIR, PERSIST_DIR, CHROMA_COLLECTION_NAME, chunk_size=1000, chunk_overlap=200
     )
-    all_splits = text_splitter.split_documents(docs)
-    for i, split in enumerate(all_splits):
-        split.metadata["chunk_id"] = f"chunk_{i}"
-
-    if vector_store._collection.count() == 0:
-        print(f"Adicionando {len(all_splits)} chunks ao Chroma em batches...")
-        batch_size = 500
-        for i in range(0, len(all_splits), batch_size):
-            batch = all_splits[i : i + batch_size]
-            vector_store.add_documents(documents=batch)
-            print(f"  {min(i + batch_size, len(all_splits))}/{len(all_splits)} chunks adicionados")
-
-        print("Ingestão concluída!")
-    else:
-        print(f"Coleção existente com {vector_store._collection.count()} chunks. Pulando ingestão.")
-
-    max_chunks = min(len(all_splits), 20)
-    print(f"\nExtraindo entidades de {max_chunks} chunks para o knowledge graph...")
-    for i, chunk in enumerate(all_splits[:max_chunks]):
-        print(f"  [{i + 1}/{max_chunks}] Chunk {chunk.metadata.get('chunk_id')}...", end=" ")
-        extraction = extract_entities_from_chunk(chunk)
+    llm_extractor = build_llm()
+    llm_with_tools = build_llm().bind_tools(tools)
+    knowledge_graph = KnowledgeGraph()
+    for chunk in all_splits[:20]:
+        identity = fingerprint(
+            {
+                "text": chunk.page_content,
+                "metadata": chunk.metadata,
+                "prompt": EXTRACTION_TEMPLATE,
+                "system": EXTRACTION_SYSTEM,
+                "configuration": configuration(),
+            }
+        )
+        chunk.metadata["chunk_id"] = identity
+        extraction = cached_extraction(
+            Path(PERSIST_DIR) / "graph" / f"{identity}.json",
+            identity,
+            lambda chunk=chunk: extract_entities_from_chunk(chunk),
+        )
         ingest_chunk_into_graph(chunk, extraction)
-        n_ents = len(extraction.get("entities", []))
-        n_rels = len(extraction.get("relations", []))
-        print(f"{n_ents} entidades, {n_rels} relações")
+    workflow = StateGraph(GraphRAGState)
+    workflow.add_node("agent", agent_node)
+    workflow.add_node("tools", ToolNode(tools))
+    workflow.set_entry_point("agent")
+    workflow.add_conditional_edges("agent", should_continue, {"tools": "tools", END: END})
+    workflow.add_edge("tools", "agent")
 
-    stats = knowledge_graph.stats
-    print(f"\nGrafo construído: {stats['nodes']} nós | {stats['edges']} arestas")
-
-    eval_llm = build_ragas_llm()
+    checkpointer = MemorySaver()
+    agent = workflow.compile(checkpointer=checkpointer)
 
     def answer_question(item):
         tracker, started_at = start_usage_tracker()
         result = query_graph_rag(item["question"], callbacks=[tracker])
-        ragas_item = {
-            "question": result["question"],
-            "answer": result["answer"],
-            "contexts": result["contexts"],
-            "ground_truth": item["ground_truth"],
-        }
-        ragas_item.update(finish_usage_tracker(tracker, started_at))
-        return ragas_item
+        result["ground_truth"] = item["ground_truth"]
+        result.update(finish_usage_tracker(tracker, started_at))
+        return result
 
-    def evaluate_question(ragas_item):
-        result = run_ragas([ragas_item], eval_llm, embeddings)
-        return result.iloc[0].to_dict()
+    return answer_question
 
-    counts = run_resumable_benchmark(
-        "graph-rag",
-        answer_question,
-        evaluate_question,
-    )
-    if counts["run_failed"]:
-        raise SystemExit(1)
+
+def main():
+    return execute_pipeline("graph-rag", prepare)
 
 
 if __name__ == "__main__":

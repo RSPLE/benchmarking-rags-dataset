@@ -1,5 +1,3 @@
-"""Compatibility for a legacy optional Vertex AI import in RAGAS 0.4.x."""
-
 from __future__ import annotations
 
 import importlib
@@ -7,17 +5,12 @@ import os
 import sys
 import types
 
+os.environ.setdefault("RAGAS_DO_NOT_TRACK", "true")
+
 LEGACY_VERTEX_MODULE = "langchain_community.chat_models.vertexai"
 
 
 def ensure_ragas_langchain_compat() -> None:
-    """Provide the removed optional class used only by RAGAS type checks.
-
-    RAGAS 0.4.3 imports ``ChatVertexAI`` from the old LangChain Community
-    module at import time. LangChain Community 0.4 removed that module, even
-    when Vertex AI is not used. A minimal placeholder keeps the optional
-    ``isinstance`` check importable without adding Google Vertex dependencies.
-    """
     try:
         importlib.import_module(LEGACY_VERTEX_MODULE)
         return
@@ -32,7 +25,6 @@ def ensure_ragas_langchain_compat() -> None:
 
 
 def build_ragas_run_config():
-    """Build shared RAGAS timeout and concurrency settings."""
     ensure_ragas_langchain_compat()
     from ragas import RunConfig
 
@@ -48,5 +40,6 @@ def build_ragas_run_config():
 
     return RunConfig(
         timeout=positive_int("RAGAS_TIMEOUT_SECONDS", 600),
-        max_workers=positive_int("RAGAS_MAX_WORKERS", 2),
+        max_workers=positive_int("RAGAS_MAX_WORKERS", 1),
+        max_retries=positive_int("RAGAS_MAX_ATTEMPTS", 1),
     )

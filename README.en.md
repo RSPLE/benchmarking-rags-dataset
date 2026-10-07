@@ -1,5 +1,11 @@
 # Benchmarking RAGs Dataset
 
+> **Current execution:** pipelines use v2 checkpoints and isolated outputs under
+> `resultados/<rag>/<experiment_id>`. Historical files in `rags/*/results/` remain
+> unchanged. See the [reliability and operations guide](docs/confiabilidade.md)
+> before starting new batches. That guide supersedes the historical instructions
+> below about resuming, output directories, ingestion and evaluation settings.
+
 [Versão em português](README.md)
 
 A monorepo for comparing six Retrieval-Augmented Generation (RAG) architectures against one shared dataset of 90 questions and reference answers. It measures quality with RAGAS, latency, and token usage; uses Chroma for vector indexing; and supports OpenRouter as the default LLM and embedding provider. Every pipeline has its own `uv` environment and lockfile to prevent dependency conflicts.
@@ -20,71 +26,23 @@ The original implementations and notebooks remain available for inspection. Inst
 
 ## Sequential, resumable execution
 
-Every pipeline processes the dataset once, one question at a time. After every attempt, the runner atomically updates:
+New runs write to `resultados/<rag>/<experiment_id>`. The v2 checkpoint persists
+answers and evidence before judging, then each metric separately. Resuming a
+compatible experiment reuses completed stages. Changed code, configuration,
+corpus or dataset creates another identity. Historical outputs remain unchanged
+under `rags/<rag>/results/` and v1 checkpoints are not resumed automatically.
 
-- `rags/<pipeline>/results/checkpoint.json`: status, attempts, errors, and result for each ID when running locally;
-- `rags/<pipeline>/results/results.csv`: cumulative successful rows without duplicate IDs across batches;
-- `rags/<pipeline>/results/errors.json`: current failures with ID, question, attempt, type, message, output, and traceback.
+`--questions` limits attempts per RAG, not successful answers. Failed cases take
+priority by default; use `--selection pending` for new cases. Configuration,
+credit and budget errors pause the batch, as do repeated equivalent failures.
+Multiple-pipeline execution stops on the first failing process.
 
-On the next run, successful items are skipped. Failed, interrupted (`running`), and pending items are retried. The checkpoint also stores the dataset SHA-256 and refuses to combine results if the dataset changes.
+`results.csv` contains complete cases, `errors.json` describes current failures,
+`events.jsonl` preserves history, and `summary.json` includes coverage and metric
+denominators. Atomic writes and process locks protect local state.
 
-For example, if only `Q037` fails in Self-RAG, running the same command again processes `Q037` without paying for the 89 successful questions again.
-
-`--questions X` limits how many unresolved questions each selected RAG attempts in the current run. Repeating the command advances through the dataset in batches while preserving earlier successes in the same CSV. Previous failures are retried first; pending items then continue in dataset order. Omitting the flag processes the entire remaining dataset.
-
-`X` applies **to each selected RAG**. Selecting three RAGs with `--questions 10` therefore allows up to 30 attempts in total: no more than 10 per pipeline. Selection is deterministic, and each run processes:
-
-1. previously recorded failures, in dataset order;
-2. pending questions, also in dataset order;
-3. never any question already completed successfully.
-
-`--questions` limits attempts, not successes. If two questions fail in a batch of 10, that run finishes after 10 attempts with eight new CSV rows and two error entries. The next run retries those failures before moving on to new questions.
-
-### Concrete example: initial batch of 10
-
-| First batch result | Saved state | Next run without `--questions` |
-|---|---|---|
-| All 10 questions succeed | 10 successes and 80 pending | skips the 10 completed questions and runs only the remaining 80 |
-| 8 succeed and 2 fail | 8 successes, 2 failures, and 80 pending | skips the 8 successes, retries the 2 failures first, and then runs the 80 pending questions |
-| All 10 fail | 10 failures and 80 pending | retries the 10 failures and then proceeds to the 80 pending questions |
-
-A failure does not immediately stop the batch: it is recorded, and that RAG continues until reaching the run's attempt limit. When several RAGs are selected, the orchestrator also continues to the next pipeline; it returns exit code `1` at the end if any RAG had failures in that run.
-
-If the second invocation also uses `--questions 10`, failures consume the first slots in that new batch. With two earlier failures, for example, the run retries those two and then attempts up to eight pending questions. Without the flag, there is no batch limit and the runner attempts every unresolved item.
-
-### Result persistence
-
-`checkpoint.json` is the source of truth. Instead of blindly appending lines, the runner atomically rebuilds `results.csv` from checkpoint successes after every attempt. This preserves dataset order, prevents duplicate IDs, and reduces the chance of a partial CSV after interruption.
-
-`results.csv` contains successful questions only. `errors.json` contains only currently unresolved failures:
-
-```json
-{
-  "version": 1,
-  "project": "self-rag",
-  "dataset": "/path/to/eval-dataset/qa_dataset_90.json",
-  "dataset_sha256": "dataset-sha256",
-  "updated_at": "2026-09-04T12:00:04+00:00",
-  "count": 1,
-  "errors": [
-    {
-      "id": "Q037",
-      "question": "Question being evaluated",
-      "attempts": 2,
-      "started_at": "2026-09-04T12:00:00+00:00",
-      "finished_at": "2026-09-04T12:00:04+00:00",
-      "error_type": "RuntimeError",
-      "message": "original exception message",
-      "output": "RuntimeError: original exception message",
-      "traceback": "Complete failure traceback"
-    }
-  ]
-}
-```
-
-After a successful retry, the entry is removed from `errors.json` and added exactly once to the CSV. If the process stops while a question is marked `running`, that item becomes an `InterruptedRun` and is retried on the next invocation.
-
-Artifacts live under `rags/<pipeline>/results/`. To start an evaluation from scratch, archive the pipeline's complete result directory so the checkpoint, CSV, and error JSON stay together.
+See the [operations guide](docs/confiabilidade.md) for migration, budgets, pause,
+frozen-answer evaluation and deterministic Telegram notifications.
 
 ## Requirements and uv installation
 
@@ -124,7 +82,9 @@ LLM_MAX_TOKENS=1024
 RAGAS_MAX_TOKENS=2048
 LLM_TIMEOUT_SECONDS=600
 RAGAS_TIMEOUT_SECONDS=600
-RAGAS_MAX_WORKERS=2
+RAGAS_MAX_WORKERS=1
+RAGAS_MAX_ATTEMPTS=1
+OPENROUTER_JUDGE_MODEL=
 LLM_MAX_TOKENS=4096
 
 EMBEDDING_PROVIDER=openrouter
@@ -259,7 +219,7 @@ uv sync
 uv run python main.py doctor
 ```
 
-`uv sync` installs dependencies but does not ingest documents. Ingestion happens when each RAG starts. Each RAG has its own Chroma index and stores results in `rags/<pipeline>/results/`.
+`uv sync` installs dependencies but does not ingest documents. Ingestion happens when each RAG starts. Each RAG has its own Chroma index and stores new results in `resultados/<pipeline>/<experiment_id>/`.
 
 ```bash
 # List the available pipelines
@@ -352,7 +312,7 @@ Each pipeline directory also contains its own `pyproject.toml` and `uv.lock`. `/
 
 ## Common problems
 
-- **Incompatible checkpoint:** the dataset content changed. Archive that pipeline's result directory and begin a new evaluation; do not combine different dataset versions.
+- **Incompatible checkpoint:** preserve the file and inspect its manifest. Use explicit migration for v1 archives; changed methodology requires a new experiment.
 - **Missing API key:** run `uv run python main.py doctor` and inspect the root `.env`, which is shared by all six RAGs.
 - **Neo4j in Docker:** because benchmarks run on the host through the CLI, use `NEO4J_URI=bolt://127.0.0.1:7687` in `.env`.
 - **Neo4j Aura:** use the instance-provided `neo4j+s://...` URI and matching credentials. Do not mix the password of the local persistent database with Aura credentials.

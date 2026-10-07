@@ -1,5 +1,11 @@
 # Benchmarking RAGs Dataset
 
+> **Execução atual:** os pipelines usam checkpoint v2 e saídas isoladas em
+> `resultados/<rag>/<experiment_id>`. Resultados antigos em `rags/*/results/`
+> permanecem intactos. Consulte [confiabilidade e operação](docs/confiabilidade.md)
+> antes de executar novos lotes. Esse guia substitui as instruções históricas
+> abaixo sobre retomada, diretórios, ingestão e configuração de avaliação.
+
 [English version](README.en.md)
 
 Monorepo para comparar seis arquiteturas de Retrieval-Augmented Generation (RAG) sobre um dataset comum de 90 perguntas e respostas de referência. O projeto mede qualidade com RAGAS, latência e consumo de tokens, usa Chroma como índice vetorial e oferece OpenRouter como provedor padrão de LLM e embeddings. Cada pipeline possui ambiente e lockfile `uv` próprios para impedir conflitos de dependências.
@@ -20,75 +26,24 @@ Os projetos preservam suas implementações e notebooks para facilitar inspeçã
 
 ## Execução sequencial e retomável
 
-Cada pipeline percorre o dataset uma única vez e processa exatamente uma pergunta por vez. Após cada tentativa, o executor grava de forma atômica:
+As novas execuções usam `resultados/<rag>/<experiment_id>`. O checkpoint v2 salva
+resposta e evidências antes do juiz e registra cada métrica separadamente. Retomar
+um experimento compatível reaproveita suas etapas concluídas. Configuração, corpus,
+código ou dataset diferentes geram outro identificador; resultados antigos ficam
+preservados em `rags/<rag>/results/`.
 
-- `rags/<pipeline>/results/checkpoint.json`: estado, número de tentativas, erro e resultado por ID na execução local;
-- `rags/<pipeline>/results/results.csv`: CSV cumulativo com todas as perguntas concluídas, sem duplicar IDs entre lotes;
-- `rags/<pipeline>/results/errors.json`: falhas atuais com ID, pergunta, tentativa, tipo, mensagem, saída e traceback.
+`--questions` limita tentativas por RAG, não sucessos. Falhas têm prioridade por
+padrão; `--selection pending` permite selecionar somente casos novos. Erros de
+configuração/crédito/orçamento suspendem o lote e falhas repetidas acionam a pausa.
+Ao executar vários pipelines, a CLI para no primeiro que retorna erro.
 
-Em uma nova execução:
+`results.csv` contém casos completos, `errors.json` mostra falhas atuais e
+`events.jsonl` mantém o histórico. `summary.json` inclui cobertura e denominadores
+das médias. Gravação atômica e bloqueios protegem o estado local.
 
-- itens com `status: success` são ignorados;
-- itens com `status: failed`, `running` (interrupção) ou sem estado são executados;
-- uma mudança no conteúdo do dataset invalida o checkpoint de forma explícita, evitando misturar avaliações diferentes.
-
-Assim, se `Q037` falhar no Self-RAG, executar novamente o mesmo comando repete `Q037` e qualquer outra falha, sem gastar novamente com os sucessos.
-
-O limite `--questions X` controla quantas perguntas ainda não concluídas cada RAG tentará na rodada. Repetir o comando avança em lotes, mantendo os sucessos anteriores no mesmo CSV. Falhas anteriores têm prioridade de retomada; depois delas, o executor continua pelos itens pendentes na ordem do dataset. Sem a flag, todo o restante do dataset é processado.
-
-O valor de `X` é aplicado **a cada RAG selecionado**. Portanto, selecionar três RAGs com `--questions 10` permite até 30 tentativas no total: no máximo 10 em cada pipeline. A seleção não é aleatória e a ordem de uma rodada é:
-
-1. falhas registradas anteriormente, na ordem do dataset;
-2. perguntas ainda pendentes, também na ordem do dataset;
-3. perguntas já concluídas nunca são executadas novamente.
-
-`--questions` limita tentativas, e não sucessos. Se um lote de 10 tiver duas falhas, a rodada termina após as 10 tentativas, com oito novas linhas no CSV e duas entradas no JSON de erros. Na próxima rodada, essas duas falhas serão tentadas antes de novos itens.
-
-### Exemplo concreto: lote inicial de 10
-
-| Resultado do primeiro lote | Estado salvo | Próxima execução sem `--questions` |
-|---|---|---|
-| As 10 perguntas tiveram sucesso | 10 sucessos e 80 pendentes | ignora as 10 concluídas e executa somente as 80 pendentes |
-| 8 tiveram sucesso e 2 falharam | 8 sucessos, 2 falhas e 80 pendentes | ignora os 8 sucessos, tenta primeiro as 2 falhas e depois as 80 pendentes |
-| As 10 falharam | 10 falhas e 80 pendentes | tenta novamente as 10 falhas e depois segue para as 80 pendentes |
-
-Uma falha não interrompe imediatamente o lote: ela é registrada e o RAG continua até atingir o limite de tentativas daquela rodada. Ao selecionar vários RAGs, o orquestrador também continua para o próximo pipeline; ao final, retorna código `1` se qualquer RAG teve falhas na rodada.
-
-Se a segunda execução também usar `--questions 10`, as falhas consomem primeiro as vagas desse novo lote. Por exemplo, com duas falhas anteriores, a rodada tentará essas duas e depois até oito perguntas pendentes. Sem a flag, não há limite de lote e todo o conjunto ainda não concluído é tentado.
-
-### Persistência dos resultados
-
-O `checkpoint.json` é a fonte de verdade da execução. O `results.csv` não recebe linhas por simples concatenação: ele é reconstruído atomicamente após cada tentativa a partir dos sucessos do checkpoint. Isso mantém a ordem do dataset, evita IDs duplicados e reduz o risco de um CSV incompleto em caso de interrupção.
-
-O `results.csv` contém somente perguntas concluídas com sucesso. O `errors.json` contém somente as falhas ainda abertas e segue esta estrutura:
-
-```json
-{
-  "version": 1,
-  "project": "self-rag",
-  "dataset": "/caminho/para/eval-dataset/qa_dataset_90.json",
-  "dataset_sha256": "sha256-do-dataset",
-  "updated_at": "2026-09-04T12:00:04+00:00",
-  "count": 1,
-  "errors": [
-    {
-      "id": "Q037",
-      "question": "Pergunta que estava sendo avaliada",
-      "attempts": 2,
-      "started_at": "2026-09-04T12:00:00+00:00",
-      "finished_at": "2026-09-04T12:00:04+00:00",
-      "error_type": "RuntimeError",
-      "message": "mensagem original da exceção",
-      "output": "RuntimeError: mensagem original da exceção",
-      "traceback": "Traceback completo da falha"
-    }
-  ]
-}
-```
-
-Quando uma pergunta é concluída em uma nova tentativa, sua entrada desaparece do `errors.json` e seu resultado passa a constar uma única vez no CSV. Se o processo for encerrado enquanto uma pergunta estiver com estado `running`, ela será marcada como `InterruptedRun` e retomada na próxima execução.
-
-Os artefatos ficam em `rags/<pipeline>/results/`. Para reiniciar uma avaliação do zero, arquive o diretório completo do pipeline — checkpoint, CSV e JSON de erros devem permanecer juntos.
+Consulte o [guia de confiabilidade](docs/confiabilidade.md) para migração explícita,
+limites, pausas, avaliação de respostas congeladas e notificação por Telegram.
+Os checkpoints v1 preservados não são retomados automaticamente pelo código novo.
 
 ## Requisitos e instalação com uv
 
@@ -133,7 +88,9 @@ LLM_MAX_TOKENS=1024
 RAGAS_MAX_TOKENS=2048
 LLM_TIMEOUT_SECONDS=600
 RAGAS_TIMEOUT_SECONDS=600
-RAGAS_MAX_WORKERS=2
+RAGAS_MAX_WORKERS=1
+RAGAS_MAX_ATTEMPTS=1
+OPENROUTER_JUDGE_MODEL=
 
 EMBEDDING_PROVIDER=openrouter
 OPENROUTER_EMBEDDING_MODEL=openai/text-embedding-3-small
@@ -240,7 +197,7 @@ uv sync
 uv run python main.py doctor
 ```
 
-O `uv sync` instala dependências, mas não faz a ingestão. A ingestão é feita quando o RAG é iniciado. Cada RAG possui seu próprio índice Chroma e seus resultados ficam em `rags/<pipeline>/results/`.
+O `uv sync` instala dependências, mas não faz a ingestão. A ingestão é feita quando o RAG é iniciado. Cada RAG possui seu próprio índice Chroma e suas novas saídas ficam em `resultados/<pipeline>/<experiment_id>/`.
 
 
 1. Coloque os PDFs diretamente na pasta `docs/` de cada RAG. Para o `knowledge-enhanced-rag`, use `data/apostilas/`.
@@ -393,7 +350,7 @@ Cada diretório de pipeline contém ainda seu próprio `pyproject.toml` e `uv.lo
 
 ## Problemas comuns
 
-- **Checkpoint incompatível:** acontece quando o conteúdo do dataset muda. Arquive o diretório de resultados do pipeline e inicie uma avaliação nova; não combine resultados de versões diferentes do dataset.
+- **Checkpoint incompatível:** preserve o arquivo e confira o manifesto. Use a migração explícita para arquivos v1; mudanças de método exigem novo experimento.
 - **Chave ausente:** execute `uv run python main.py doctor` e confira o `.env` da raiz. Os seis RAGs compartilham esse arquivo.
 - **Neo4j em Docker:** como os benchmarks rodam no host pela CLI, use `NEO4J_URI=bolt://127.0.0.1:7687` no `.env`.
 - **Neo4j Aura:** use a URI `neo4j+s://...` fornecida pela instância e as credenciais correspondentes. Não misture a senha do banco local persistido no volume com a senha da instância Aura.

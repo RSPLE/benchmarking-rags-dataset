@@ -1,0 +1,23 @@
+[Unit]
+Description=Bounded RAG benchmark batch
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=benchmark
+Group=benchmark
+WorkingDirectory=/logibot/benchmarking-rags-dataset
+EnvironmentFile=/etc/benchmark/worker.env
+ExecStart=/logibot/benchmarking-rags-dataset/.venv/bin/python main.py run ${BENCHMARK_PROJECT} --questions ${BENCHMARK_QUESTION_LIMIT} --max-calls ${BENCHMARK_MAX_CALLS}
+Restart=no
+TimeoutStartSec=infinity
+TimeoutStopSec=960
+KillSignal=SIGTERM
+KillMode=control-group
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
