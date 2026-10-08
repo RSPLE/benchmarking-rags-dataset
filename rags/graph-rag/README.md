@@ -1,5 +1,9 @@
 # Graph RAG
 
+> Operação atual / Current operation: [Português](../../docs/confiabilidade.md) · [English](../../docs/reliability.en.md).
+> Checkpoint v2, limites e controle pelo Telegram estão documentados nesses guias.
+> These guides document v2 checkpoints, budgets and Telegram control.
+
 > **Atualização do monorepo:** este pipeline agora lê as 90 perguntas de `../eval-dataset/qa_dataset_90.json`, executa uma pergunta por vez e retoma apenas falhas por meio de `results/checkpoint.json`. Use `uv run python ../main.py run graph-rag` a partir da raiz; as referências abaixo a 5 rodadas e 10 perguntas descrevem a versão histórica.
 > Dependências vêm de `pyproject.toml`/`uv.lock` deste diretório e toda configuração vem exclusivamente de `../.env`; ignore as instruções históricas de `requirements.txt` e `.env` local abaixo.
 > Dependências vêm de `pyproject.toml`/`uv.lock` deste diretório e toda configuração vem exclusivamente de `../.env`; ignore as instruções históricas de `requirements.txt` e `.env` local abaixo.

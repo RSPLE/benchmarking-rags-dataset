@@ -1,0 +1,84 @@
+# Acceptance matrix
+
+[Português](aceite.md) · [Operations](reliability.en.md)
+
+Automated acceptance means local verification without paid calls. Live validation
+means execution against actual external services. They are different. The operator
+has deferred Telegram activation and the pilot until implementation is complete.
+
+| Case | Automated evidence | Limitation / remaining live validation |
+| --- | --- | --- |
+| T01 | `test_resume_only_failed_metric_and_never_regenerate_saved_answer` | Simulated judge |
+| T02 | Same test; independent metric checkpoints | Real RAGAs with a fake judge in integration tests |
+| T03 | `test_invalid_metrics_cannot_be_successful` | Zero, missing and invalid values |
+| T04 | `test_lock_rejects_second_process_before_call` | Actual local process locking |
+| T05 | `test_configuration_model_prompt_and_corpus_are_fingerprinted` | External aliases still require pinned versions/providers |
+| T06 | `test_hard_process_exit_between_metrics_is_resumable` | Actual local subprocess termination |
+| T07 | `test_reconciliation_is_append_only_and_idempotent` | Fake metadata; no automatic reconciliation without an ID |
+| T08 | `test_authorization_and_credit_errors_stop_after_one_case` and HTTP integration coverage | Live credentials will be checked after bot connection |
+| T09 | `test_http_retry_and_budget_are_enforced_below_sdk` | Mock HTTP with a real client |
+| T10 | Invalid extraction cache, answer/metric validation and four metrics with a fake judge | Real GLM truncation/empty output requires the pilot |
+| T11 | `test_real_chroma_resume_uses_no_additional_embeddings` | Real Chroma, fake embeddings |
+| T12 | `test_unusable_pdfs_fail_before_embedding_calls` and six-corpus preflight | Empty, invalid and textless PDFs; seven real books per RAG |
+| T13 | `test_observed_index_dimension_mismatch_stops_before_embedding` | Real Chroma dimensions; live Neo4j not validated |
+| T14 | Migration, corruption and legacy checks in `test_reliability.py` | Historical checkpoints have not been migrated in place |
+| T15 | `test_pause_between_metrics_preserves_answer_and_first_metric` | VPS service not activated |
+| T16 | Reservations, unknown usage, shared period and UTC rollover in `test_operations.py` | Financial reservation is an estimate, not a final billing guarantee |
+| T17 | Queue idempotency and lost gateway response | Restart cannot requeue paid work |
+| T18 | Authorization/injection checks in `test_operations.py` | Actual local Unix socket also tested |
+| T19 | `test_delivery_failure_restart_and_deduplication` | Mock Telegram; live rate limits remain to be checked |
+| T20 | Evidence/memory checks across six environments and supervisor watchdog | Real model limits and load require the pilot |
+| T21 | Original CSV/error tests and persistent history | Publication reads only public artifacts |
+| T22 | `test_scientific_repetition_has_an_independent_identity` | Statistical judge stability not measured yet |
+| T23 | Gateway/notifier without model clients and a service without model keys | No external administrative-agent integration |
+| T24 | `test_gateway_filters_chat_scope_and_persists_offset` and actual socket | Bot and private channel exist; live connection pending |
+| T25 | `test_evaluation_mode_never_prepares_a_pipeline` and evidence export/import | A complete real frozen set still requires generated answers |
+| T26 | `test_frozen_answer_missing_evidence_never_uses_reference` | Missing historical contexts are never fabricated |
+
+## Protected data and audit
+
+The hashes of all 25 checked files in this stage (datasets, historical results and
+locks outside virtual environments) remained unchanged. Each of the six local
+corpora contains seven PDFs and 2604 pages. This is 42 local PDF copies across six
+architectures, not 42 different books.
+
+Knowledge's corpus was copied from Context and verified by hash. Reproduce it with
+`python scripts/prepare_corpus.py`, which refuses to overwrite different files.
+Notebook code comments were removed while saved outputs were preserved; previous
+copies remain in the local stage backup. Notebooks remain historical material,
+not supported entrypoints.
+
+SSH inspection found the VPS repository at commit
+`84fb661147a6dc68b97a6c50f3b2cd40b9fd7a0c`, with no Git changes and no container
+listed by Docker Compose at that moment. Remote code, services and databases were
+not changed in this stage. This observation does not replace a fresh, consistent
+audit and backup immediately before deployment.
+
+## Conditions for completing live validation
+
+- Configure the bot token, private channel ID and authorized human IDs in the single `.env`.
+- Deploy verified code, environments and services with remote execution initially disabled.
+- Verify permissions, dummy delivery, unauthorized-user rejection and outbox restart.
+- Verify accounting and technical limits; the operator removed the monetary cap.
+- Authorize a small batch through the bot and measure preparation, generation, judging and failures.
+- Manually review evidence/scores and test actual pause/resume.
+- Only then increase batch scope. The 6 × 90 benchmark was not executed in this
+  stage; configuring `.env` does not start tests or send messages.
+
+## Local verification results for this revision
+
+- Root suite: 67 discovered tests, 58 passed, and nine integration tests skipped
+  because they belong to child environments. The actual Unix socket test passed.
+- Integrations: nine tests in each of six environments, 54 passing executions
+  without paid requests.
+- Preflight: six passing corpora, seven PDFs and 2604 pages per corpus.
+- Ruff, formatting and `git diff --check`: passed.
+- Protected files: 25 hashes checked, no differences.
+- Unified configuration: existing values preserved, mode `0600`, per-process
+  credential filtering and execution without USD verified.
+- All three systemd units passed syntax validation with local paths; their live
+  permissions and execution still require VPS deployment.
+
+Local logs: `tmp/implementation-20261007/`. The sandbox had blocked socket creation
+and asynchronous shutdown; conclusive verification ran outside it, retaining fake
+models/HTTP. No VPS service was activated.

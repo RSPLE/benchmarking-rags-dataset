@@ -8,16 +8,20 @@ Type=oneshot
 User=benchmark
 Group=benchmark
 WorkingDirectory=/logibot/benchmarking-rags-dataset
-EnvironmentFile=/etc/benchmark/worker.env
-ExecStart=/logibot/benchmarking-rags-dataset/.venv/bin/python main.py run ${BENCHMARK_PROJECT} --questions ${BENCHMARK_QUESTION_LIMIT} --max-calls ${BENCHMARK_MAX_CALLS}
+Environment=UV_CACHE_DIR=/var/lib/benchmark/uv-cache
+EnvironmentFile=/logibot/benchmarking-rags-dataset/.env
+ExecStart=/logibot/benchmarking-rags-dataset/.venv/bin/python service_entrypoint.py batch --from-environment
 Restart=no
 TimeoutStartSec=infinity
 TimeoutStopSec=960
 KillSignal=SIGTERM
 KillMode=control-group
+StateDirectory=benchmark
 UMask=0027
 NoNewPrivileges=true
 PrivateTmp=true
+
+InaccessiblePaths=/logibot/benchmarking-rags-dataset/.env
 
 [Install]
 WantedBy=multi-user.target

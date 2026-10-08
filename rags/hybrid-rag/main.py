@@ -14,6 +14,7 @@ from rag_settings import (
     start_usage_tracker,
 )
 
+from benchmark_context import select_documents
 from benchmark_index import load_index
 from benchmark_pipeline import execute_pipeline
 
@@ -43,7 +44,7 @@ def build_hybrid_retriever():
 
 @traceable(name="hybrid-rag-query", run_type="chain")
 def hybrid_rag(query, retriever, llm, callbacks=None):
-    context_docs = retriever.invoke(query)
+    context_docs = select_documents(retriever.invoke(query))
     contexts = [doc.page_content for doc in context_docs]
     context = format_docs(context_docs)
 

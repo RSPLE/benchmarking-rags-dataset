@@ -1,0 +1,32 @@
+[Unit]
+Description=RAG benchmark local control and supervised worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=benchmark
+Group=benchmark
+WorkingDirectory=/logibot/benchmarking-rags-dataset
+Environment=UV_CACHE_DIR=/var/lib/benchmark/uv-cache
+EnvironmentFile=/logibot/benchmarking-rags-dataset/.env
+ExecStart=/logibot/benchmarking-rags-dataset/.venv/bin/python service_entrypoint.py control --from-environment
+Restart=on-failure
+RestartSec=10
+RuntimeDirectory=benchmark
+RuntimeDirectoryMode=0750
+StateDirectory=benchmark
+StateDirectoryMode=0750
+UMask=0027
+TimeoutStopSec=25
+KillMode=control-group
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/benchmark /logibot/benchmarking-rags-dataset/resultados /logibot/benchmarking-rags-dataset/rags
+
+InaccessiblePaths=/logibot/benchmarking-rags-dataset/.env
+
+[Install]
+WantedBy=multi-user.target

@@ -10,6 +10,8 @@ from benchmark_storage import file_hash, fingerprint
 ROOT = Path(__file__).resolve().parent
 METRICS = ("faithfulness", "answer_relevancy", "context_precision", "context_recall")
 DEFAULTS = {
+    "BENCHMARK_CONTEXT_MAX_BYTES": "32000",
+    "BENCHMARK_INPUT_MAX_BYTES": "128000",
     "LLM_PROVIDER": "openrouter",
     "RETRIEVER_K": "3",
     "OPENROUTER_BASE_URL": "https://openrouter.ai/api/v1",
@@ -20,6 +22,7 @@ DEFAULTS = {
     "OPENAI_EMBEDDING_MODEL": "text-embedding-3-large",
     "OPENAI_REASONING_EFFORT": "medium",
     "EMBEDDING_PROVIDER": "",
+    "EMBEDDING_DIMENSIONS": "",
     "OPENROUTER_EMBEDDING_MODEL": "openai/text-embedding-3-small",
     "LLM_MAX_TOKENS": "4096",
     "RAGAS_MAX_TOKENS": "2048",
@@ -31,6 +34,7 @@ DEFAULTS = {
     "BENCHMARK_AGENT_RECURSION_LIMIT": "12",
     "BENCHMARK_REPETITION": "1",
     "BENCHMARK_KG_MODE": "required",
+    "BENCHMARK_KG_SNAPSHOT": "",
     "NEO4J_URI": "",
     "NEO4J_DATABASE": "neo4j",
 }
@@ -106,7 +110,7 @@ def build_manifest(project, dataset, *, mode="full", frozen_path=None):
         "code": {str(p.relative_to(ROOT)): file_hash(p) for p in files},
         "corpus": corpus,
         "metrics": list(METRICS),
-        "evidence_policy": "ordered-generation-evidence-v2",
+        "evidence_policy": "ordered-deduplicated-byte-bounded-evidence-v3",
         "index": {
             "path": str(
                 Path(os.getenv("CHROMA_PERSIST_DIR", str(project_dir / "chroma_v2"))).resolve()
@@ -129,6 +133,10 @@ def experiment_directory(manifest):
 
 
 def knowledge_identity():
+    if os.getenv("BENCHMARK_KG_MODE") == "snapshot":
+        from benchmark_knowledge import read_snapshot
+
+        return fingerprint(read_snapshot(os.environ["BENCHMARK_KG_SNAPSHOT"]))
     if os.getenv("BENCHMARK_KG_MODE", "required") == "disabled":
         return "disabled"
     from neo4j import GraphDatabase

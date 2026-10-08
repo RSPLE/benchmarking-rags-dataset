@@ -71,11 +71,11 @@ def atomic_json(path, data, *, mode=0o600):
         output.write("\n")
 
 
-def append_event(path, event):
+def append_event(path, event, *, mode=0o600):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     data = (json.dumps(event, ensure_ascii=False, allow_nan=False) + "\n").encode()
-    fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
+    fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, mode)
     with os.fdopen(fd, "ab", buffering=0) as output:
         if output.write(data) != len(data):
             raise OSError("Incomplete event write")

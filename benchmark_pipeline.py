@@ -69,6 +69,7 @@ def frozen_answers(path, project, questions):
 
 
 def execute_pipeline(project, prepare=None):
+    os.environ.setdefault("BENCHMARK_RETRY_COOLDOWN_SECONDS", "60")
     dataset = DEFAULT_DATASET
     mode = os.getenv("BENCHMARK_MODE", "full")
     if mode not in {"full", "evaluate"}:
@@ -77,6 +78,9 @@ def execute_pipeline(project, prepare=None):
     if mode == "evaluate" and not frozen_path:
         raise ValueError("Evaluation mode requires BENCHMARK_FROZEN_FILE")
     manifest = build_manifest(project, dataset, mode=mode, frozen_path=frozen_path)
+    expected = os.getenv("BENCHMARK_EXPECTED_EXPERIMENT")
+    if expected and manifest["experiment_id"] != expected:
+        raise ValueError("Requested experiment is incompatible with current configuration")
     output = experiment_directory(manifest)
     root = Path(os.getenv("BENCHMARK_OUTPUT_DIR", str(ROOT / "resultados")))
     if not root.is_absolute():
@@ -99,8 +103,28 @@ def execute_pipeline(project, prepare=None):
         ledger.set_stage(question["id"], "generation")
         return prepared(question)
 
-    with exclusive_lock(root / ".worker.lock"):
-        ledger = UsageLedger(output / "usage.jsonl", budget_root=root)
+    budget_root = Path(os.getenv("BENCHMARK_BUDGET_DIR", str(root))).resolve()
+    if os.getenv("BENCHMARK_RECONCILE_ON_START") == "true":
+        from benchmark_reconcile import reconcile
+
+        reconcile(budget_root, apply=True)
+    with exclusive_lock(budget_root / ".worker.lock"):
+        if expected:
+            (output / "pause.request").unlink(missing_ok=True)
+        ledger = UsageLedger(output / "usage.jsonl", budget_root=budget_root)
+        ledger.progress()
+        if os.getenv("BENCHMARK_JOB_FILE"):
+            from benchmark_storage import atomic_json
+
+            atomic_json(
+                os.environ["BENCHMARK_JOB_FILE"],
+                {
+                    "project": project,
+                    "experiment_id": manifest["experiment_id"],
+                    "directory": str(output),
+                    "run_id": ledger.run_id,
+                },
+            )
         benchmark_usage.ACTIVE_LEDGER = ledger
         try:
             counts = run_resumable_benchmark(

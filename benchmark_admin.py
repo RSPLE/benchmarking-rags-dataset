@@ -8,7 +8,7 @@ from pathlib import Path
 
 from benchmark_config import METRICS, ROOT, corpus_inventory
 from benchmark_runner import DEFAULT_DATASET, _load_dataset, validate_metrics
-from benchmark_storage import atomic_json, exclusive_lock, file_hash
+from benchmark_storage import atomic_json, exclusive_lock, file_hash, fingerprint
 
 
 def audit():
@@ -107,4 +107,79 @@ def status(directory):
         "project": checkpoint["project"],
         "version": checkpoint["version"],
         "states": dict(Counter(item["status"] for item in checkpoint["items"].values())),
+    }
+
+
+def export_frozen(directory, destination):
+    from benchmark_pipeline import frozen_answers
+    from benchmark_runner import validate_answer
+
+    directory, destination = Path(directory).resolve(), Path(destination).resolve()
+    if destination.exists():
+        raise FileExistsError(destination)
+    with exclusive_lock(directory / ".lock"):
+        checkpoint = json.loads((directory / "checkpoint.json").read_text())
+        manifest = json.loads((directory / "manifest.json").read_text())
+        if (
+            checkpoint.get("legacy")
+            or checkpoint.get("version") != 2
+            or manifest.get("mode") != "full"
+        ):
+            raise ValueError("Only experiments with saved evidence can be exported")
+        if checkpoint.get("manifest_fingerprint") != fingerprint(manifest):
+            raise ValueError("Manifest identity mismatch")
+        questions = _load_dataset(DEFAULT_DATASET)
+        if checkpoint["dataset_sha256"] != file_hash(DEFAULT_DATASET):
+            raise ValueError("Dataset identity mismatch")
+        rows = []
+        for question in questions:
+            state = checkpoint["items"].get(question["id"], {})
+            if "artifact" not in state:
+                continue
+            artifact = validate_answer(state["artifact"], question)
+            if fingerprint(artifact) != state.get("artifact_sha256"):
+                raise ValueError("Saved answer identity mismatch")
+            if not artifact.get("contexts") or not isinstance(
+                artifact.get("evidence_metadata", []), list
+            ):
+                raise ValueError("Saved evidence is incomplete")
+            rows.append(
+                {
+                    "experiment_id": manifest["experiment_id"],
+                    "rag": manifest["project"],
+                    "question_id": question["id"],
+                    "question": question["question"],
+                    "reference": question["ground_truth"],
+                    "response": artifact["answer"],
+                    "retrieved_contexts": artifact["contexts"],
+                    "generation_fingerprint": state["artifact_sha256"],
+                    "evidence_metadata": artifact.get("evidence_metadata", []),
+                }
+            )
+        if not rows:
+            raise ValueError("No saved answers with evidence")
+        for row in rows:
+            row["generation_fingerprint"] = fingerprint(
+                {"experiment": manifest["experiment_id"], "policy": manifest["evidence_policy"]}
+            )
+        atomic_json(destination, rows)
+        frozen_answers(destination, manifest["project"], questions)
+    return {"path": str(destination), "cases": len(rows), "sha256": file_hash(destination)}
+
+
+def report(root):
+    from benchmark_usage import historical_usage
+
+    root = Path(root).resolve()
+    experiments = []
+    for path in sorted(root.glob("*/*/summary.json")):
+        if path.resolve().is_relative_to(root):
+            summary = json.loads(path.read_text())
+            experiments.append({"directory": str(path.parent), **summary})
+    cost, unknown = historical_usage(root)
+    return {
+        "experiments": experiments,
+        "utc_day_known_cost_usd": cost,
+        "unresolved_calls": unknown,
+        "comparison_policy": "Compare matching datasets, evidence policies and judge configurations; report each metric's coverage",
     }

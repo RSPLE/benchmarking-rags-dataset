@@ -1,0 +1,295 @@
+{
+  "schema": 1,
+  "source": "repository-curated-graph",
+  "graph": {
+    "nodes": [
+      {
+        "nome": "Variáveis",
+        "dificuldade": 1
+      },
+      {
+        "nome": "Tipos de Dados",
+        "dificuldade": 1
+      },
+      {
+        "nome": "Operadores",
+        "dificuldade": 1
+      },
+      {
+        "nome": "Entrada e Saída",
+        "dificuldade": 1
+      },
+      {
+        "nome": "Condicionais IF/ELSE",
+        "dificuldade": 2
+      },
+      {
+        "nome": "Switch/Case",
+        "dificuldade": 2
+      },
+      {
+        "nome": "Loop FOR",
+        "dificuldade": 2
+      },
+      {
+        "nome": "Loop WHILE",
+        "dificuldade": 2
+      },
+      {
+        "nome": "Loop DO-WHILE",
+        "dificuldade": 2
+      },
+      {
+        "nome": "Funções",
+        "dificuldade": 3
+      },
+      {
+        "nome": "Vetores/Arrays",
+        "dificuldade": 3
+      },
+      {
+        "nome": "Matrizes",
+        "dificuldade": 3
+      },
+      {
+        "nome": "Recursão",
+        "dificuldade": 4
+      },
+      {
+        "nome": "Ordenação",
+        "dificuldade": 4
+      }
+    ],
+    "edges": [
+      {
+        "source": "Condicionais IF/ELSE",
+        "relation": "REQUER",
+        "target": "Variáveis",
+        "properties": {}
+      },
+      {
+        "source": "Condicionais IF/ELSE",
+        "relation": "REQUER",
+        "target": "Operadores",
+        "properties": {}
+      },
+      {
+        "source": "Switch/Case",
+        "relation": "REQUER",
+        "target": "Variáveis",
+        "properties": {}
+      },
+      {
+        "source": "Loop FOR",
+        "relation": "REQUER",
+        "target": "Variáveis",
+        "properties": {}
+      },
+      {
+        "source": "Loop FOR",
+        "relation": "REQUER",
+        "target": "Operadores",
+        "properties": {}
+      },
+      {
+        "source": "Loop WHILE",
+        "relation": "REQUER",
+        "target": "Variáveis",
+        "properties": {}
+      },
+      {
+        "source": "Loop WHILE",
+        "relation": "REQUER",
+        "target": "Operadores",
+        "properties": {}
+      },
+      {
+        "source": "Loop DO-WHILE",
+        "relation": "REQUER",
+        "target": "Variáveis",
+        "properties": {}
+      },
+      {
+        "source": "Loop DO-WHILE",
+        "relation": "REQUER",
+        "target": "Operadores",
+        "properties": {}
+      },
+      {
+        "source": "Funções",
+        "relation": "REQUER",
+        "target": "Variáveis",
+        "properties": {}
+      },
+      {
+        "source": "Funções",
+        "relation": "REQUER",
+        "target": "Tipos de Dados",
+        "properties": {}
+      },
+      {
+        "source": "Vetores/Arrays",
+        "relation": "REQUER",
+        "target": "Variáveis",
+        "properties": {}
+      },
+      {
+        "source": "Vetores/Arrays",
+        "relation": "REQUER",
+        "target": "Loop FOR",
+        "properties": {}
+      },
+      {
+        "source": "Matrizes",
+        "relation": "REQUER",
+        "target": "Vetores/Arrays",
+        "properties": {}
+      },
+      {
+        "source": "Recursão",
+        "relation": "REQUER",
+        "target": "Funções",
+        "properties": {}
+      },
+      {
+        "source": "Ordenação",
+        "relation": "REQUER",
+        "target": "Vetores/Arrays",
+        "properties": {}
+      },
+      {
+        "source": "Ordenação",
+        "relation": "REQUER",
+        "target": "Loop FOR",
+        "properties": {}
+      },
+      {
+        "source": "Entrada e Saída",
+        "relation": "REQUER",
+        "target": "Variáveis",
+        "properties": {}
+      },
+      {
+        "source": "Entrada e Saída",
+        "relation": "REQUER",
+        "target": "Tipos de Dados",
+        "properties": {}
+      },
+      {
+        "source": "Switch/Case",
+        "relation": "É_UM_TIPO_DE",
+        "target": "Condicionais IF/ELSE",
+        "properties": {}
+      },
+      {
+        "source": "Loop FOR",
+        "relation": "SIMILAR_A",
+        "target": "Loop WHILE",
+        "properties": {}
+      },
+      {
+        "source": "Loop WHILE",
+        "relation": "SIMILAR_A",
+        "target": "Loop DO-WHILE",
+        "properties": {}
+      },
+      {
+        "source": "Loop FOR",
+        "relation": "SIMILAR_A",
+        "target": "Loop DO-WHILE",
+        "properties": {}
+      },
+      {
+        "source": "Condicionais IF/ELSE",
+        "relation": "SIMILAR_A",
+        "target": "Switch/Case",
+        "properties": {}
+      },
+      {
+        "source": "Vetores/Arrays",
+        "relation": "SIMILAR_A",
+        "target": "Matrizes",
+        "properties": {}
+      },
+      {
+        "source": "Variáveis",
+        "relation": "LEVA_A",
+        "target": "Tipos de Dados",
+        "properties": {}
+      },
+      {
+        "source": "Tipos de Dados",
+        "relation": "LEVA_A",
+        "target": "Operadores",
+        "properties": {}
+      },
+      {
+        "source": "Operadores",
+        "relation": "LEVA_A",
+        "target": "Entrada e Saída",
+        "properties": {}
+      },
+      {
+        "source": "Entrada e Saída",
+        "relation": "LEVA_A",
+        "target": "Condicionais IF/ELSE",
+        "properties": {}
+      },
+      {
+        "source": "Condicionais IF/ELSE",
+        "relation": "LEVA_A",
+        "target": "Loop FOR",
+        "properties": {}
+      },
+      {
+        "source": "Loop FOR",
+        "relation": "LEVA_A",
+        "target": "Loop WHILE",
+        "properties": {}
+      },
+      {
+        "source": "Loop WHILE",
+        "relation": "LEVA_A",
+        "target": "Loop DO-WHILE",
+        "properties": {}
+      },
+      {
+        "source": "Loop DO-WHILE",
+        "relation": "LEVA_A",
+        "target": "Funções",
+        "properties": {}
+      },
+      {
+        "source": "Funções",
+        "relation": "LEVA_A",
+        "target": "Vetores/Arrays",
+        "properties": {}
+      },
+      {
+        "source": "Vetores/Arrays",
+        "relation": "LEVA_A",
+        "target": "Matrizes",
+        "properties": {}
+      },
+      {
+        "source": "Matrizes",
+        "relation": "LEVA_A",
+        "target": "Recursão",
+        "properties": {}
+      },
+      {
+        "source": "Recursão",
+        "relation": "LEVA_A",
+        "target": "Ordenação",
+        "properties": {}
+      },
+      {
+        "source": "Switch/Case",
+        "relation": "LEVA_A",
+        "target": "Loop FOR",
+        "properties": {}
+      }
+    ]
+  },
+  "sha256": "a79a74c59365db3ee2af1b35b73a59285afef2badf74d1360a4deb95a2b219e6"
+}

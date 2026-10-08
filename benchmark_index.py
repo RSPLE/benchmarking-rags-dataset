@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from benchmark_config import configuration, corpus_inventory
@@ -14,6 +15,13 @@ def chunk_ids(chunks):
     ]
 
 
+def index_dimension(store):
+    values = store.get(include=["embeddings"], limit=1).get("embeddings")
+    if values is None or len(values) == 0:
+        return None
+    return len(values[0])
+
+
 def ensure_index(store, chunks, manifest_path, identity):
     manifest_path = Path(manifest_path)
     expected = chunk_ids(chunks)
@@ -21,8 +29,14 @@ def ensure_index(store, chunks, manifest_path, identity):
         raise ValueError("No usable chunks in corpus")
     with exclusive_lock(manifest_path.with_suffix(".lock")):
         existing = set(store.get(include=[])["ids"])
+        dimension = index_dimension(store) if existing else None
+        expected_dimension = int(os.getenv("EMBEDDING_DIMENSIONS", "0"))
+        if expected_dimension and dimension and dimension != expected_dimension:
+            raise RuntimeError("Stored vector dimension differs from configured embeddings")
         if manifest_path.exists():
             saved = json.loads(manifest_path.read_text())
+            if saved.get("embedding_dimension") and dimension != saved["embedding_dimension"]:
+                raise RuntimeError("Stored vector dimension differs from the index manifest")
             if saved.get("identity") != identity or saved.get("ids") != expected:
                 raise RuntimeError(
                     "Index manifest mismatch; preserve the existing index and use a new path"
@@ -44,7 +58,15 @@ def ensure_index(store, chunks, manifest_path, identity):
             store.add_documents(documents=[doc for doc, _ in batch], ids=[key for _, key in batch])
         if set(store.get(include=[])["ids"]) != set(expected):
             raise RuntimeError("Incomplete ingestion")
-        atomic_json(manifest_path, {"identity": identity, "ids": expected, "complete": True})
+        atomic_json(
+            manifest_path,
+            {
+                "identity": identity,
+                "ids": expected,
+                "complete": True,
+                "embedding_dimension": index_dimension(store),
+            },
+        )
 
 
 def load_index(docs_dir, persist_dir, collection, *, chunk_size=800, chunk_overlap=100):

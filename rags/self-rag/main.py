@@ -11,6 +11,7 @@ from rag_settings import (
     start_usage_tracker,
 )
 
+from benchmark_context import select_documents
 from benchmark_index import load_index
 from benchmark_pipeline import critique_decision, execute_pipeline
 
@@ -31,7 +32,7 @@ def build_vectorstore():
 
 
 def self_rag(query, retriever, llm, callbacks=None):
-    docs = retriever.invoke(query)
+    docs = select_documents(retriever.invoke(query))
     contexts = [d.page_content for d in docs]
     context = "\n\n".join(contexts)
     callback_config = build_callback_config(callbacks)

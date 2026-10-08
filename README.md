@@ -17,7 +17,7 @@ Monorepo para comparar seis arquiteturas de Retrieval-Augmented Generation (RAG)
 | `rags/context-rag/` | RAG clássico | top-5 por similaridade vetorial; resposta restrita ao contexto |
 | `rags/graph-rag/` | Graph RAG experimental | Chroma + grafo `networkx` extraído por LLM; agente LangGraph |
 | `rags/hybrid-rag/` | RAG híbrido | BM25 (peso 0,4) + Chroma (peso 0,6) |
-| `rags/knowledge-enhanced-rag/` | Knowledge-Enhanced RAG | Chroma + grafo pedagógico curado em Neo4j |
+| `rags/knowledge-enhanced-rag/` | Knowledge-Enhanced RAG | Chroma + grafo pedagógico curado no Neo4j |
 | `rags/memory-augmented-rag/` | RAG com memória | agente LangGraph com `MemorySaver` e ferramenta de recuperação |
 | `rags/self-rag/` | Self-RAG simplificado | geração, autocrítica binária e até um refinamento |
 | `eval-dataset/` | Dataset compartilhado | 90 itens (`Q001`–`Q090`) com pergunta, resposta e fonte |
@@ -42,7 +42,9 @@ Ao executar vários pipelines, a CLI para no primeiro que retorna erro.
 das médias. Gravação atômica e bloqueios protegem o estado local.
 
 Consulte o [guia de confiabilidade](docs/confiabilidade.md) para migração explícita,
-limites, pausas, avaliação de respostas congeladas e notificação por Telegram.
+limites, pausas, avaliação de respostas congeladas e controle pelo Telegram.
+A [implantação](deployment/README.md) descreve o socket local, a `.env` única, IDs autorizados
+e a fila persistente. O [aceite](docs/aceite.md) separa verificações sem consumo e piloto real.
 Os checkpoints v1 preservados não são retomados automaticamente pelo código novo.
 
 ## Requisitos e instalação com uv
@@ -51,7 +53,7 @@ Os checkpoints v1 preservados não são retomados automaticamente pelo código n
 - [`uv`](https://docs.astral.sh/uv/);
 - Docker Desktop com Docker Compose apenas se você quiser executar um Neo4j local em container;
 - chave do OpenRouter ou da OpenAI;
-- Neo4j apenas para o `knowledge-enhanced-rag` quando o grafo for usado;
+- Neo4j apenas para o modo de grafo `required`; o modo `snapshot` funciona sem banco;
 - PDFs próprios ou com autorização de redistribuição para formar os corpora locais.
 
 ```bash
@@ -62,16 +64,21 @@ uv sync
 
 O `pyproject.toml` e o `uv.lock` da raiz contêm somente o orquestrador. Cada diretório em `rags/` tem seu próprio `pyproject.toml`, `uv.lock` e `.venv`, criados sob demanda pelo `main.py`. Não há arquivos `requirements.txt`. Essa separação permite que um pipeline evolua suas bibliotecas sem alterar o ambiente dos demais.
 
-Crie a configuração local:
+Toda configuração operacional fica na **`.env` da raiz**, incluindo modelos, Neo4j
+e Telegram. Veja [onde preencher token, canal privado e IDs autorizados](docs/configuracao.md).
+Não há teto monetário obrigatório. O Knowledge usa os mesmos sete PDFs e Neo4j;
+o snapshot JSON adicional fica inativo.
+
+Somente em uma instalação nova, crie a configuração local sem substituir uma `.env` existente:
 
 ```bash
-cp .env.example .env
+cp -n .env.example .env
 ```
 
 No PowerShell:
 
 ```powershell
-Copy-Item .env.example .env
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
 ```
 
 ## OpenRouter
@@ -83,7 +90,7 @@ Configuração mínima:
 ```env
 LLM_PROVIDER=openrouter
 OPENROUTER_API_KEY=sk-or-v1-...
-OPENROUTER_MODEL=~openai/gpt-latest
+OPENROUTER_MODEL=<ID_EXATO_DO_MODELO_CONFIGURADO>
 LLM_MAX_TOKENS=1024
 RAGAS_MAX_TOKENS=2048
 LLM_TIMEOUT_SECONDS=600

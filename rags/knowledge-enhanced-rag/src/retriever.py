@@ -1,7 +1,8 @@
 import os
 
+from benchmark_context import select_documents
 from src.ingestion import load_or_create_index
-from src.knowledge_graph import KnowledgeGraph
+from src.knowledge_graph import KnowledgeGraph, SnapshotKnowledgeGraph
 
 
 class KERagRetriever:
@@ -10,10 +11,12 @@ class KERagRetriever:
         self.kg = knowledge_graph
 
         self.kg_mode = os.getenv("BENCHMARK_KG_MODE", "required")
-        if self.kg_mode not in {"required", "disabled"}:
-            raise ValueError("BENCHMARK_KG_MODE must be required or disabled")
+        if self.kg_mode not in {"required", "disabled", "snapshot"}:
+            raise ValueError("BENCHMARK_KG_MODE must be required, disabled or snapshot")
         if self.kg_mode == "disabled":
             self.kg = None
+        elif self.kg_mode == "snapshot":
+            self.kg = SnapshotKnowledgeGraph(os.environ["BENCHMARK_KG_SNAPSHOT"])
         else:
             self.kg = self.kg or KnowledgeGraph()
             self.kg.driver.verify_connectivity()
@@ -24,7 +27,7 @@ class KERagRetriever:
 
     def retrieve(self, pergunta: str) -> dict:
 
-        docs = self.indice.similarity_search(pergunta, k=5)
+        docs = select_documents(self.indice.similarity_search(pergunta, k=5))
 
         conceito = None
         kg_facts = ""

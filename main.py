@@ -9,6 +9,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from service_entrypoint import role_environment
+
 ROOT = Path(__file__).resolve().parent
 RAGS_ROOT = ROOT / "rags"
 PROJECTS = {
@@ -52,7 +54,7 @@ def uv_command() -> list[str]:
 
 def run_project(project: str, provider: str | None, questions: int | None = None) -> int:
     load_environment()
-    env = os.environ.copy()
+    env = role_environment("worker", os.environ)
 
     env.pop("VIRTUAL_ENV", None)
     if provider:
@@ -69,7 +71,14 @@ def run_project(project: str, provider: str | None, questions: int | None = None
         entrypoint = "main.py"
     env["BENCHMARK_PROJECT"] = project
     env.setdefault("RAGAS_DO_NOT_TRACK", "true")
-    for name in ("DOCS_DIR", "CHROMA_PERSIST_DIR", "BENCHMARK_FROZEN_FILE"):
+    for name in (
+        "DOCS_DIR",
+        "CHROMA_PERSIST_DIR",
+        "BENCHMARK_FROZEN_FILE",
+        "BENCHMARK_KG_SNAPSHOT",
+        "BENCHMARK_OUTPUT_DIR",
+        "BENCHMARK_BUDGET_DIR",
+    ):
         if env.get(name):
             env[name] = str((ROOT / env[name]).resolve())
     command = [
@@ -132,24 +141,30 @@ def doctor() -> int:
     load_environment()
     provider = os.getenv("LLM_PROVIDER", "openrouter").lower()
     embedding_provider = os.getenv("EMBEDDING_PROVIDER", provider).lower()
-    key_by_provider = {
-        "openrouter": "OPENROUTER_API_KEY",
-        "openai": "OPENAI_API_KEY",
-    }
-
     errors = 0
     print(f"Python: {sys.version.split()[0]}")
     print(f"LLM: {provider}")
     print(f"Embeddings: {embedding_provider}")
-    for selected in {provider, embedding_provider}:
-        variable = key_by_provider.get(selected)
-        if not variable:
+    roles = (
+        ("judge", "judge_embedding")
+        if os.getenv("BENCHMARK_MODE") == "evaluate"
+        or os.getenv("BENCHMARK_CREDIT_SCOPE") == "judge"
+        else ("generation", "judge", "embedding", "judge_embedding")
+    )
+    for role in roles:
+        selected = embedding_provider if "embedding" in role else provider
+        if selected not in {"openrouter", "openai"}:
             print(f"[ERRO] Provedor desconhecido: {selected}")
             errors += 1
-        elif os.getenv(variable):
-            print(f"[OK] {variable} configurada")
+            continue
+        prefix = selected.upper()
+        names = [f"{prefix}_{role.upper()}_API_KEY", f"{prefix}_API_KEY"]
+        if role == "judge_embedding":
+            names.insert(1, f"{prefix}_JUDGE_API_KEY")
+        if any(os.getenv(name) for name in names):
+            print(f"[OK] Credencial configurada: {selected}/{role}")
         else:
-            print(f"[ERRO] {variable} ausente")
+            print(f"[ERRO] Credencial ausente: {selected}/{role}")
             errors += 1
 
     for project in PROJECTS:
@@ -164,7 +179,9 @@ def doctor() -> int:
             print(f"[ERRO] Corpus ausente: {docs_dir}")
         print(f"[INFO] {project}: {count} PDF(s) local(is)")
 
-    if not os.getenv("NEO4J_URI") or not os.getenv("NEO4J_PASSWORD"):
+    if os.getenv("BENCHMARK_KG_MODE", "required") == "required" and (
+        not os.getenv("NEO4J_URI") or not os.getenv("NEO4J_PASSWORD")
+    ):
         print(
             "[AVISO] Neo4j nao configurado; knowledge-enhanced-rag requer BENCHMARK_KG_MODE=disabled para rodar sem KG."
         )
@@ -219,6 +236,15 @@ def build_parser() -> argparse.ArgumentParser:
             "--selection", choices=("unresolved", "pending", "failed"), default="unresolved"
         )
         command_parser.add_argument("--max-calls", type=positive_integer)
+    export_parser = subparsers.add_parser("export-frozen")
+    export_parser.add_argument("directory", type=Path)
+    export_parser.add_argument("destination", type=Path)
+    report_parser = subparsers.add_parser("report")
+    report_parser.add_argument("root", type=Path)
+    reconcile_parser = subparsers.add_parser("reconcile")
+    reconcile_parser.add_argument("root", type=Path)
+    reconcile_parser.add_argument("--apply", action="store_true")
+    subparsers.add_parser("preflight", help="valida os seis ambientes sem chamadas pagas")
     subparsers.add_parser("audit", help="auditoria local sem chamadas externas")
     status_parser = subparsers.add_parser("status")
     status_parser.add_argument("directory", type=Path)
@@ -237,6 +263,24 @@ def main() -> int:
     args = parser.parse_args()
     if args.command in {None, "list"}:
         show_projects()
+        return 0
+    if args.command == "preflight":
+        return subprocess.run(
+            [sys.executable, str(ROOT / "scripts/preflight.py")], check=False
+        ).returncode
+    if args.command in {"export-frozen", "report", "reconcile"}:
+        from benchmark_admin import export_frozen, report
+        from benchmark_reconcile import reconcile
+
+        if args.command == "export-frozen":
+            result = export_frozen(args.directory, args.destination)
+        elif args.command == "report":
+            result = report(args.root)
+        else:
+            if args.apply:
+                load_environment()
+            result = reconcile(args.root, apply=args.apply)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "doctor":
         return doctor()

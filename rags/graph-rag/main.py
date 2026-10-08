@@ -25,6 +25,7 @@ from rag_settings import (
 )
 
 from benchmark_config import configuration, positive_int
+from benchmark_context import select_documents
 from benchmark_index import cached_extraction, load_index
 from benchmark_pipeline import execute_pipeline, tool_evidence
 from benchmark_storage import fingerprint
@@ -202,7 +203,7 @@ def ingest_chunk_into_graph(chunk: Document, extraction: Dict) -> None:
     description="Recupera chunks de texto relevantes por similaridade semântica.",
 )
 def retrieve_vector_context(query: str):
-    retrieved_docs = vector_store.similarity_search(query, k=3)
+    retrieved_docs = select_documents(vector_store.similarity_search(query, k=3))
     serialized = "\n\n".join(
         f"Source: {doc.metadata}\nContent: {doc.page_content}" for doc in retrieved_docs
     )

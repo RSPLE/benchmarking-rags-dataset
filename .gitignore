@@ -2,6 +2,7 @@
 .venv/
 .uv-cache/
 **/.env
+*.env
 **/.venv/
 **/__pycache__/
 *.py[cod]
@@ -22,3 +23,6 @@ tmp/audit-*/
 tmp/*.log
 tmp/*.txt
 *.outbox.db
+
+tmp/implementation-*/
+*.queue.db

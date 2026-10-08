@@ -58,16 +58,32 @@ def _openrouter_headers() -> dict[str, str]:
     return headers
 
 
+def role_key(provider, role):
+    prefix = provider.upper()
+    name = f"{prefix}_{role.upper()}_API_KEY"
+    value = (
+        os.getenv(name)
+        or (os.getenv(f"{prefix}_JUDGE_API_KEY") if role == "judge_embedding" else None)
+        or os.getenv(f"{prefix}_API_KEY")
+    )
+    if not value:
+        raise RuntimeError(f"Missing {name} or {prefix}_API_KEY")
+    if os.getenv("BENCHMARK_CREDIT_SCOPE") == "judge" and role not in {"judge", "judge_embedding"}:
+        raise RuntimeError("Judge-only credentials cannot fund generation or preparation")
+    return value
+
+
 def build_llm(max_tokens: int | None = None, *, judge: bool = False) -> ChatOpenAI:
     provider = _provider("LLM_PROVIDER", "openrouter")
     from benchmark_usage import http_clients
 
     timeout = _positive_int("RAGAS_TIMEOUT_SECONDS", 600) if judge else _timeout_seconds()
-    clients = http_clients(timeout)
+    role = "judge" if judge else "generation"
+    clients = http_clients(timeout, role=role)
 
     if provider == "openrouter":
         kwargs: dict[str, Any] = {
-            "api_key": _required("OPENROUTER_API_KEY", provider),
+            "api_key": role_key("openrouter", role),
             "base_url": os.getenv("OPENROUTER_BASE_URL", OPENROUTER_BASE_URL),
             "model": (os.getenv("OPENROUTER_JUDGE_MODEL") if judge else None)
             or _required("OPENROUTER_MODEL", provider),
@@ -84,7 +100,7 @@ def build_llm(max_tokens: int | None = None, *, judge: bool = False) -> ChatOpen
         return ChatOpenAI(**kwargs)
 
     kwargs = {
-        "api_key": _required("OPENAI_API_KEY", provider),
+        "api_key": role_key("openai", role),
         "model": (os.getenv("OPENAI_JUDGE_MODEL") if judge else None)
         or os.getenv("OPENAI_MODEL", "gpt-5.5"),
         "max_tokens": max_tokens or _max_tokens(),
@@ -100,10 +116,11 @@ def build_llm(max_tokens: int | None = None, *, judge: bool = False) -> ChatOpen
     return ChatOpenAI(**kwargs)
 
 
-def build_embeddings() -> OpenAIEmbeddings:
+def build_embeddings(*, judge=False) -> OpenAIEmbeddings:
     from benchmark_usage import http_clients
 
-    clients = http_clients(_timeout_seconds())
+    role = "judge_embedding" if judge else "embedding"
+    clients = http_clients(_timeout_seconds(), role=role)
     default_provider = _provider("LLM_PROVIDER", "openrouter")
     provider = _provider("EMBEDDING_PROVIDER", default_provider)
 
@@ -112,7 +129,12 @@ def build_embeddings() -> OpenAIEmbeddings:
             **clients,
             "max_retries": 0,
             "check_embedding_ctx_length": False,
-            "api_key": _required("OPENROUTER_API_KEY", provider),
+            **(
+                {"dimensions": int(os.environ["EMBEDDING_DIMENSIONS"])}
+                if os.getenv("EMBEDDING_DIMENSIONS")
+                else {}
+            ),
+            "api_key": role_key("openrouter", role),
             "base_url": os.getenv("OPENROUTER_BASE_URL", OPENROUTER_BASE_URL),
             "model": os.getenv(
                 "OPENROUTER_EMBEDDING_MODEL",
@@ -127,7 +149,12 @@ def build_embeddings() -> OpenAIEmbeddings:
     return OpenAIEmbeddings(
         **clients,
         max_retries=0,
-        api_key=_required("OPENAI_API_KEY", provider),
+        **(
+            {"dimensions": int(os.environ["EMBEDDING_DIMENSIONS"])}
+            if os.getenv("EMBEDDING_DIMENSIONS")
+            else {}
+        ),
+        api_key=role_key("openai", role),
         model=os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-large"),
     )
 

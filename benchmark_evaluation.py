@@ -23,7 +23,7 @@ class MetricEvaluator:
 
         if self.llm is None:
             self.llm = build_ragas_llm()
-            self.embeddings = build_embeddings()
+            self.embeddings = build_embeddings(judge=True)
         metric = deepcopy(getattr(metrics, name))
         if hasattr(metric, "max_retries"):
             metric.max_retries = 0

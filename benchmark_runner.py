@@ -353,6 +353,8 @@ def run_resumable_benchmark(
     if question_ids and set(question_ids) - {q["id"] for q in questions}:
         raise ValueError("Unknown question IDs")
     with exclusive_lock(output_dir / ".lock"), pause_signals() as paused:
+        if ledger:
+            ledger.pause_event = paused
         checkpoint_path = output_dir / "checkpoint.json"
         checkpoint = _load_checkpoint(
             checkpoint_path, project, dataset_path, _dataset_hash(dataset_path)
@@ -367,7 +369,8 @@ def run_resumable_benchmark(
         checkpoint.update(manifest_fingerprint=identity, required_metrics=list(required))
         if manifest:
             _atomic_json(output_dir / "manifest.json", manifest)
-        run_id = uuid.uuid4().hex
+        run_id = ledger.run_id if ledger else uuid.uuid4().hex
+        run_started = time.monotonic()
         events_path = output_dir / "events.jsonl"
         states = checkpoint["items"]
         unknown = set(states) - {q["id"] for q in questions}
@@ -397,16 +400,42 @@ def run_resumable_benchmark(
                     raise ValueError("Saved answer fingerprint mismatch")
 
         def event(kind, **values):
-            append_event(
-                events_path,
-                {
-                    "event_id": uuid.uuid4().hex,
-                    "run_id": run_id,
-                    "at": _now(),
-                    "kind": kind,
-                    **values,
-                },
-            )
+            record = {
+                "event_id": uuid.uuid4().hex,
+                "run_id": run_id,
+                "at": _now(),
+                "kind": kind,
+                **values,
+            }
+            append_event(events_path, record)
+            if kind in {"started", "failed", "finished", "interrupted"}:
+                public = {
+                    key: value
+                    for key, value in record.items()
+                    if key
+                    in {
+                        "event_id",
+                        "run_id",
+                        "at",
+                        "kind",
+                        "question_id",
+                        "stage",
+                        "category",
+                        "question_limit",
+                        "success",
+                        "failed",
+                        "pending",
+                        "partial",
+                        "attempted",
+                        "paused",
+                    }
+                }
+                public.update(
+                    project=project,
+                    experiment_id=(manifest or {}).get("experiment_id"),
+                    mode=(manifest or {}).get("mode", "full"),
+                )
+                append_event(output_dir / "public_events.jsonl", public, mode=0o640)
 
         def save():
             checkpoint["updated_at"] = _now()
@@ -432,6 +461,12 @@ def run_resumable_benchmark(
                     "experiment_id": (manifest or {}).get("experiment_id"),
                     "updated_at": checkpoint["updated_at"],
                     "operation": checkpoint.get("operation"),
+                    "run_id": run_id,
+                    "mode": (manifest or {}).get("mode", "full"),
+                    "elapsed_seconds": time.monotonic() - run_started,
+                    "current_question": checkpoint.get("current_question"),
+                    "current_stage": checkpoint.get("current_stage"),
+                    "alert": checkpoint.get("alert"),
                     **summary_for(questions, checkpoint),
                     "usage": ledger.summary() if ledger else {"cost_usd": None},
                 },
@@ -441,6 +476,7 @@ def run_resumable_benchmark(
         if _recover_interrupted_questions(checkpoint):
             event("interrupted", consumption="unknown", action="resume_saved_stages_only")
         checkpoint["operation"] = "running"
+        checkpoint.pop("alert", None)
         print(f"Experimento: {project} | checkpoint: {checkpoint_path}")
         save()
         event("started", project=project, question_limit=question_limit)
@@ -451,6 +487,19 @@ def run_resumable_benchmark(
             eligible = [q for q in eligible if states.get(q["id"], {}).get("status") == "failed"]
         if question_ids:
             eligible = [q for q in eligible if q["id"] in question_ids]
+        max_stage_attempts = int(os.getenv("BENCHMARK_MAX_STAGE_ATTEMPTS", "3"))
+        cooldown = int(os.getenv("BENCHMARK_RETRY_COOLDOWN_SECONDS", "0"))
+        if max_stage_attempts < 1 or cooldown < 0:
+            raise ValueError("Invalid retry policy")
+        eligible = [
+            q
+            for q in eligible
+            if (
+                states.get(q["id"], {}).get("retry_after", 0) <= time.time()
+                and max(states.get(q["id"], {}).get("stage_failures", {}).values(), default=0)
+                < max_stage_attempts
+            )
+        ]
         eligible.sort(key=lambda q: states.get(q["id"], {}).get("status") != "failed")
         attempted = run_success = run_failed = consecutive = 0
         previous_category = None
@@ -470,6 +519,7 @@ def run_resumable_benchmark(
                 started_at=_now(),
             )
             stage = "generation"
+            checkpoint.update(current_question=question_id, current_stage=stage)
             save()
             try:
                 if ledger:
@@ -495,6 +545,7 @@ def run_resumable_benchmark(
                         checkpoint["operation"] = "paused"
                         break
                     stage = name
+                    checkpoint["current_stage"] = name
                     if ledger:
                         ledger.set_stage(question_id, "judge", name)
                     for n in names:
@@ -537,7 +588,15 @@ def run_resumable_benchmark(
                 consecutive = 0
                 event("success", question_id=question_id)
             except (Exception, KeyboardInterrupt) as exc:
+                failures = state.setdefault("stage_failures", {})
+                failures[stage] = failures.get(stage, 0) + 1
+                state["retry_after"] = time.time() + cooldown
                 category = error_category(exc)
+                checkpoint["alert"] = {
+                    "question_id": question_id,
+                    "stage": stage,
+                    "category": category,
+                }
                 message = sanitize(str(exc))
                 state.update(
                     status="failed",
@@ -571,6 +630,7 @@ def run_resumable_benchmark(
                 save()
         if checkpoint["operation"] == "running":
             checkpoint["operation"] = "idle"
+        checkpoint.update(current_question=None, current_stage=None)
         save()
         counts = summary_for(questions, checkpoint)
         counts.pop("metrics")

@@ -1,10 +1,17 @@
 # KE-RAG: Chatbot de Lógica de Programação
 
-> **Atualização do monorepo:** este pipeline agora lê as 90 perguntas de `../eval-dataset/qa_dataset_90.json`, executa uma pergunta por vez e retoma apenas falhas por meio de `results/checkpoint.json`. Use `uv run python ../main.py run knowledge-enhanced-rag` a partir da raiz; as referências abaixo a 5 rodadas e 10 perguntas descrevem a versão histórica.
-> Dependências vêm de `pyproject.toml`/`uv.lock` deste diretório e toda configuração vem exclusivamente de `../.env`; ignore as instruções históricas de `requirements.txt` e `.env` local abaixo.
-> Dependências vêm de `pyproject.toml`/`uv.lock` deste diretório e toda configuração vem exclusivamente de `../.env`; ignore as instruções históricas de `requirements.txt` e `.env` local abaixo.
+> Operação atual / Current operation: [Português](../../docs/confiabilidade.md) · [English](../../docs/reliability.en.md).
+> Checkpoint v2, limites e controle pelo Telegram estão documentados nesses guias.
+> These guides document v2 checkpoints, budgets and Telegram control.
 
-> **Atualização do monorepo:** este pipeline agora lê as 90 perguntas de `../eval-dataset/qa_dataset_90.json`, executa uma pergunta por vez e retoma apenas falhas por meio de `results/checkpoint.json`. Use `uv run python ../main.py run knowledge-enhanced-rag` a partir da raiz; as referências abaixo a 5 rodadas e 10 perguntas descrevem a versão histórica.
+> Configuração atual: somente a `.env` da raiz (`../../.env` a partir deste diretório).
+> O corpus contém os mesmos sete PDFs dos demais RAGs em `data/apostilas/`; o grafo
+> padrão continua no Neo4j (`BENCHMARK_KG_MODE=required`). O JSON de snapshot na raiz
+> é opcional e inativo. Consulte a [explicação dos dados](../../docs/configuracao.md).
+> Current configuration: root `.env` only; the same seven PDFs under `data/apostilas/`
+> plus Neo4j. The root graph snapshot is optional and inactive. See the
+> [data explanation](../../docs/configuration.en.md). Historical instructions below
+> do not override the current v2 operation guides.
 
 Chatbot baseado em **KE-RAG (Knowledge Enhanced RAG)** para ajudar alunos iniciantes de Computação na matéria de Lógica de Programação. Combina busca semântica em apostilas PDF (RAG clássico) com um **Knowledge Graph no Neo4j**, curado manualmente, para enriquecer as respostas com relações entre conceitos (pré-requisitos, categorização, progressão de aprendizado).
 

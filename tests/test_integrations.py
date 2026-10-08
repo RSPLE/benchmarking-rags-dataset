@@ -62,6 +62,84 @@ class IntegrationTests(unittest.TestCase):
             module = runpy.run_path(str(project_dir / "main.py"), run_name="pipeline_import_test")
             self.assertIn("prepare", module)
 
+    def test_role_credentials_and_judge_only_scope(self):
+        from rag_provider import build_embeddings, build_llm
+
+        with patch.dict(
+            os.environ,
+            {
+                "OPENROUTER_GENERATION_API_KEY": "generation-key",
+                "OPENROUTER_JUDGE_API_KEY": "judge-key",
+                "OPENROUTER_EMBEDDING_API_KEY": "embedding-key",
+            },
+        ):
+            self.assertEqual(build_llm().openai_api_key.get_secret_value(), "generation-key")
+            self.assertEqual(build_llm(judge=True).openai_api_key.get_secret_value(), "judge-key")
+            self.assertEqual(build_embeddings().openai_api_key.get_secret_value(), "embedding-key")
+            self.assertEqual(
+                build_embeddings(judge=True).openai_api_key.get_secret_value(), "judge-key"
+            )
+            with patch.dict(os.environ, {"BENCHMARK_CREDIT_SCOPE": "judge"}):
+                with self.assertRaises(RuntimeError):
+                    build_llm()
+                with self.assertRaises(RuntimeError):
+                    build_embeddings()
+                self.assertEqual(
+                    build_llm(judge=True).openai_api_key.get_secret_value(), "judge-key"
+                )
+
+    def test_observed_index_dimension_mismatch_stops_before_embedding(self):
+        from langchain_chroma import Chroma
+        from langchain_core.documents import Document
+        from langchain_core.embeddings import Embeddings
+
+        from benchmark_index import ensure_index
+
+        class Embedding(Embeddings):
+            def __init__(self):
+                self.calls = 0
+
+            def embed_documents(self, texts):
+                self.calls += 1
+                return [[0.1, 0.2] for _ in texts]
+
+            def embed_query(self, text):
+                return [0.1, 0.2]
+
+        embedding = Embedding()
+        store = Chroma(
+            collection_name="dimension_test",
+            embedding_function=embedding,
+            persist_directory=str(Path(self.temp.name) / "dimensions"),
+        )
+        documents = [Document(page_content="evidence")]
+        manifest = Path(self.temp.name) / "dimension.json"
+        ensure_index(store, documents, manifest, "identity")
+        self.assertEqual(json.loads(manifest.read_text())["embedding_dimension"], 2)
+        with patch.dict(os.environ, {"EMBEDDING_DIMENSIONS": "3"}), self.assertRaises(RuntimeError):
+            ensure_index(store, documents, manifest, "identity")
+        self.assertEqual(embedding.calls, 1)
+
+    def test_unusable_pdfs_fail_before_embedding_calls(self):
+        from pypdf import PdfWriter
+        from pypdf.errors import PdfReadError
+
+        from benchmark_index import load_index
+
+        docs = Path(self.temp.name) / "docs"
+        docs.mkdir()
+        with patch("rag_provider.build_embeddings") as embeddings:
+            for content in (b"", b"not a pdf"):
+                (docs / "book.pdf").write_bytes(content)
+                with self.assertRaises((ValueError, PdfReadError)):
+                    load_index(docs, Path(self.temp.name) / "index", "pdf_test")
+            writer = PdfWriter()
+            writer.add_blank_page(width=100, height=100)
+            writer.write(docs / "book.pdf")
+            with self.assertRaisesRegex(ValueError, "no usable text"):
+                load_index(docs, Path(self.temp.name) / "index", "pdf_test")
+            embeddings.assert_not_called()
+
     def test_generation_evidence_and_memory_isolation(self):
         import inspect
         import runpy

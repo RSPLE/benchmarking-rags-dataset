@@ -2,7 +2,7 @@
 
 > **Current execution:** pipelines use v2 checkpoints and isolated outputs under
 > `resultados/<rag>/<experiment_id>`. Historical files in `rags/*/results/` remain
-> unchanged. See the [reliability and operations guide](docs/confiabilidade.md)
+> unchanged. See the [reliability and operations guide](docs/reliability.en.md)
 > before starting new batches. That guide supersedes the historical instructions
 > below about resuming, output directories, ingestion and evaluation settings.
 
@@ -41,8 +41,11 @@ Multiple-pipeline execution stops on the first failing process.
 `events.jsonl` preserves history, and `summary.json` includes coverage and metric
 denominators. Atomic writes and process locks protect local state.
 
-See the [operations guide](docs/confiabilidade.md) for migration, budgets, pause,
-frozen-answer evaluation and deterministic Telegram notifications.
+See the [operations guide](docs/reliability.en.md) for migration, budgets, pause,
+frozen-answer evaluation and Telegram control.
+The [deployment guide](deployment/README.en.md) covers the local socket, single `.env`,
+authorized IDs and durable queue. The [acceptance matrix](docs/acceptance.en.md)
+separates offline checks from the live pilot.
 
 ## Requirements and uv installation
 
@@ -50,23 +53,28 @@ frozen-answer evaluation and deterministic Telegram notifications.
 - [`uv`](https://docs.astral.sh/uv/);
 - Docker Desktop with Docker Compose only if you want to run Neo4j locally in a container;
 - an OpenRouter or OpenAI API key;
-- Neo4j only for the Knowledge-Enhanced RAG graph;
+- Neo4j only for `required` graph mode; `snapshot` mode does not need a database;
 - locally supplied PDFs that you are authorized to use.
 
 ```bash
 git clone https://github.com/RSPLE/benchmarking-rags-dataset.git
 cd benchmarking-rags-dataset
 uv sync
-cp .env.example .env
+cp -n .env.example .env
 ```
 
 PowerShell equivalent for the final command:
 
 ```powershell
-Copy-Item .env.example .env
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
 ```
 
 The root `pyproject.toml` and `uv.lock` contain only orchestration dependencies. Each directory under `rags/` has its own `pyproject.toml`, `uv.lock`, and on-demand `.venv`. There are no `requirements.txt` files, so one pipeline can evolve its dependency set without changing another pipeline's environment.
+
+All operational settings belong in the **root `.env`**, including models, Neo4j
+and Telegram. See [where to enter the private channel and bot settings](docs/configuration.en.md).
+There is no mandatory dollar cap. Knowledge uses the same seven PDFs and Neo4j;
+the additional JSON snapshot is inactive. Preserve existing `.env` values when upgrading.
 
 ## OpenRouter
 
@@ -77,7 +85,7 @@ Minimal configuration:
 ```env
 LLM_PROVIDER=openrouter
 OPENROUTER_API_KEY=sk-or-v1-...
-OPENROUTER_MODEL=~openai/gpt-latest
+OPENROUTER_MODEL=<EXACT_CONFIGURED_MODEL_ID>
 LLM_MAX_TOKENS=1024
 RAGAS_MAX_TOKENS=2048
 LLM_TIMEOUT_SECONDS=600

@@ -16,6 +16,7 @@ from rag_settings import (
 )
 
 from benchmark_config import positive_int
+from benchmark_context import select_documents
 from benchmark_index import load_index
 from benchmark_pipeline import execute_pipeline, tool_evidence
 
@@ -41,7 +42,7 @@ def build_agent(vector_store, llm):
         description="Retrieve information to help answer a query.",
     )
     def retrieve_context(query: str):
-        retrieved_docs = vector_store.similarity_search(query, k=5)
+        retrieved_docs = select_documents(vector_store.similarity_search(query, k=5))
         serialized = "\n\n".join(
             (f"Source: {doc.metadata}\nContent: {doc.page_content}") for doc in retrieved_docs
         )

@@ -24,6 +24,11 @@ class TelegramClient:
         self.token = token
 
     def call(self, method, payload, document=None):
+        payload = dict(payload)
+        filename = payload.pop("_filename", "results.csv")
+        if filename not in {"results.csv", "results.json"}:
+            raise ValueError("Invalid document name")
+        mime = "application/json" if filename.endswith(".json") else "text/csv"
         url = f"https://api.telegram.org/bot{self.token}/{method}"
         if document is None:
             data = json.dumps(payload).encode()
@@ -36,7 +41,7 @@ class TelegramClient:
                     f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"\r\n\r\n{value}\r\n'.encode()
                 )
             sections.append(
-                f'--{boundary}\r\nContent-Disposition: form-data; name="document"; filename="results.csv"\r\nContent-Type: text/csv\r\n\r\n'.encode()
+                f'--{boundary}\r\nContent-Disposition: form-data; name="document"; filename="{filename}"\r\nContent-Type: {mime}\r\n\r\n'.encode()
                 + document
                 + b"\r\n"
             )
@@ -75,6 +80,20 @@ def format_summary(summary):
         lines.append(f"{metric}: {mean} (n={data['count']})")
     usage = summary.get("usage", {})
     cost = usage.get("cost_usd")
+    lines.extend(
+        [
+            f"Modo / Mode: {summary.get('mode', 'unknown')}",
+            f"Pergunta / Question: {summary.get('current_question') or '-'} | Etapa / Stage: {summary.get('current_stage') or '-'}",
+            f"Duração / Duration (s): {summary.get('elapsed_seconds', 0):.1f}",
+            f"Consumo desconhecido / Unknown cost calls: {usage.get('unknown_cost_calls', 0)}",
+        ]
+    )
+    if usage.get("remaining_cost_usd") is not None:
+        lines.append(
+            f"Orçamento restante estimado / Estimated remaining USD: {usage['remaining_cost_usd']}"
+        )
+    if summary.get("alert"):
+        lines.append(f"Alerta / Alert: {summary['alert']}")
     lines.append(f"Custo da rodada USD: {cost if cost is not None else 'desconhecido'}")
     return "\n".join(lines)
 
@@ -92,10 +111,36 @@ class Notifier:
         self.db.commit()
 
     def scan(self):
+        paths = [self.root / "control_events.jsonl", *self.root.glob("*/*/public_events.jsonl")]
+        for event_path in paths:
+            if not event_path.is_file() or not event_path.resolve().is_relative_to(self.root):
+                continue
+            for line in event_path.read_text().splitlines():
+                try:
+                    event = json.loads(line)
+                    identifier = fingerprint({"chat": self.chat_id, "event": event["event_id"]})
+                    payload = {
+                        "chat_id": self.chat_id,
+                        "text": json.dumps(event, ensure_ascii=False, indent=2)[:3500],
+                    }
+                    self.db.execute(
+                        "INSERT OR IGNORE INTO outbox (id,method,payload) VALUES (?, 'sendMessage', ?)",
+                        (identifier, json.dumps(payload)),
+                    )
+                except (ValueError, KeyError, TypeError):
+                    continue
         for path in sorted(self.root.glob("*/*/summary.json")):
             if not path.resolve().is_relative_to(self.root):
                 continue
-            summary = json.loads(path.read_text())
+            try:
+                summary = json.loads(path.read_text())
+                progress_path = path.parent / "progress.json"
+                if progress_path.is_file() and summary.get("operation") == "running":
+                    progress = json.loads(progress_path.read_text())
+                    if progress.get("run_id") == summary.get("run_id"):
+                        summary.update(progress)
+            except (OSError, ValueError):
+                continue
             payload = {"chat_id": self.chat_id, "text": format_summary(summary)}
             identifier = fingerprint({"chat": self.chat_id, "summary": summary})
             self.db.execute(
@@ -104,7 +149,12 @@ class Notifier:
             )
             if self.send_files and summary.get("operation") in {"idle", "paused"}:
                 checkpoint_path = path.parent / "public_results.json"
-                checkpoint = json.loads(checkpoint_path.read_text())
+                if not checkpoint_path.resolve().is_relative_to(self.root):
+                    continue
+                try:
+                    checkpoint = json.loads(checkpoint_path.read_text())
+                except (OSError, ValueError):
+                    continue
                 if checkpoint.get("updated_at") != summary.get("updated_at"):
                     continue
                 import csv
@@ -135,6 +185,15 @@ class Notifier:
                         document,
                     ),
                 )
+                self.db.execute(
+                    "INSERT OR IGNORE INTO outbox (id, method, payload, document) VALUES (?, ?, ?, ?)",
+                    (
+                        identifier + "-json",
+                        "sendDocument",
+                        json.dumps({"chat_id": self.chat_id, "_filename": "results.json"}),
+                        json.dumps(checkpoint, ensure_ascii=False).encode(),
+                    ),
+                )
         self.db.commit()
 
     def deliver(self):
@@ -161,8 +220,12 @@ def main():
     parser.add_argument("--database", type=Path, required=True)
     parser.add_argument("--once", action="store_true")
     args = parser.parse_args()
-    if any(os.getenv(key) for key in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "LANGCHAIN_API_KEY")):
-        parser.error("Run the notifier with its own environment, without model credentials")
+    if any(
+        value
+        for key, value in os.environ.items()
+        if key.endswith("API_KEY") or key in {"NEO4J_PASSWORD", "LANGCHAIN_API_KEY"}
+    ):
+        parser.error("Use service_entrypoint.py telegram to filter the shared configuration")
     if os.getenv("TELEGRAM_ENABLED", "false").lower() != "true":
         return
     token, chat = os.getenv("TELEGRAM_BOT_TOKEN"), os.getenv("TELEGRAM_RESULTS_CHAT_ID")
@@ -179,8 +242,19 @@ def main():
             chat,
             send_files=os.getenv("TELEGRAM_SEND_FINAL_FILES", "false").lower() == "true",
         )
+        gateway = None
+        if os.getenv("TELEGRAM_CONTROL_ENABLED") == "true":
+            from telegram_gateway import Gateway
+
+            allowed = [int(value) for value in os.environ["TELEGRAM_ALLOWED_USER_IDS"].split(",")]
+            gateway = Gateway(notifier, os.environ["BENCHMARK_CONTROL_SOCKET"], allowed)
         try:
             while True:
+                if gateway:
+                    try:
+                        gateway.poll()
+                    except (OSError, TelegramError):
+                        pass
                 notifier.scan()
                 notifier.deliver()
                 if args.once:

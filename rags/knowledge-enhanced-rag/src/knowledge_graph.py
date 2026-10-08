@@ -18,6 +18,10 @@ class KnowledgeGraph:
         self.driver.close()
 
     def build_graph(self):
+        if os.getenv("BENCHMARK_ALLOW_KG_REBUILD") != "true":
+            raise RuntimeError(
+                "Graph replacement is disabled; back up the database and explicitly enable BENCHMARK_ALLOW_KG_REBUILD"
+            )
         print("Construindo o Knowledge Graph de Lógica de Programação...")
 
         with self.driver.session(database=os.getenv("NEO4J_DATABASE", "neo4j")) as sessao:
@@ -187,3 +191,49 @@ class KnowledgeGraph:
                 return conceito
 
         return None
+
+
+class SnapshotKnowledgeGraph(KnowledgeGraph):
+    def __init__(self, path):
+        from benchmark_knowledge import read_snapshot
+
+        self.graph = read_snapshot(path)
+        self.nodes = {node["nome"]: node for node in self.graph["nodes"]}
+
+    def fechar(self):
+        pass
+
+    def build_graph(self):
+        raise RuntimeError("Snapshot graphs are immutable")
+
+    def get_prerequisites(self, conceito):
+        return sorted(
+            edge["target"]
+            for edge in self.graph["edges"]
+            if edge["source"] == conceito and edge["relation"] == "REQUER"
+        )
+
+    def get_next_concepts(self, conceito):
+        return sorted(
+            (
+                edge["target"]
+                for edge in self.graph["edges"]
+                if edge["source"] == conceito and edge["relation"] == "LEVA_A"
+            ),
+            key=lambda name: (self.nodes[name].get("dificuldade", 0), name),
+        )
+
+    def get_related_facts(self, conceito):
+        edges = sorted(
+            (edge for edge in self.graph["edges"] if edge["source"] == conceito),
+            key=lambda edge: (edge["relation"], edge["target"]),
+        )
+        if not edges:
+            return f"Não foram encontrados relacionamentos para o conceito '{conceito}'."
+        lines = [f"Fatos sobre '{conceito}':"]
+        for edge in edges:
+            relation = edge["relation"].replace("_", " ")
+            target = edge["target"]
+            difficulty = self.nodes[target].get("dificuldade")
+            lines.append(f"- {conceito} {relation} {target} (dificuldade: {difficulty})")
+        return "\n".join(lines)
