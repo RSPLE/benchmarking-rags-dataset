@@ -202,8 +202,8 @@ The address still comes exclusively from `.env`, without a hardcoded IP.
 To diagnose without disabling certificate verification:
 
 ```bash
-curl --head http://VPS_IP
-curl --head https://VPS_IP/auth/login
+curl --silent --show-error --output /dev/null --write-out '%{http_code}\n' http://VPS_IP
+curl --silent --show-error --output /dev/null --write-out '%{http_code}\n' https://VPS_IP/auth/login
 docker compose logs --tail 80 proxy
 ```
 

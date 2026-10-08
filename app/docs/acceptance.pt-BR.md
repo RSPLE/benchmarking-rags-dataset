@@ -121,3 +121,23 @@ Essas verificações não comprovam emissão pública de TLS, capacidade da VPS,
 disponibilidade dos provedores ou notas científicas. Não houve chamadas pagas a
 modelos nem reconstrução de grafo de produção nesta reorganização. Fontes
 históricas inválidas/incompletas são preservadas e sinalizadas pelo dashboard.
+
+## HTTPS público da VPS — 8 de outubro de 2026
+
+A porta 80 respondeu com redirecionamento 308. O certificado da Let's Encrypt já
+estava emitido, mas o acesso TLS por IP sem SNI falhava. Após configurar
+`default_sni {$DASHBOARD_PUBLIC_HOST}`, a página pública de login retornou HTTP 200
+com validação normal do certificado e abriu no navegador. Apenas o proxy foi
+atualizado; a configuração anterior foi salva em
+`backups/configuration/Caddyfile.before-default-sni-20261008` na VPS.
+
+Três regressões externas passaram: certificado confiável no acesso por IP, cookie
+HTTPS com Secure/HttpOnly e redirecionamento das rotas privadas sem autenticação.
+Para repetir essas consultas sem credenciais nem chamadas de modelo:
+
+```bash
+BENCHMARK_WEB_TLS_TEST_URL=https://IP_DA_VPS uv run --locked python -m unittest discover -s app/tests/dashboard -p test_proxy_tls.py -v
+```
+
+A porta 8501 permanece restrita ao localhost. As portas públicas 80/443 estavam
+acessíveis; não foi necessário alterar o firewall para essa correção.

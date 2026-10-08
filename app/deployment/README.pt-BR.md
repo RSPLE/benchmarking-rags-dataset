@@ -203,8 +203,8 @@ O endereço continua vindo exclusivamente da `.env`, sem IP fixo no Caddyfile.
 Para investigar sem desativar a validação do certificado:
 
 ```bash
-curl --head http://IP_DA_VPS
-curl --head https://IP_DA_VPS/auth/login
+curl --silent --show-error --output /dev/null --write-out '%{http_code}\n' http://IP_DA_VPS
+curl --silent --show-error --output /dev/null --write-out '%{http_code}\n' https://IP_DA_VPS/auth/login
 docker compose logs --tail 80 proxy
 ```
 

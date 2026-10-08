@@ -121,3 +121,23 @@ These checks do not prove public TLS issuance, VPS resource capacity, live provi
 availability or scientific scores. No paid model run or production graph rebuild
 was performed as part of this reorganization. Historical files are preserved,
 including invalid/incomplete sources that the dashboard explicitly flags.
+
+## Public VPS HTTPS — October 8, 2026
+
+Port 80 returned a 308 redirect. The Let's Encrypt certificate had already been
+issued, but IP-based TLS without SNI failed. After configuring
+`default_sni {$DASHBOARD_PUBLIC_HOST}`, the public login page returned HTTP 200
+with normal certificate verification and opened in the browser. Only the proxy
+was updated; its previous configuration was saved at
+`backups/configuration/Caddyfile.before-default-sni-20261008` on the VPS.
+
+Three external regressions passed: trusted certificate for IP access, HTTPS cookie
+with Secure/HttpOnly, and redirect of unauthenticated private routes. Repeat these
+queries without credentials or model calls using:
+
+```bash
+BENCHMARK_WEB_TLS_TEST_URL=https://VPS_IP uv run --locked python -m unittest discover -s app/tests/dashboard -p test_proxy_tls.py -v
+```
+
+Port 8501 remains restricted to localhost. Public ports 80/443 were reachable;
+no firewall changes were necessary for this correction.
