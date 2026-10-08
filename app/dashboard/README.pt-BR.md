@@ -177,3 +177,10 @@ uv sync --project app/dashboard --frozen
 uv run --project app/dashboard --frozen python -m unittest discover -s app/tests/dashboard -v
 uv run --locked python -m unittest discover -s app/tests -v
 ```
+
+## Atualização do proxy e WebSocket
+
+O Caddyfile é copiado para a imagem do proxy. `docker compose up -d` reconstrói
+e recria esse serviço quando o arquivo muda. A verificação de autenticação remove
+os cabeçalhos de upgrade apenas da consulta HTTP de sessão; o WebSocket autenticado
+é encaminhado ao Streamlit. Isso evita manter a configuração antiga em memória.

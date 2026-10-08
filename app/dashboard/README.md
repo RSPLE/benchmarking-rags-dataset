@@ -27,6 +27,9 @@ Replace `VPS_PUBLIC_IP` with the public IP or domain, without a scheme or port.
 Compose reads `DASHBOARD_PUBLIC_HOST` from `.env` and passes it to the `proxy`
 service. The root [Caddyfile](../../Caddyfile) uses that variable without a fixed or
 default address. Missing or empty values stop Compose with a configuration error.
+The Caddyfile is copied into the proxy image, so `docker compose up -d` rebuilds
+and recreates that service when the file changes. Its authentication check removes
+WebSocket upgrade headers only from the HTTP session-verification subrequest.
 The proxy protects the UI, downloads and WebSocket connection. Public HTTP
 redirects to HTTPS. Port 8501 is restricted to localhost and uses the same
 authentication; Streamlit is not published directly.
@@ -40,8 +43,8 @@ Actual issuance can only be confirmed after deployment with reachable ports.
 Running on your local computer does not validate HTTPS on the public IP.
 
 There are seven services: proxy, authentication, dashboard, importer/backup,
-executor, Telegram and Neo4j. The five application services build locally. Caddy,
-Neo4j and base images are public. No profiles, private project images or
+executor, Telegram and Neo4j. The five application services and the Caddy proxy build locally.
+Neo4j and all base images are public. No profiles, private project images or
 `docker login` are required. The initial build needs internet access. Do not expose
 additional ports for SQLite, authentication, queue, Neo4j or Telegram. The bot uses
 outbound polling and does not need a public webhook/port.
