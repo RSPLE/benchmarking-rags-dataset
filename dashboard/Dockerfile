@@ -1,0 +1,17 @@
+FROM ghcr.io/astral-sh/uv:0.12.5 AS uv
+FROM python:3.12-slim-bookworm
+COPY --from=uv /uv /usr/local/bin/uv
+ENV UV_LINK_MODE=copy PYTHONUNBUFFERED=1 PYTHON_DOTENV_DISABLED=1 MPLCONFIGDIR=/tmp/matplotlib
+WORKDIR /app
+COPY dashboard/pyproject.toml dashboard/uv.lock /app/dashboard/
+RUN uv sync --project dashboard --frozen --no-dev --python /usr/local/bin/python
+COPY benchmark_export.py benchmark_config.py benchmark_storage.py benchmark_archive.py /app/
+COPY rags/context-rag/plot_graph.py /app/rags/context-rag/plot_graph.py
+COPY dashboard /app/dashboard
+RUN groupadd --gid 1000 benchmark && useradd --uid 1000 --gid 1000 --create-home benchmark && mkdir -p /state /backups && chown benchmark:benchmark /state /backups
+USER benchmark
+ENV PATH=/app/dashboard/.venv/bin:$PATH PYTHONPATH=/app
+WORKDIR /app/dashboard
+EXPOSE 8501
+HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=3)"
+CMD ["python", "-m", "streamlit", "run", "app.py", "--server.address=0.0.0.0"]

@@ -61,7 +61,7 @@ def aggregate_means(files: List[str]) -> pd.DataFrame:
     return df
 
 
-def plot_overall_mean(df_means: pd.DataFrame, save_path: str) -> None:
+def build_overall_figure(df_means: pd.DataFrame):
     overall = df_means.mean(axis=0)
 
     plt.style.use("seaborn-v0_8")
@@ -86,6 +86,11 @@ def plot_overall_mean(df_means: pd.DataFrame, save_path: str) -> None:
         ax.text(rect.get_x() + rect.get_width() / 2, v + 0.02, f"{v:.3f}", ha="center")
 
     fig.tight_layout()
+    return fig
+
+
+def plot_overall_mean(df_means: pd.DataFrame, save_path: str) -> None:
+    fig = build_overall_figure(df_means)
     os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
     fig.savefig(save_path, dpi=200)
     plt.close(fig)

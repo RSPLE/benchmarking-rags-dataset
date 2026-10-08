@@ -14,5 +14,132 @@ services:
       timeout: 5s
       retries: 20
 
+  dashboard:
+    profiles: [analytics]
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    image: logibots-rag-dashboard:local
+    restart: unless-stopped
+    environment: &dashboard_environment
+      DASHBOARD_DATABASE: /state/dashboard.sqlite3
+      DASHBOARD_RESULTS_DIR: /results
+      DASHBOARD_LEGACY_DIR: /legacy
+      DASHBOARD_BACKUP_DIR: /backups
+      DASHBOARD_POLL_SECONDS: ${DASHBOARD_POLL_SECONDS:-15}
+      DASHBOARD_BACKUP_SECONDS: ${DASHBOARD_BACKUP_SECONDS:-60}
+      DASHBOARD_SESSION_SECONDS: ${DASHBOARD_SESSION_SECONDS:-28800}
+    ports:
+      - "${DASHBOARD_BIND_ADDRESS:-127.0.0.1}:${DASHBOARD_PORT:-8501}:8501"
+    volumes:
+      - dashboard-state:/state
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+
+  monitor:
+    profiles: [analytics]
+    image: logibots-rag-dashboard:local
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    restart: unless-stopped
+    command: [python, -m, dashboard.monitor]
+    environment: *dashboard_environment
+    volumes:
+      - dashboard-state:/state
+      - dashboard-backups:/backups
+      - ${BENCHMARK_OUTPUT_DIR:-./resultados}:/results:ro
+      - ./rags:/legacy:ro
+    healthcheck:
+      test: [CMD, python, -c, "import sqlite3,datetime; d=sqlite3.connect('file:/state/dashboard.sqlite3?mode=ro',uri=True); t=d.execute(\"SELECT value FROM metadata WHERE key='last_sync'\").fetchone()[0]; assert (datetime.datetime.now(datetime.UTC)-datetime.datetime.fromisoformat(t)).total_seconds()<120"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+
+  control:
+    profiles: [execution]
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile.benchmark
+    image: logibots-rag-benchmark:local
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      BENCHMARK_OUTPUT_DIR: /app/resultados
+      BENCHMARK_BUDGET_DIR: /app/resultados
+      BENCHMARK_CONTROL_SOCKET: /run/benchmark/control.sock
+      BENCHMARK_CONTROL_DATABASE: /state/queue.db
+      DOCS_DIR: /corpus
+      NEO4J_URI: ${NEO4J_CONTAINER_URI:-bolt://neo4j:7687}
+    volumes:
+      - ${BENCHMARK_OUTPUT_DIR:-./resultados}:/app/resultados
+      - ./rags/context-rag/docs:/corpus:ro
+      - control-state:/state
+      - control-socket:/run/benchmark
+      - index-context-rag:/app/rags/context-rag/chroma_v2
+      - index-graph-rag:/app/rags/graph-rag/chroma_v2
+      - index-hybrid-rag:/app/rags/hybrid-rag/chroma_v2
+      - index-knowledge-enhanced-rag:/app/rags/knowledge-enhanced-rag/chroma_v2
+      - index-memory-augmented-rag:/app/rags/memory-augmented-rag/chroma_v2
+      - index-self-rag:/app/rags/self-rag/chroma_v2
+    read_only: true
+    tmpfs:
+      - /tmp:size=512m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    stop_grace_period: 30s
+
+  telegram:
+    profiles: [execution]
+    image: logibots-rag-benchmark:local
+    restart: unless-stopped
+    command: [python, service_entrypoint.py, telegram, --from-environment]
+    environment:
+      TELEGRAM_ENABLED: ${TELEGRAM_ENABLED:-false}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_RESULTS_CHAT_ID: ${TELEGRAM_RESULTS_CHAT_ID:-}
+      TELEGRAM_ALLOWED_USER_IDS: ${TELEGRAM_ALLOWED_USER_IDS:-}
+      TELEGRAM_CONTROL_ENABLED: ${TELEGRAM_CONTROL_ENABLED:-false}
+      TELEGRAM_SEND_FINAL_FILES: ${TELEGRAM_SEND_FINAL_FILES:-true}
+      TELEGRAM_PROGRESS_INTERVAL_SECONDS: ${TELEGRAM_PROGRESS_INTERVAL_SECONDS:-15}
+      BENCHMARK_CONTROL_SOCKET: /run/benchmark/control.sock
+      BENCHMARK_OUTPUT_DIR: /app/resultados
+      BENCHMARK_TELEGRAM_DATABASE: /state/telegram.outbox.db
+    volumes:
+      - ${BENCHMARK_OUTPUT_DIR:-./resultados}:/app/resultados:ro
+      - telegram-state:/state
+      - control-socket:/run/benchmark
+    depends_on:
+      control:
+        condition: service_started
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+
 volumes:
   neo4j-data:
+  dashboard-state:
+  dashboard-backups:
+  control-state:
+  control-socket:
+  telegram-state:
+  index-context-rag:
+  index-graph-rag:
+  index-hybrid-rag:
+  index-knowledge-enhanced-rag:
+  index-memory-augmented-rag:
+  index-self-rag:

@@ -653,5 +653,9 @@ def run_resumable_benchmark(
             paused=int(checkpoint["operation"] == "paused"),
         )
         event("finished", **counts)
+        if manifest is not None:
+            from benchmark_archive import create_run_archive
+
+            create_run_archive(output_dir, run_id, dataset_path)
         print(json.dumps(counts, ensure_ascii=False))
         return counts

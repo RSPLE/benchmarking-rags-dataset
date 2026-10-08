@@ -26,3 +26,7 @@ tmp/*.txt
 
 tmp/implementation-*/
 *.queue.db
+dashboard/state/
+backups/
+**/*.sqlite3-wal
+**/*.sqlite3-shm

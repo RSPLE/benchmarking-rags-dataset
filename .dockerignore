@@ -12,3 +12,13 @@
 **/*.sqlite3
 **/*.pdf
 **/*.ipynb
+tmp
+backups
+dashboard/state
+**/*.env
+**/.env
+**/*.sqlite3-wal
+**/*.sqlite3-shm
+.uv-cache
+resultados
+**/*.db

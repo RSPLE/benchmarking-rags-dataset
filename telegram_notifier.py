@@ -12,7 +12,7 @@ import uuid
 from pathlib import Path
 
 from benchmark_export import result_bytes
-from benchmark_storage import exclusive_lock, fingerprint
+from benchmark_storage import exclusive_lock, file_hash, fingerprint
 
 
 class TelegramError(RuntimeError):
@@ -31,9 +31,13 @@ class TelegramClient:
     def call(self, method, payload, document=None):
         payload = dict(payload)
         filename = payload.pop("_filename", "results.csv")
-        if filename not in {"results.csv", "results.json"}:
+        if filename not in {"results.csv", "results.json", "results.zip"}:
             raise ValueError("Invalid document name")
-        mime = "application/json" if filename.endswith(".json") else "text/csv"
+        mime = {
+            "results.json": "application/json",
+            "results.csv": "text/csv",
+            "results.zip": "application/zip",
+        }[filename]
         url = f"https://api.telegram.org/bot{self.token}/{method}"
         if document is None:
             data = json.dumps(payload).encode()
@@ -116,6 +120,36 @@ class Notifier:
         self.db.commit()
 
     def scan(self):
+        for metadata_path in sorted(self.root.glob("*/*/deliveries/*/metadata.json")):
+            archive_path = metadata_path.parent / "results.zip"
+            if not metadata_path.resolve().is_relative_to(
+                self.root
+            ) or not archive_path.resolve().is_relative_to(self.root):
+                continue
+            try:
+                metadata = json.loads(metadata_path.read_text())
+                identifier = fingerprint(
+                    {"chat": self.chat_id, "archive": metadata["sha256"], "run": metadata["run_id"]}
+                )
+                if self.db.execute("SELECT 1 FROM outbox WHERE id=?", (identifier,)).fetchone():
+                    continue
+                if (
+                    archive_path.stat().st_size > 49 * 1024 * 1024
+                    or file_hash(archive_path) != metadata["sha256"]
+                ):
+                    continue
+                payload = {
+                    "chat_id": self.chat_id,
+                    "_filename": "results.zip",
+                    "caption": f"{metadata['project']} · {metadata['operation']}\nExperimento: {metadata['experiment_id']}\nRodada: {metadata['run_id']}\nVálidos: {metadata['success']} | Falhas: {metadata['failed']} | Pendentes: {metadata['pending']}\nSHA-256: {metadata['sha256']}",
+                }
+                if self.send_files:
+                    self.db.execute(
+                        "INSERT OR IGNORE INTO outbox (id,method,payload,document) VALUES (?, 'sendDocument', ?, ?)",
+                        (identifier, json.dumps(payload), archive_path.read_bytes()),
+                    )
+            except (OSError, ValueError, KeyError):
+                continue
         paths = [self.root / "control_events.jsonl", *self.root.glob("*/*/public_events.jsonl")]
         for event_path in paths:
             if not event_path.is_file() or not event_path.resolve().is_relative_to(self.root):
