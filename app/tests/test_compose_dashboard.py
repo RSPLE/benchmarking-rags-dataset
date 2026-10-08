@@ -94,7 +94,7 @@ class ComposeDashboardTests(unittest.TestCase):
         self.assertEqual(
             set(services), {"neo4j", "dashboard", "monitor", "control", "telegram", "proxy", "auth"}
         )
-        for name in ("dashboard", "monitor", "control", "telegram", "auth"):
+        for name in ("dashboard", "monitor", "control", "telegram", "auth", "proxy"):
             with self.subTest(service=name):
                 self.assertNotIn("profiles", services[name])
                 self.assertNotIn("image", services[name])

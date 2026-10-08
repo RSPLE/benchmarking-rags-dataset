@@ -1,91 +1,190 @@
-# Implantação e recuperação
+# Implantação na VPS com Docker Compose
 
-[English](README.md) · [Configuração única](../docs/configuration.pt-BR.md) · [Operação](../docs/reliability.pt-BR.md)
+[English](README.md) · [Configuração](../docs/configuration.pt-BR.md) · [Dashboard](../dashboard/README.pt-BR.md)
 
-Para a interface Streamlit, siga o [guia do painel](../dashboard/README.pt-BR.md), incluindo
-o único comando `docker compose up -d`, credenciais na `.env` antes de subir,
-HTTPS pelo Caddyfile da raiz e acesso em `https://<DASHBOARD_PUBLIC_HOST>`. Libere TCP
-80/443 no firewall da VPS/provedor. Banco, fila e Telegram não precisam de portas
-públicas. O painel permite iniciar e retomar os lotes pela mesma fila do bot.
-O fluxo systemd abaixo se refere ao executor e ao Telegram.
+Execute os comandos abaixo na raiz do repositório. O fluxo padrão usa apenas
+Docker Engine e o plugin Docker Compose na VPS; não exige instalar Python/uv no host.
+Confirme `docker --version` e `docker compose version` antes de começar.
 
-## Preparação sem execução paga
-
-1. Registrar commit, alterações locais, datasets, resultados, corpus, índices e
-   estado dos serviços da VPS. Preservar `.env` sem exibir seu conteúdo.
-2. Fazer backup consistente. Para Chroma, nenhum worker pode estar usando o índice.
-   Para Neo4j, usar backup/dump compatível com a versão instalada e restauração em
-   banco separado; copiar um volume ativo não comprova um backup válido.
-3. Transferir código validado e PDFs sem substituir resultados, `.env`, bancos ou
-   índices históricos. Sincronizar raiz e seis ambientes com
-   `uv sync --locked --python 3.12`; usar `--project app/rags/NOME` em cada ambiente.
-4. Executar `python -m app preflight` e as suítes descritas no guia. Corrigir bloqueios.
-5. Criar usuários de sistema `benchmark` e `benchmark-notifier`, ambos com grupo
-   `benchmark`. O segundo não pode ler credenciais ou checkpoints. Dar escrita ao
-   primeiro em resultados, índices e `/var/lib/benchmark`. O código implantado deve
-   ser legível pelos serviços, mas administrado separadamente dos seus usuários.
-6. Completar somente `/logibot/benchmarking-rags-dataset/.env`, com proprietário
-   administrativo e modo `0600`, seguindo o guia de configuração. Não criar
-   `worker.env`, `control.env`, `telegram.env` ou `profiles.json`. O modo padrão
-   `full` cobre os seis RAGs; Knowledge usa `required`, com PDFs + Neo4j.
-7. Criar diretórios de resultados com grupo benchmark e travessia `0750`. Arquivos
-   públicos usam `0640`; checkpoints e diários financeiros usam `0600`. StateDirectory
-   das unidades prepara `/var/lib/benchmark` e `/var/lib/benchmark-notifier`.
-8. Instalar `control.service` como `benchmark-control.service` e `telegram.service`
-   como `benchmark-telegram.service` durante a conexão. `systemctl daemon-reload`
-   lê as unidades, sem criar lotes. Reiniciar os serviços após editar a `.env`.
-
-Os exemplos usam caminhos absolutos da VPS informada. Ajustar se a instalação for
-outra. O cache UV usa `/var/lib/benchmark/uv-cache`; ambientes devem estar preparados
-antes de iniciar o serviço. `app/services/entrypoint.py` seleciona as variáveis da função
-antes de iniciar o processo final. O controle recebe IDs humanos, sem token do bot;
-o notificador recebe token/destino, sem chaves dos modelos ou Neo4j. O systemd lê
-`EnvironmentFile` antes de aplicar o bloqueio de leitura da `.env` pelos serviços.
-As versões de python-dotenv dos locks reconhecem `PYTHON_DOTENV_DISABLED`, usado
-pelo inicializador para impedir novas leituras do arquivo no processo filho.
-
-`benchmark.service` é uma alternativa de lote único. Exige `BENCHMARK_PROJECT` e
-`BENCHMARK_QUESTION_LIMIT` na mesma `.env`. Não iniciar dois supervisores para o
-mesmo trabalho. O fluxo usual pelo Telegram usa somente os serviços de controle e
-notificação; não exige essas duas variáveis de lote único.
-
-## Conexão ao Telegram
-
-A `.env` local já contém canal verificado, token do bot e ID humano autorizado,
-com publicação, controle e admissão remota habilitados. Ao transferir a configuração,
-preserve os endereços e credenciais corretos do Neo4j da VPS.
+## 1. Clonar ou copiar o projeto
 
 ```bash
-uv run --locked python -m app telegram-check
-sudo install -m 0644 app/deployment/control.service /etc/systemd/system/benchmark-control.service
-sudo install -m 0644 app/deployment/telegram.service /etc/systemd/system/benchmark-telegram.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now benchmark-control.service benchmark-telegram.service
-sudo systemctl status benchmark-control.service benchmark-telegram.service
+git clone https://github.com/RSPLE/benchmarking-rags-dataset.git
+cd benchmarking-rags-dataset
 ```
 
-Execute após preparar usuários, permissões, ambientes e diretórios como descrito
-acima. Iniciar serviços admite comandos, mas não agenda benchmark. Mantenha somente
-um processo de polling. No privado do bot, envie `/start` e depois `/status`. O
-canal recebe publicações; `/start` no canal não executa trabalho. Quando estiver
-pronto, use `/executar context-rag --questions 1` ou `/executar all --questions 1`.
-Esses comandos podem consumir modelos desde a preparação. Todas as flags
-compartilhadas com a CLI estão em [compatibilidade](../docs/compatibility.pt-BR.md).
+O clone precisa conter a revisão com `app/` e os Dockerfiles novos. Alterações ainda
+somente locais precisam ser transferidas ou publicadas no repositório antes do clone.
+Não copie `.venv`, caches ou containers. Se já existem dados na VPS, preserve o `.env`,
+`resultados/`, índices e volumes; mantenha o nome do projeto Compose usado anteriormente.
 
-A consulta real de leitura ao Telegram passou nesta revisão. Entrega de mensagens,
-execução dos serviços, Neo4j e piloto real com modelos ainda dependem da validação
-após implantação. Nenhum serviço da VPS foi ativado ou modelo pago chamado. Editar
-a `.env` local não atualiza a VPS. Se um token foi exposto, substitua pelo BotFather
-e atualize `TELEGRAM_BOT_TOKEN` antes de iniciar os serviços.
+## 2. Criar o único arquivo de configuração
 
-## Recuperação
+Em uma instalação nova:
 
-Uma reinicialização do controle marca lotes pendentes/em execução como interrompidos.
-Não há reinício pago automático. Conferir estado e consumo, reconciliar quando
-possível e enviar uma nova solicitação explícita de retomada. Uma chamada cobrada
-sem resposta salva pode precisar de investigação e não deve ser tratada como gratuita.
+```bash
+cp .env.example .env
+chmod 600 .env
+nano .env
+```
 
-Testar desligamento do serviço durante um lote simulado, restauração em diretório
-isolado e reinício do notificador. Medir CPU/RAM/tempo na VPS antes de ampliar lotes.
-Para rollback, parar admissão de novos lotes e usar uma cópia separada do código
-anterior; não misturar checkpoints antigos com experimentos novos.
+Se `.env` já existir, edite-o sem substituir suas credenciais. Preencha:
+
+| Variável | O que colocar |
+| --- | --- |
+| `DASHBOARD_PUBLIC_HOST` | IP público da VPS, por exemplo `179.236.251.180`, ou domínio; sem `https://` nem porta |
+| `DASHBOARD_USERNAME` | Seu usuário, com 3–64 letras, números, `.`, `_` ou `-` |
+| `DASHBOARD_PASSWORD` | Sua senha, com pelo menos 12 caracteres; use aspas simples se contiver `$` |
+| `OPENROUTER_API_KEY` | Chave real do OpenRouter |
+| `OPENROUTER_MODEL`, `OPENROUTER_JUDGE_MODEL`, `OPENROUTER_EMBEDDING_MODEL` | Modelos do protocolo; juiz vazio herda o modelo principal |
+| `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`, `NEO4J_DATABASE` | Conexão do grafo do Knowledge |
+| `NEO4J_CONTAINER_URI` | `bolt://neo4j:7687` para banco local do Compose; vazio para usar a URI hospedada |
+| `TELEGRAM_BOT_TOKEN` | Token completo do BotFather, não apenas o ID do bot |
+| `TELEGRAM_RESULTS_CHAT_ID` | ID numérico negativo do canal privado, geralmente `-100...` |
+| `TELEGRAM_ALLOWED_USER_IDS` | Seu ID pessoal numérico; múltiplos IDs separados por vírgula |
+| `BENCHMARK_REMOTE_ENABLED` | `true` para permitir execução pelo dashboard e Telegram |
+| `TELEGRAM_ENABLED`, `TELEGRAM_CONTROL_ENABLED` | `true` para publicar resultados e receber comandos |
+| `TELEGRAM_SEND_FINAL_FILES` | `true` para enviar os arquivos públicos ao concluir cada rodada de RAG |
+
+Não há limite monetário obrigatório. Os limites técnicos de chamadas, tokens e tempo
+continuam configuráveis. As credenciais não têm valores padrão de acesso ao dashboard.
+
+Para Neo4j local, use `NEO4J_USERNAME=neo4j`, escolha uma senha e mantenha
+`NEO4J_URI=bolt://127.0.0.1:7687` com `NEO4J_CONTAINER_URI=bolt://neo4j:7687`.
+Para Aura/outro servidor, use suas credenciais e deixe `NEO4J_CONTAINER_URI` vazio.
+Uma senha nova não altera a autenticação de um volume Neo4j já existente.
+
+## 3. Conferir PDFs, diretório de resultados e portas
+
+Coloque os mesmos sete PDFs aprovados em `app/rags/context-rag/docs/` se ainda não
+estiverem presentes. No Compose, esse diretório é montado como `/corpus` para os
+seis RAGs, incluindo Knowledge; não é necessário manter seis cópias na VPS.
+Os PDFs não entram na imagem. O dataset já fica em `data/evaluation/`.
+
+Os serviços gravam como UID/GID 1000. Para o `BENCHMARK_OUTPUT_DIR=resultados`
+padrão, em instalação nova:
+
+```bash
+sudo install -d -m 0750 -o 1000 -g 1000 resultados
+```
+
+Se estiver como root, `sudo` pode ser omitido. Para outro caminho, crie esse diretório
+com a mesma propriedade; se houver resultados existentes, preserve-os e ajuste acesso
+antes da execução. Não use permissão `777`.
+
+Libere **TCP 80 e 443** no firewall da VPS e do provedor, preservando o acesso SSH.
+Essas portas precisam estar livres e chegar a esta VPS. Não publique Streamlit,
+autenticação, fila, SQLite ou Neo4j diretamente. O Telegram usa conexões de saída.
+
+## 4. Subir tudo
+
+```bash
+docker compose config --quiet
+docker compose up -d
+docker compose ps
+```
+
+As imagens são construídas localmente a partir de bases públicas. A primeira subida
+precisa de internet e pode demorar. Não há profiles nem login em registry privado.
+O Compose inicia os serviços, sem agendar um benchmark automaticamente.
+O Caddyfile da raiz é copiado para a imagem do proxy: mudanças nele são aplicadas
+pela próxima execução de `docker compose up -d`.
+
+Acesse `https://<DASHBOARD_PUBLIC_HOST>` com o usuário/senha definidos na `.env`.
+No mesmo computador que executa Docker, use `http://127.0.0.1:8501`.
+O endereço `127.0.0.1` em seu notebook não aponta para a VPS.
+A emissão do certificado público depende de o endereço e as portas chegarem à VPS;
+executar a aplicação localmente com o IP remoto não comprova HTTPS na VPS.
+
+```bash
+docker compose logs --tail 80 proxy auth dashboard monitor control telegram
+docker compose exec control python -m app doctor
+docker compose exec control python -m app preflight
+docker compose exec control python -m app telegram-check
+```
+
+`doctor` confere configuração/corpus; `preflight` lê PDFs e dependências sem gerar
+embeddings ou chamar modelos. A leitura dos sete PDFs pode demorar. `telegram-check`
+consulta a API para conferir bot/canal/permissões, sem enviar mensagens nem consumir
+updates. O bot deve ser administrador do canal com permissão de publicar.
+
+## 5. Preparar o grafo do Knowledge quando necessário
+
+`BENCHMARK_KG_MODE=required` exige o grafo curado preenchido. Se você usa a base
+hospedada existente ou restaurou o grafo, não o reconstrua. Um Neo4j novo e vazio
+não contém esse grafo automaticamente. Os PDFs continuam sendo os mesmos sete.
+
+Somente para inicializar uma base sem nós `Conceito`, o comando abaixo cria o grafo
+definido no código original e recusa uma base que já contenha esses nós. Execute
+antes de enviar trabalhos e mantenha `BENCHMARK_ALLOW_KG_REBUILD=false` na `.env`:
+
+```bash
+docker compose exec -T -w /app/app/rags/knowledge-enhanced-rag control .venv/bin/python - <<'PY'
+import os
+import rag_settings
+from src.knowledge_graph import KnowledgeGraph
+
+graph = KnowledgeGraph()
+try:
+    with graph.driver.session(database=os.getenv("NEO4J_DATABASE", "neo4j")) as session:
+        count = session.run("MATCH (n:Conceito) RETURN count(n) AS total").single()["total"]
+    if count:
+        raise SystemExit("O grafo já contém conceitos; preserve a base existente.")
+    os.environ["BENCHMARK_ALLOW_KG_REBUILD"] = "true"
+    graph.build_graph()
+finally:
+    graph.fechar()
+PY
+```
+
+A preparação acima grava no Neo4j configurado, não chama modelos nem extrai um novo
+grafo dos PDFs. Bancos existentes devem ser preservados/restaurados conforme seu
+protocolo de pesquisa, sem substituir o grafo por outro para contornar uma falha.
+
+## 6. Iniciar e acompanhar
+
+Na interface, abra **Executar e retomar**, escolha RAG, quantidade e flags e envie
+o lote. **Pendências e falhas** prepara retomadas. Fechar o navegador não interrompe
+o executor. Para Telegram, envie os comandos na conversa privada com o bot:
+
+```text
+/start
+/status
+/executar context-rag --questions 1
+/retomar context-rag ID_COMPLETO --questions 3 --selection failed
+```
+
+O canal recebe resultados; comandos de execução são aceitos na conversa privada.
+O equivalente pelo terminal, dentro do container, é:
+
+```bash
+docker compose exec control python -m app run context-rag --questions 1
+docker compose exec control python -m app resume context-rag ID_COMPLETO --questions 3 --selection failed
+```
+
+Esses comandos iniciam trabalho real e podem consumir créditos desde a preparação.
+CLI, dashboard e Telegram compartilham as flags e checkpoints. Uma execução ativa
+possui trava global; não inicie outro lote enquanto ela estiver em andamento.
+Consulte [as opções e o protocolo](../docs/compatibility.pt-BR.md).
+
+## 7. Preservar e atualizar
+
+`resultados/` fica no host. SQLite, fila, outbox do Telegram, índices e certificados
+ficam em volumes persistentes. O monitor usa backup consistente do SQLite após
+mudanças; o Telegram envia os artefatos públicos de cada rodada conforme a configuração.
+O canal não substitui backup completo: checkpoints privados, índices e banco precisam
+ser preservados também fora da VPS.
+
+```bash
+docker compose exec monitor python -m app.dashboard.manage backup
+docker compose ps
+```
+
+Faça atualizações sem trabalho ativo. Preserve os dados, atualize o código e execute
+`docker compose up -d`. Não use `docker compose down -v`: `-v` apaga os volumes.
+Retomadas exigem configuração compatível; confira o [guia de migração](../docs/layout.pt-BR.md).
+Em caso de WebSocket recusado, verifique os logs de `proxy`, `auth` e `dashboard`;
+o proxy deve usar a imagem atual, com verificação HTTP da sessão antes do upgrade.
+
+A alternativa sem Compose está no [guia systemd](systemd.pt-BR.md). Não execute
+os dois supervisores sobre os mesmos trabalhos ou o mesmo polling do Telegram.

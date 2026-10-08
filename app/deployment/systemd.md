@@ -1,6 +1,6 @@
 # Deployment and recovery
 
-[Português](README.pt-BR.md) · [Single configuration](../docs/configuration.md) · [Operations](../docs/reliability.md)
+[Português](systemd.pt-BR.md) · [Single configuration](../docs/configuration.md) · [Operations](../docs/reliability.md)
 
 For Streamlit, follow the [dashboard guide](../dashboard/README.md), including
 the single `docker compose up -d` command, credentials set in `.env` before startup,

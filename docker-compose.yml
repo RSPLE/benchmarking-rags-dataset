@@ -1,6 +1,9 @@
 services:
   proxy:
-    image: caddy:2.11.7-alpine
+    build:
+      context: .
+      dockerfile: app/deployment/Dockerfile.proxy
+    pull_policy: build
     restart: unless-stopped
     environment:
       DASHBOARD_PUBLIC_HOST: ${DASHBOARD_PUBLIC_HOST:?Defina DASHBOARD_PUBLIC_HOST na .env}
@@ -9,7 +12,6 @@ services:
       - "${DASHBOARD_HTTPS_PORT:-443}:443"
       - "127.0.0.1:${DASHBOARD_PORT:-8501}:8080"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
     depends_on:
