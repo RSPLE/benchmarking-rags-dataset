@@ -8,7 +8,7 @@
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
-tests/.runtime/
+app/tests/.runtime/
 .ipynb_checkpoints/
 .idea/
 .vscode/

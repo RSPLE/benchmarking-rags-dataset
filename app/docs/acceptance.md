@@ -90,3 +90,34 @@ models/HTTP. No VPS service was activated.
 
 Original protocol details and declared differences: [compatibility](compatibility.md).
 Current logs: `unit-paper.log` and `integrations-paper.log` under the local log directory.
+
+## Application layout and proxy verification — October 8, 2026
+
+- `app/` now contains benchmark, dashboard, RAGs, providers, Telegram, services,
+  tools, deployment, docs, scripts and tests. English READMEs are primary.
+- General suite: 101 discovered, 90 passed, 11 integration tests skipped in the
+  lightweight root environment. Those integrations passed in all six locked RAG
+  environments, using fake model responses and real RAGAS/Chroma libraries.
+- HTTP/proxy suite: 10 passed against an isolated Compose deployment, including
+  authenticated WebSocket, rejection without login, logout and session persistence.
+- Docker builds for dashboard/auth, worker and proxy succeeded. Isolated auth,
+  dashboard, monitor, control and proxy became healthy. No benchmark was queued.
+- Browser verification: login, reload without logout, execution form, original
+  CSV chart and PNG/EPS downloads passed; no browser console errors were observed.
+- Preservation check: 33 recorded historical/data/lock files and the plotting
+  script retained their bytes; the same seven PDF hashes matched across six RAGs.
+- Migration tests cover the approved code/path transition, refusal of changed
+  configuration or unknown revisions, saved-answer/metric reuse, provenance and
+  historical SQLite imports without duplicate experiment IDs.
+
+The reported local WebSocket failure was reproduced as HTTP 403: the running
+proxy retained an old Caddy configuration and sent an upgrade request to the HTTP
+authentication endpoint. Copying the root Caddyfile into a locally built proxy image
+makes configuration changes take effect through plain `docker compose up -d`.
+After replacing only the local proxy, login returned 303, the page returned 200
+and the authenticated WebSocket connected with the `streamlit` subprotocol.
+
+These checks do not prove public TLS issuance, VPS resource capacity, live provider
+availability or scientific scores. No paid model run or production graph rebuild
+was performed as part of this reorganization. Historical files are preserved,
+including invalid/incomplete sources that the dashboard explicitly flags.

@@ -40,7 +40,7 @@ A emissão real só pode ser confirmada após subir na VPS com essas portas aces
 Rodar no computador local não comprova o HTTPS do IP público.
 
 São sete serviços: proxy, autenticação, painel, importador/backup, executor,
-Telegram e Neo4j. Os cinco serviços da aplicação são construídos localmente.
+Telegram e Neo4j. Os cinco serviços da aplicação e o proxy Caddy são construídos localmente.
 Caddy, Neo4j e as imagens base são públicos. Não existem perfis nem imagem privada
 do projeto; não é necessário `docker login`. A primeira construção requer internet.
 Não publique portas adicionais para SQLite, autenticação, fila, Neo4j ou Telegram.

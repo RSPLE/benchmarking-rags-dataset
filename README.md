@@ -187,7 +187,7 @@ The database is available to the CLI at `127.0.0.1:7687`. The `neo4j-data` volum
 
 ```bash
 docker compose logs -f neo4j
-docker compose down
+docker compose stop neo4j
 ```
 
 Recommended order for testing `knowledge-enhanced-rag` with local Neo4j:
@@ -200,7 +200,7 @@ uv run python -m app run knowledge-enhanced-rag --questions 3
 
 ### Hosted Neo4j
 
-To use Neo4j Aura or another hosted instance, do not start the local `neo4j` service. The dashboard can still run in Docker. Create the hosted database, copy the credentials provided by the service, and configure `.env`:
+To use Neo4j Aura or another hosted instance, configure its URI and leave `NEO4J_CONTAINER_URI` empty. Plain Compose also starts the local database, but the worker uses the configured hosted endpoint. Create the hosted database, copy the credentials provided by the service, and configure `.env`:
 
 ```env
 NEO4J_URI=neo4j+s://your-id.databases.neo4j.io

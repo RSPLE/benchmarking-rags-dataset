@@ -91,7 +91,7 @@ As flags compartilhadas e os limites de comparação estão no
 
 - Python 3.11, 3.12 ou 3.13 para execução local;
 - [`uv`](https://docs.astral.sh/uv/);
-- Docker Desktop com Docker Compose apenas se você quiser executar um Neo4j local em container;
+- Docker Engine com o plugin Compose para a implantação completa em containers;
 - chave do OpenRouter ou da OpenAI;
 - Neo4j apenas para o modo de grafo `required`; o modo `snapshot` funciona sem banco;
 - PDFs próprios ou com autorização de redistribuição para formar os corpora locais.
@@ -191,7 +191,7 @@ O banco fica disponível para a CLI em `127.0.0.1:7687`. O volume `neo4j-data` c
 
 ```bash
 docker compose logs -f neo4j
-docker compose down
+docker compose stop neo4j
 ```
 
 Ordem recomendada para testar o `knowledge-enhanced-rag` com Neo4j local:
@@ -204,7 +204,7 @@ uv run python -m app run knowledge-enhanced-rag --questions 3
 
 ### Neo4j hospedado
 
-Para usar Neo4j Aura ou outra instância hospedada, não inicie o serviço local `neo4j`. O painel pode continuar rodando em Docker. Crie o banco hospedado, copie as credenciais fornecidas pelo serviço e configure o `.env`:
+Para usar Neo4j Aura ou outra instância hospedada, configure sua URI e deixe `NEO4J_CONTAINER_URI` vazio. O Compose também inicia o banco local, mas o executor usa o endereço hospedado configurado. Crie o banco hospedado, copie as credenciais fornecidas pelo serviço e configure o `.env`:
 
 ```env
 NEO4J_URI=neo4j+s://seu-id.databases.neo4j.io
@@ -403,7 +403,7 @@ Cada diretório de pipeline contém ainda seu próprio `pyproject.toml` e `uv.lo
 
 - **Checkpoint incompatível:** preserve o arquivo e confira o manifesto. Use a migração explícita para arquivos v1; mudanças de método exigem novo experimento.
 - **Chave ausente:** execute `uv run python -m app doctor` e confira o `.env` da raiz. Os seis RAGs compartilham esse arquivo.
-- **Neo4j em Docker:** como os benchmarks rodam no host pela CLI, use `NEO4J_URI=bolt://127.0.0.1:7687` no `.env`.
+- **Neo4j em Docker:** para o executor no Compose, use `NEO4J_CONTAINER_URI=bolt://neo4j:7687`; a CLI no host usa `NEO4J_URI=bolt://127.0.0.1:7687`.
 - **Neo4j Aura:** use a URI `neo4j+s://...` fornecida pela instância e as credenciais correspondentes. Não misture a senha do banco local persistido no volume com a senha da instância Aura.
 - **Modelo de embeddings alterado:** use outro `CHROMA_PERSIST_DIR` ou recrie conscientemente o índice; modelos com dimensões distintas não devem compartilhar a mesma coleção.
 

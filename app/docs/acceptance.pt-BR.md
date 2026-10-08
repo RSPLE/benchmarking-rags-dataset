@@ -90,3 +90,34 @@ fora do sandbox, mantendo modelos/HTTP simulados. Nenhum serviço da VPS foi ati
 
 Protocolo original e diferenças declaradas: [compatibilidade](compatibility.pt-BR.md).
 Logs atuais: `unit-paper.log` e `integrations-paper.log` no diretório local de logs.
+
+## Validação da estrutura e do proxy — 8 de outubro de 2026
+
+- `app/` reúne benchmark, dashboard, RAGs, providers, Telegram, serviços, ferramentas,
+  implantação, documentação, scripts e testes. Os READMEs principais estão em inglês.
+- Suíte geral: 101 descobertos, 90 aprovados e 11 integrações ignoradas no ambiente
+  leve da raiz. Essas integrações passaram nos seis ambientes RAG com lockfiles,
+  usando respostas simuladas e bibliotecas reais de RAGAS/Chroma.
+- Suíte HTTP/proxy: 10 aprovados em Compose isolado, incluindo WebSocket autenticado,
+  bloqueio sem login, logout e persistência de sessão.
+- Builds de dashboard/auth, executor e proxy concluídos. Auth, dashboard, monitor,
+  control e proxy ficaram saudáveis na instância isolada. Nenhum benchmark foi enviado.
+- Navegador: login, recarga sem logout, formulário de execução, gráfico original
+  do CSV e downloads PNG/EPS validados, sem erros observados no console.
+- Preservação: 33 arquivos históricos/dados/locks registrados e o script de gráficos
+  conservaram seus bytes; os mesmos sete hashes de PDFs coincidem nos seis RAGs.
+- Testes de migração cobrem a mudança aprovada de código/caminho, rejeição de revisão
+  desconhecida/configuração alterada, reutilização de respostas/métricas salvas,
+  registro de procedência e importação histórica no SQLite sem duplicar IDs.
+
+A falha local de WebSocket foi reproduzida com HTTP 403: o proxy em execução mantinha
+uma configuração antiga do Caddy e enviava upgrade à rota HTTP de autenticação.
+Copiar o Caddyfile da raiz para uma imagem construída localmente faz mudanças
+entrarem em vigor com `docker compose up -d`. Após substituir somente o proxy local,
+o login retornou 303, a página retornou 200 e o WebSocket autenticado conectou com
+o subprotocolo `streamlit`.
+
+Essas verificações não comprovam emissão pública de TLS, capacidade da VPS,
+disponibilidade dos provedores ou notas científicas. Não houve chamadas pagas a
+modelos nem reconstrução de grafo de produção nesta reorganização. Fontes
+históricas inválidas/incompletas são preservadas e sinalizadas pelo dashboard.
