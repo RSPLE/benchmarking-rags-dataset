@@ -327,6 +327,9 @@ class OperationsTests(unittest.TestCase):
             "UNRELATED_SECRET": "unrelated",
             "PYTHONPATH": "/untrusted",
             "PATH": "/usr/bin",
+            "UV_NO_SYNC": "1",
+            "UV_LINK_MODE": "copy",
+            "DASHBOARD_PASSWORD": "dashboard-secret",
         }
         telegram = role_environment("telegram", source)
         control = role_environment("control", source)
@@ -340,6 +343,8 @@ class OperationsTests(unittest.TestCase):
         self.assertNotIn("TELEGRAM_ALLOWED_USER_IDS", worker)
         for env in (telegram, control, worker):
             self.assertNotIn("UNRELATED_SECRET", env)
+            self.assertNotIn("DASHBOARD_PASSWORD", env)
+            self.assertEqual(env["UV_NO_SYNC"], "1")
             self.assertNotIn("PYTHONPATH", env)
             self.assertEqual(env["PYTHON_DOTENV_DISABLED"], "1")
 

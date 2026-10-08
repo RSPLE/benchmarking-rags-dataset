@@ -8,6 +8,11 @@
 
 [Versão em português](README.md)
 
+**Web interface:** see [dashboard first login](dashboard/README.en.md) to start
+by setting `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` in `.env`. Then run
+`docker compose up -d` and open <http://127.0.0.1:8501>. All services start without
+profiles and application images build locally. There are no default credentials.
+
 A monorepo for comparing six Retrieval-Augmented Generation (RAG) architectures against one shared dataset of 90 questions and reference answers. It measures quality with RAGAS, latency, and token usage; uses Chroma for vector indexing; and supports OpenRouter as the default LLM and embedding provider. Every pipeline has its own `uv` environment and lockfile to prevent dependency conflicts.
 
 ## Repository contents
@@ -187,7 +192,7 @@ uv run python main.py run knowledge-enhanced-rag --questions 3
 
 ### Hosted Neo4j
 
-To use Neo4j Aura or another hosted instance, do not run `docker compose`. Create the hosted database, copy the credentials provided by the service, and configure `.env`:
+To use Neo4j Aura or another hosted instance, do not start the local `neo4j` service. The dashboard can still run in Docker. Create the hosted database, copy the credentials provided by the service, and configure `.env`:
 
 ```env
 NEO4J_URI=neo4j+s://your-id.databases.neo4j.io

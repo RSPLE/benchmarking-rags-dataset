@@ -2,6 +2,10 @@
 
 [Português](README.md) · [Single configuration](../docs/configuration.en.md) · [Operations](../docs/reliability.en.md)
 
+For Streamlit, follow the [dashboard guide](../dashboard/README.en.md), including
+Docker commands, account creation, persistence and access recovery. The systemd
+workflow below covers execution and Telegram.
+
 ## Preparation without paid execution
 
 1. Record VPS commit, local changes, datasets, results, corpus, indices and service

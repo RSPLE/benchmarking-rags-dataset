@@ -9,6 +9,15 @@ template, not a second configuration to maintain. The local file is
 and credentials during deployment; do not blindly replace its configuration with
 the local copy. Separate Telegram/control environment files are no longer needed.
 
+## Web access before startup
+
+Set `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` in the same `.env`. Choose a
+password with at least 12 characters. Then run only `docker compose up -d` and open
+<http://127.0.0.1:8501>. There is no default account or post-start registration.
+Application images build locally without profiles or registry login. SQLite stores
+a password hash; keep `.env` private with mode `0600`. See
+[access, persistence and password changes](../dashboard/README.en.md).
+
 ## Where Telegram values belong
 
 | Variable in `.env` | Required value |

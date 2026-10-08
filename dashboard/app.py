@@ -48,8 +48,14 @@ def login():
         configured = db.execute("SELECT count(*) FROM users").fetchone()[0]
     if not configured:
         st.info(
-            "O administrador ainda precisa cadastrar o usuário no servidor. Consulte o guia de implantação."
+            "Defina DASHBOARD_USERNAME e DASHBOARD_PASSWORD na .env da raiz "
+            "antes de iniciar a aplicação. Use uma senha com pelo menos 12 caracteres."
         )
+        st.code(
+            "docker compose up -d",
+            language="bash",
+        )
+        st.caption("O painel não possui credenciais padrão. Guia completo: dashboard/README.md.")
         st.stop()
     with st.form("login", clear_on_submit=True):
         username = st.text_input("Usuário", max_chars=64)

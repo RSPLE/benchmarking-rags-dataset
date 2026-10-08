@@ -32,6 +32,11 @@ def main():
     args = parser.parse_args()
     settings = Settings.from_environment()
     if args.command in {"create-user", "reset-password"}:
+        if settings.password and args.username.strip().lower() == settings.username.lower():
+            parser.error(
+                "This account is configured in .env. Update DASHBOARD_PASSWORD "
+                "there, then run docker compose up -d."
+            )
         password = getpass.getpass("Senha / Password: ")
         if getpass.getpass("Confirme / Confirm: ") != password:
             parser.error("Passwords do not match")

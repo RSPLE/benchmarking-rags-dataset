@@ -2,6 +2,10 @@
 
 [English](README.en.md) · [Configuração única](../docs/configuracao.md) · [Operação](../docs/confiabilidade.md)
 
+Para a interface Streamlit, siga o [guia do painel](../dashboard/README.md), incluindo
+os comandos Docker, cadastro de usuário/senha, persistência e recuperação de acesso.
+O fluxo systemd abaixo se refere ao executor e ao Telegram.
+
 ## Preparação sem execução paga
 
 1. Registrar commit, alterações locais, datasets, resultados, corpus, índices e

@@ -3,32 +3,34 @@ services:
     image: neo4j:5-community
     restart: unless-stopped
     environment:
-      NEO4J_AUTH: ${NEO4J_USERNAME:-neo4j}/${NEO4J_PASSWORD:-benchmarking-rags}
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-benchmarking-rags}
     ports:
       - "127.0.0.1:7687:7687"
     volumes:
       - neo4j-data:/data
     healthcheck:
-      test: ["CMD-SHELL", "cypher-shell -u ${NEO4J_USERNAME:-neo4j} -p ${NEO4J_PASSWORD:-benchmarking-rags} 'RETURN 1' || exit 1"]
+      test: ["CMD-SHELL", "exec cypher-shell -u neo4j -p \"$${NEO4J_AUTH#*/}\" 'RETURN 1'"]
       interval: 10s
       timeout: 5s
       retries: 20
 
   dashboard:
-    profiles: [analytics]
-    build:
+    build: &dashboard_build
       context: .
       dockerfile: dashboard/Dockerfile
-    image: logibots-rag-dashboard:local
+    pull_policy: build
     restart: unless-stopped
-    environment: &dashboard_environment
-      DASHBOARD_DATABASE: /state/dashboard.sqlite3
-      DASHBOARD_RESULTS_DIR: /results
-      DASHBOARD_LEGACY_DIR: /legacy
-      DASHBOARD_BACKUP_DIR: /backups
-      DASHBOARD_POLL_SECONDS: ${DASHBOARD_POLL_SECONDS:-15}
-      DASHBOARD_BACKUP_SECONDS: ${DASHBOARD_BACKUP_SECONDS:-60}
-      DASHBOARD_SESSION_SECONDS: ${DASHBOARD_SESSION_SECONDS:-28800}
+    environment:
+      <<: &dashboard_environment
+        DASHBOARD_DATABASE: /state/dashboard.sqlite3
+        DASHBOARD_RESULTS_DIR: /results
+        DASHBOARD_LEGACY_DIR: /legacy
+        DASHBOARD_BACKUP_DIR: /backups
+        DASHBOARD_POLL_SECONDS: ${DASHBOARD_POLL_SECONDS:-15}
+        DASHBOARD_BACKUP_SECONDS: ${DASHBOARD_BACKUP_SECONDS:-60}
+        DASHBOARD_SESSION_SECONDS: ${DASHBOARD_SESSION_SECONDS:-28800}
+      DASHBOARD_USERNAME: ${DASHBOARD_USERNAME:?Defina DASHBOARD_USERNAME na .env}
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:?Defina DASHBOARD_PASSWORD na .env}
     ports:
       - "${DASHBOARD_BIND_ADDRESS:-127.0.0.1}:${DASHBOARD_PORT:-8501}:8501"
     volumes:
@@ -41,18 +43,21 @@ services:
     cap_drop: [ALL]
 
   monitor:
-    profiles: [analytics]
-    image: logibots-rag-dashboard:local
-    build:
-      context: .
-      dockerfile: dashboard/Dockerfile
+    build: *dashboard_build
+    pull_policy: build
     restart: unless-stopped
     command: [python, -m, dashboard.monitor]
     environment: *dashboard_environment
+    depends_on:
+      dashboard:
+        condition: service_healthy
     volumes:
       - dashboard-state:/state
       - dashboard-backups:/backups
-      - ${BENCHMARK_OUTPUT_DIR:-./resultados}:/results:ro
+      - type: bind
+        source: ${BENCHMARK_OUTPUT_DIR:-./resultados}
+        target: /results
+        read_only: true
       - ./rags:/legacy:ro
     healthcheck:
       test: [CMD, python, -c, "import sqlite3,datetime; d=sqlite3.connect('file:/state/dashboard.sqlite3?mode=ro',uri=True); t=d.execute(\"SELECT value FROM metadata WHERE key='last_sync'\").fetchone()[0]; assert (datetime.datetime.now(datetime.UTC)-datetime.datetime.fromisoformat(t)).total_seconds()<120"]
@@ -67,22 +72,26 @@ services:
     cap_drop: [ALL]
 
   control:
-    profiles: [execution]
-    build:
+    build: &benchmark_build
       context: .
       dockerfile: deployment/Dockerfile.benchmark
-    image: logibots-rag-benchmark:local
+    pull_policy: build
     restart: unless-stopped
     env_file: .env
+    depends_on:
+      dashboard:
+        condition: service_healthy
     environment:
       BENCHMARK_OUTPUT_DIR: /app/resultados
       BENCHMARK_BUDGET_DIR: /app/resultados
       BENCHMARK_CONTROL_SOCKET: /run/benchmark/control.sock
       BENCHMARK_CONTROL_DATABASE: /state/queue.db
       DOCS_DIR: /corpus
-      NEO4J_URI: ${NEO4J_CONTAINER_URI:-bolt://neo4j:7687}
+      NEO4J_URI: ${NEO4J_CONTAINER_URI:-${NEO4J_URI:-bolt://neo4j:7687}}
     volumes:
-      - ${BENCHMARK_OUTPUT_DIR:-./resultados}:/app/resultados
+      - type: bind
+        source: ${BENCHMARK_OUTPUT_DIR:-./resultados}
+        target: /app/resultados
       - ./rags/context-rag/docs:/corpus:ro
       - control-state:/state
       - control-socket:/run/benchmark
@@ -99,10 +108,16 @@ services:
       - no-new-privileges:true
     cap_drop: [ALL]
     stop_grace_period: 30s
+    healthcheck:
+      test: [CMD, python, -c, "import pathlib; assert pathlib.Path('/run/benchmark/control.sock').is_socket()"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   telegram:
-    profiles: [execution]
-    image: logibots-rag-benchmark:local
+    build: *benchmark_build
+    pull_policy: build
     restart: unless-stopped
     command: [python, service_entrypoint.py, telegram, --from-environment]
     environment:
@@ -117,12 +132,15 @@ services:
       BENCHMARK_OUTPUT_DIR: /app/resultados
       BENCHMARK_TELEGRAM_DATABASE: /state/telegram.outbox.db
     volumes:
-      - ${BENCHMARK_OUTPUT_DIR:-./resultados}:/app/resultados:ro
+      - type: bind
+        source: ${BENCHMARK_OUTPUT_DIR:-./resultados}
+        target: /app/resultados
+        read_only: true
       - telegram-state:/state
       - control-socket:/run/benchmark
     depends_on:
       control:
-        condition: service_started
+        condition: service_healthy
     read_only: true
     tmpfs:
       - /tmp:size=128m

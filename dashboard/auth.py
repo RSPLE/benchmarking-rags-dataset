@@ -15,14 +15,47 @@ def password_digest(password, salt):
     ).hex()
 
 
-def set_password(database, username, password, *, replace=False):
+def validate_username(username):
     username = username.strip().lower()
     if not re.fullmatch(r"[a-z0-9_.-]{3,64}", username):
         raise ValueError("Username must contain 3–64 letters, digits, underscores, dots or hyphens")
+    return username
+
+
+def password_record(password):
     if not 12 <= len(password) <= 1024:
         raise ValueError("Use a password with 12–1024 characters")
     salt = secrets.token_hex(16)
     digest = password_digest(password, salt)
+    return salt, digest
+
+
+def bootstrap_account(database, username, password):
+    if not username or not password:
+        raise ValueError("Set DASHBOARD_USERNAME and DASHBOARD_PASSWORD in .env before startup")
+    username = validate_username(username)
+    if not 12 <= len(password) <= 1024:
+        raise ValueError("DASHBOARD_PASSWORD must contain 12–1024 characters")
+    with connect(database) as db, db:
+        db.execute("BEGIN IMMEDIATE")
+        row = db.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
+        if row and hmac.compare_digest(
+            row["password_hash"], password_digest(password, row["salt"])
+        ):
+            return
+        salt, digest = password_record(password)
+        db.execute(
+            "INSERT INTO users (username,password_hash,salt,updated_at) VALUES (?,?,?,?) "
+            "ON CONFLICT(username) DO UPDATE SET password_hash=excluded.password_hash, "
+            "salt=excluded.salt, failed_attempts=0, locked_until=0, version=users.version+1, "
+            "updated_at=excluded.updated_at",
+            (username, digest, salt, time.time()),
+        )
+
+
+def set_password(database, username, password, *, replace=False):
+    username = validate_username(username)
+    salt, digest = password_record(password)
     with connect(database) as db, db:
         exists = db.execute("SELECT 1 FROM users WHERE username=?", (username,)).fetchone()
         if exists and not replace:

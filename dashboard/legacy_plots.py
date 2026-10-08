@@ -107,7 +107,7 @@ def graph_figure(frame, title):
     radar_values = mean_scores + [mean_scores[0]]
     ax3.plot(angles, radar_values, color="#2c3e50", linewidth=2.5, marker="o", markersize=10)
     ax3.fill(angles, radar_values, color="#3498db", alpha=0.25)
-    for angle, value, label in zip(angles[:-1], mean_scores, available_labels, strict=False):
+    for angle, value, _label in zip(angles[:-1], mean_scores, available_labels, strict=False):
         ax3.annotate(
             f"{value:.3f}",
             xy=(angle, value),

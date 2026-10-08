@@ -14,4 +14,4 @@ ENV PATH=/app/dashboard/.venv/bin:$PATH PYTHONPATH=/app
 WORKDIR /app/dashboard
 EXPOSE 8501
 HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=3)"
-CMD ["python", "-m", "streamlit", "run", "app.py", "--server.address=0.0.0.0"]
+CMD ["python", "-m", "dashboard.server", "--address", "0.0.0.0"]

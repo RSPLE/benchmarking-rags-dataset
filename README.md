@@ -8,6 +8,11 @@
 
 [English version](README.en.md)
 
+**Interface web:** consulte [primeiro acesso ao painel](dashboard/README.md) para
+preencher `DASHBOARD_USERNAME` e `DASHBOARD_PASSWORD` na `.env`. Depois execute
+`docker compose up -d` e acesse <http://127.0.0.1:8501>. Todos os serviços sobem
+sem perfis e as imagens da aplicação são construídas localmente. Não há credenciais padrão.
+
 Monorepo para comparar seis arquiteturas de Retrieval-Augmented Generation (RAG) sobre um dataset comum de 90 perguntas e respostas de referência. O projeto mede qualidade com RAGAS, latência e consumo de tokens, usa Chroma como índice vetorial e oferece OpenRouter como provedor padrão de LLM e embeddings. Cada pipeline possui ambiente e lockfile `uv` próprios para impedir conflitos de dependências.
 
 ## O que existe neste repositório
@@ -171,7 +176,7 @@ NEO4J_PASSWORD=uma-senha-local-segura
 Inicie o banco:
 
 ```bash
-docker compose up -d
+docker compose up -d neo4j
 ```
 
 O banco fica disponível para a CLI em `127.0.0.1:7687`. O volume `neo4j-data` conserva os dados e a senha usada na primeira inicialização; se ele já existir, mantenha essa senha no `.env`. Para acompanhar ou encerrar apenas o banco:
@@ -191,7 +196,7 @@ uv run python main.py run knowledge-enhanced-rag --questions 3
 
 ### Neo4j hospedado
 
-Para usar Neo4j Aura ou outra instância hospedada, não execute `docker compose`. Crie o banco hospedado, copie as credenciais fornecidas pelo serviço e configure o `.env`:
+Para usar Neo4j Aura ou outra instância hospedada, não inicie o serviço local `neo4j`. O painel pode continuar rodando em Docker. Crie o banco hospedado, copie as credenciais fornecidas pelo serviço e configure o `.env`:
 
 ```env
 NEO4J_URI=neo4j+s://seu-id.databases.neo4j.io

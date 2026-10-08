@@ -25,6 +25,7 @@ tmp/*.txt
 *.outbox.db
 
 tmp/implementation-*/
+tmp/startup-check/
 *.queue.db
 dashboard/state/
 backups/

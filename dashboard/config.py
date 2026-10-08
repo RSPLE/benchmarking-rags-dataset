@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,13 +16,17 @@ class Settings:
     poll_seconds: int = 15
     backup_seconds: int = 60
     session_seconds: int = 28800
+    username: str = ""
+    password: str = field(default="", repr=False)
 
     @classmethod
     def from_environment(cls):
         from dotenv import dotenv_values
 
         configured = (
-            dotenv_values(ROOT / ".env") if os.getenv("PYTHON_DOTENV_DISABLED") != "1" else {}
+            dotenv_values(ROOT / ".env", interpolate=False)
+            if os.getenv("PYTHON_DOTENV_DISABLED") != "1"
+            else {}
         )
         values = {**configured, **os.environ}
 
@@ -37,4 +41,6 @@ class Settings:
             max(5, int(values.get("DASHBOARD_POLL_SECONDS", "15"))),
             max(15, int(values.get("DASHBOARD_BACKUP_SECONDS", "60"))),
             max(300, int(values.get("DASHBOARD_SESSION_SECONDS", "28800"))),
+            values.get("DASHBOARD_USERNAME", "") or "",
+            values.get("DASHBOARD_PASSWORD", "") or "",
         )
