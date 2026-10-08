@@ -1,62 +1,62 @@
-# Implantação e recuperação
+# Deployment and recovery
 
-[English](README.en.md) · [Configuração única](../docs/configuracao.md) · [Operação](../docs/confiabilidade.md)
+[Português](README.pt-BR.md) · [Single configuration](../docs/configuration.md) · [Operations](../docs/reliability.md)
 
-Para a interface Streamlit, siga o [guia do painel](../dashboard/README.md), incluindo
-o único comando `docker compose up -d`, credenciais na `.env` antes de subir,
-HTTPS pelo Caddyfile da raiz e acesso em `https://<DASHBOARD_PUBLIC_HOST>`. Libere TCP
-80/443 no firewall da VPS/provedor. Banco, fila e Telegram não precisam de portas
-públicas. O painel permite iniciar e retomar os lotes pela mesma fila do bot.
-O fluxo systemd abaixo se refere ao executor e ao Telegram.
+For Streamlit, follow the [dashboard guide](../app/dashboard/README.md), including
+the single `docker compose up -d` command, credentials set in `.env` before startup,
+HTTPS through the root Caddyfile and access at `https://<DASHBOARD_PUBLIC_HOST>`. Allow TCP
+80/443 in the VPS/provider firewall. Database, queue and Telegram do not need public
+ports. The dashboard starts and resumes jobs through the same queue as the bot.
+The systemd workflow below covers execution and Telegram.
 
-## Preparação sem execução paga
+## Preparation without paid execution
 
-1. Registrar commit, alterações locais, datasets, resultados, corpus, índices e
-   estado dos serviços da VPS. Preservar `.env` sem exibir seu conteúdo.
-2. Fazer backup consistente. Para Chroma, nenhum worker pode estar usando o índice.
-   Para Neo4j, usar backup/dump compatível com a versão instalada e restauração em
-   banco separado; copiar um volume ativo não comprova um backup válido.
-3. Transferir código validado e PDFs sem substituir resultados, `.env`, bancos ou
-   índices históricos. Sincronizar raiz e seis ambientes com
-   `uv sync --locked --python 3.12`; usar `--project rags/NOME` em cada ambiente.
-4. Executar `main.py preflight` e as suítes descritas no guia. Corrigir bloqueios.
-5. Criar usuários de sistema `benchmark` e `benchmark-notifier`, ambos com grupo
-   `benchmark`. O segundo não pode ler credenciais ou checkpoints. Dar escrita ao
-   primeiro em resultados, índices e `/var/lib/benchmark`. O código implantado deve
-   ser legível pelos serviços, mas administrado separadamente dos seus usuários.
-6. Completar somente `/logibot/benchmarking-rags-dataset/.env`, com proprietário
-   administrativo e modo `0600`, seguindo o guia de configuração. Não criar
-   `worker.env`, `control.env`, `telegram.env` ou `profiles.json`. O modo padrão
-   `full` cobre os seis RAGs; Knowledge usa `required`, com PDFs + Neo4j.
-7. Criar diretórios de resultados com grupo benchmark e travessia `0750`. Arquivos
-   públicos usam `0640`; checkpoints e diários financeiros usam `0600`. StateDirectory
-   das unidades prepara `/var/lib/benchmark` e `/var/lib/benchmark-notifier`.
-8. Instalar `control.service` como `benchmark-control.service` e `telegram.service`
-   como `benchmark-telegram.service` durante a conexão. `systemctl daemon-reload`
-   lê as unidades, sem criar lotes. Reiniciar os serviços após editar a `.env`.
+1. Record VPS commit, local changes, datasets, results, corpus, indices and service
+   state. Preserve `.env` without printing its contents.
+2. Make consistent backups. Chroma must not be used by a worker. Use a Neo4j
+   backup/dump compatible with the installed version and restore into a separate
+   database; copying a live volume does not prove a consistent backup.
+3. Transfer verified code and PDFs without replacing historical results, `.env`,
+   databases or indices. Sync the root and all six environments with
+   `uv sync --locked --python 3.12`, adding `--project app/rags/NAME` for each child.
+4. Run `main.py preflight` and the documented suites; resolve blockers.
+5. Create system users `benchmark` and `benchmark-notifier`, both in group
+   `benchmark`. The latter must not read credentials/checkpoints. Grant the worker
+   write access to results, indices and `/var/lib/benchmark`. Deployed code must be
+   readable by services but administered separately from their accounts.
+6. Complete only `/logibot/benchmarking-rags-dataset/.env`, with administrative
+   ownership and mode `0600`, following the configuration guide. Do not create
+   `worker.env`, `control.env`, `telegram.env` or `profiles.json`. Default `full`
+   mode covers all six RAGs; Knowledge uses `required`, with PDFs plus Neo4j.
+7. Result directories use group benchmark and traversal mode `0750`. Public files
+   use `0640`; checkpoints and financial journals use `0600`. Unit StateDirectory
+   settings prepare `/var/lib/benchmark` and `/var/lib/benchmark-notifier`.
+8. Install `control.service` as `benchmark-control.service` and `telegram.service`
+   as `benchmark-telegram.service` during connection. `systemctl daemon-reload`
+   loads units without queuing work. Restart services after editing `.env`.
 
-Os exemplos usam caminhos absolutos da VPS informada. Ajustar se a instalação for
-outra. O cache UV usa `/var/lib/benchmark/uv-cache`; ambientes devem estar preparados
-antes de iniciar o serviço. `service_entrypoint.py` seleciona as variáveis da função
-antes de iniciar o processo final. O controle recebe IDs humanos, sem token do bot;
-o notificador recebe token/destino, sem chaves dos modelos ou Neo4j. O systemd lê
-`EnvironmentFile` antes de aplicar o bloqueio de leitura da `.env` pelos serviços.
-As versões de python-dotenv dos locks reconhecem `PYTHON_DOTENV_DISABLED`, usado
-pelo inicializador para impedir novas leituras do arquivo no processo filho.
+Examples use the supplied VPS paths; adjust for other deployments. The UV cache
+uses `/var/lib/benchmark/uv-cache`; environments must be prepared before startup.
+`app/services/entrypoint.py` selects role-specific variables before starting the final
+process. Control receives human IDs without the bot token; the notifier receives
+its token/destination without model or Neo4j credentials. Systemd reads
+`EnvironmentFile` before blocking service access to `.env`. Locked python-dotenv
+versions support `PYTHON_DOTENV_DISABLED`, which the launcher sets to prevent
+subsequent file reads in child processes.
 
-`benchmark.service` é uma alternativa de lote único. Exige `BENCHMARK_PROJECT` e
-`BENCHMARK_QUESTION_LIMIT` na mesma `.env`. Não iniciar dois supervisores para o
-mesmo trabalho. O fluxo usual pelo Telegram usa somente os serviços de controle e
-notificação; não exige essas duas variáveis de lote único.
+`benchmark.service` is a one-shot alternative. It requires `BENCHMARK_PROJECT` and
+`BENCHMARK_QUESTION_LIMIT` in the same `.env`. Do not supervise the same work twice.
+The usual Telegram flow uses only control and notification services and does not
+require these two one-shot variables.
 
-## Conexão ao Telegram
+## Telegram connection
 
-A `.env` local já contém canal verificado, token do bot e ID humano autorizado,
-com publicação, controle e admissão remota habilitados. Ao transferir a configuração,
-preserve os endereços e credenciais corretos do Neo4j da VPS.
+The local `.env` already contains the verified channel, bot token and authorized
+human ID, with publication/control/remote admission enabled. Preserve the correct
+Neo4j endpoint and credentials for the VPS when transferring configuration.
 
 ```bash
-uv run --locked python main.py telegram-check
+uv run --locked python -m app telegram-check
 sudo install -m 0644 deployment/control.service /etc/systemd/system/benchmark-control.service
 sudo install -m 0644 deployment/telegram.service /etc/systemd/system/benchmark-telegram.service
 sudo systemctl daemon-reload
@@ -64,28 +64,28 @@ sudo systemctl enable --now benchmark-control.service benchmark-telegram.service
 sudo systemctl status benchmark-control.service benchmark-telegram.service
 ```
 
-Execute após preparar usuários, permissões, ambientes e diretórios como descrito
-acima. Iniciar serviços admite comandos, mas não agenda benchmark. Mantenha somente
-um processo de polling. No privado do bot, envie `/start` e depois `/status`. O
-canal recebe publicações; `/start` no canal não executa trabalho. Quando estiver
-pronto, use `/executar context-rag --questions 1` ou `/executar all --questions 1`.
-Esses comandos podem consumir modelos desde a preparação. Todas as flags
-compartilhadas com a CLI estão em [compatibilidade](../docs/compatibilidade.md).
+Run these commands after preparing users, permissions, environments and directories
+as described above. Starting services admits commands but does not schedule a
+benchmark. Keep only one polling process. In the private bot conversation use
+`/start`, then `/status`. The channel receives publications; `/start` posted in the
+channel does not execute work. When ready, use `/executar context-rag --questions 1`
+or `/executar all --questions 1`. These commands can incur model costs from preparation.
+All shared CLI flags are documented in [compatibility](../docs/compatibility.md).
 
-A consulta real de leitura ao Telegram passou nesta revisão. Entrega de mensagens,
-execução dos serviços, Neo4j e piloto real com modelos ainda dependem da validação
-após implantação. Nenhum serviço da VPS foi ativado ou modelo pago chamado. Editar
-a `.env` local não atualiza a VPS. Se um token foi exposto, substitua pelo BotFather
-e atualize `TELEGRAM_BOT_TOKEN` antes de iniciar os serviços.
+Live read-only Telegram checks passed in this review. Message delivery, service
+execution, Neo4j and a real model pilot still require deployment validation. No VPS
+service was activated or paid model call made. Editing local `.env` does not update
+the VPS automatically. If a token has been exposed, replace it via BotFather and
+update `TELEGRAM_BOT_TOKEN` before starting services.
 
-## Recuperação
+## Recovery
 
-Uma reinicialização do controle marca lotes pendentes/em execução como interrompidos.
-Não há reinício pago automático. Conferir estado e consumo, reconciliar quando
-possível e enviar uma nova solicitação explícita de retomada. Uma chamada cobrada
-sem resposta salva pode precisar de investigação e não deve ser tratada como gratuita.
+Control restarts mark queued/running jobs interrupted. Paid work never restarts
+without an explicit request. Inspect state and usage, reconcile where possible
+and submit a new resume request. A charged call without a saved response may need
+investigation and must not be considered free.
 
-Testar desligamento do serviço durante um lote simulado, restauração em diretório
-isolado e reinício do notificador. Medir CPU/RAM/tempo na VPS antes de ampliar lotes.
-Para rollback, parar admissão de novos lotes e usar uma cópia separada do código
-anterior; não misturar checkpoints antigos com experimentos novos.
+Test shutdown during a simulated job, restoration into an isolated directory and
+notifier restart. Measure VPS CPU/RAM/time before increasing batches. For rollback,
+stop admitting jobs and use a separate checkout of the earlier code; do not mix old
+checkpoints with new experiments.

@@ -14,7 +14,7 @@
 **/*.ipynb
 tmp
 backups
-dashboard/state
+app/dashboard/state
 **/*.env
 **/.env
 **/*.sqlite3-wal

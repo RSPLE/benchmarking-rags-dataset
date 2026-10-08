@@ -25,6 +25,8 @@ line-length = 100
 select = ["E4", "E7", "E9", "F", "I", "B"]
 
 [tool.ruff.lint.per-file-ignores]
-"rags/*/main.py" = ["E402"]
-"rags/*/rag_settings.py" = ["E402"]
-"rags/knowledge-enhanced-rag/app.py" = ["E402"]
+"app/rags/*/main.py" = ["E402"]
+"app/rags/*/rag_settings.py" = ["E402"]
+"app/rags/knowledge-enhanced-rag/api.py" = ["E402"]
+
+"app/benchmark/evaluate_saved.py" = ["E402"]

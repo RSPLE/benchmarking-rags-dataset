@@ -13,14 +13,14 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from benchmark_control import Control, Worker, environment_profiles, parse_command
-from benchmark_export import RESULT_COLUMNS, result_bytes
-from benchmark_pipeline import evaluation_documents
-from benchmark_runner import run_resumable_benchmark
-from benchmark_storage import atomic_json
-from main import build_parser
-from telegram_notifier import Notifier, TelegramClient
-from telegram_setup import check_configuration
+from app.benchmark.control import Control, Worker, environment_profiles, parse_command
+from app.benchmark.export import RESULT_COLUMNS, result_bytes
+from app.benchmark.pipeline import evaluation_documents
+from app.benchmark.runner import run_resumable_benchmark
+from app.benchmark.storage import atomic_json
+from app.cli import build_parser
+from app.telegram.notifier import Notifier, TelegramClient
+from app.telegram.setup import check_configuration
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -40,7 +40,7 @@ class ContractTests(unittest.TestCase):
             self.assertEqual(contract["columns"], list(RESULT_COLUMNS))
             for spec in contract["prompts"]:
                 with self.subTest(project=project, prompt=spec["name"]):
-                    tree = ast.parse((ROOT / "rags" / project / spec["file"]).read_text())
+                    tree = ast.parse((ROOT / "app" / "rags" / project / spec["file"]).read_text())
                     scope = (
                         next(
                             n
@@ -127,7 +127,7 @@ class ContractTests(unittest.TestCase):
                 parse_command("/executar context-rag " + invalid)
 
     def test_preflight_reads_the_same_root_environment_and_corpus_path(self):
-        import main as cli
+        from app import cli
 
         def load():
             os.environ["DOCS_DIR"] = "corpus"
@@ -159,7 +159,7 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(control.handle(request), response)
         self.assertEqual(len(response["jobs"]), 6)
         worker = Worker(control)
-        with patch("benchmark_control.subprocess.Popen") as launch:
+        with patch("app.benchmark.control.subprocess.Popen") as launch:
             launch.return_value.poll.return_value = None
             worker.tick()
             self.assertEqual(launch.call_args.kwargs["env"]["BENCHMARK_MAX_CALLS"], "30")

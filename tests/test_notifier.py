@@ -4,8 +4,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
-from benchmark_storage import atomic_json
-from telegram_notifier import Notifier, TelegramError
+from app.benchmark.storage import atomic_json
+from app.telegram.notifier import Notifier, TelegramError
 
 
 class NotifierTests(unittest.TestCase):

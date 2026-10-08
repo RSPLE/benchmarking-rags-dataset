@@ -10,7 +10,7 @@ Group=benchmark
 WorkingDirectory=/logibot/benchmarking-rags-dataset
 Environment=UV_CACHE_DIR=/var/lib/benchmark/uv-cache
 EnvironmentFile=/logibot/benchmarking-rags-dataset/.env
-ExecStart=/logibot/benchmarking-rags-dataset/.venv/bin/python service_entrypoint.py batch --from-environment
+ExecStart=/logibot/benchmarking-rags-dataset/.venv/bin/python -m app.services.entrypoint batch --from-environment
 Restart=no
 TimeoutStartSec=infinity
 TimeoutStopSec=960

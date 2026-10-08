@@ -1,71 +1,71 @@
 # Benchmarking RAGs Dataset
 
-> **Execução atual:** os pipelines usam checkpoint v2 e saídas isoladas em
-> `resultados/<rag>/<experiment_id>`. Resultados antigos em `rags/*/results/`
-> permanecem intactos. Consulte [confiabilidade e operação](docs/confiabilidade.md)
-> antes de executar novos lotes. Esse guia substitui as instruções históricas
-> abaixo sobre retomada, diretórios, ingestão e configuração de avaliação.
+> **Current execution:** pipelines use v2 checkpoints and isolated outputs under
+> `resultados/<rag>/<experiment_id>`. Historical files in `app/rags/*/results/` remain
+> unchanged. See the [reliability and operations guide](docs/reliability.md)
+> before starting new batches. That guide supersedes the historical instructions
+> below about resuming, output directories, ingestion and evaluation settings.
 
-[English version](README.en.md)
+[Versão em português](README.pt-BR.md)
 
-**Interface web:** consulte [primeiro acesso ao painel](dashboard/README.md) para
-preencher `DASHBOARD_USERNAME`, `DASHBOARD_PASSWORD` e `DASHBOARD_PUBLIC_HOST` na `.env`. Depois execute
-`docker compose up -d`. Na VPS, acesse `https://<DASHBOARD_PUBLIC_HOST>`; localmente,
-<http://127.0.0.1:8501>. O [Caddyfile](Caddyfile) publica o painel com HTTPS.
-O menu lateral permite iniciar/retomar lotes e acompanhar pendências. Todos os serviços sobem
-sem perfis e as imagens da aplicação são construídas localmente. Não há credenciais padrão.
+**Web interface:** see [dashboard first login](app/dashboard/README.md) to start
+by setting `DASHBOARD_USERNAME`, `DASHBOARD_PASSWORD` and `DASHBOARD_PUBLIC_HOST` in `.env`. Then run
+`docker compose up -d`. On the VPS, open `https://<DASHBOARD_PUBLIC_HOST>`; locally,
+<http://127.0.0.1:8501>. The [Caddyfile](Caddyfile) publishes the dashboard over HTTPS.
+The sidebar provides execution/resume and pending cases. All services start without
+profiles and application images build locally. There are no default credentials.
 
-Monorepo para comparar seis arquiteturas de Retrieval-Augmented Generation (RAG) sobre um dataset comum de 90 perguntas e respostas de referência. O projeto mede qualidade com RAGAS, latência e consumo de tokens, usa Chroma como índice vetorial e oferece OpenRouter como provedor padrão de LLM e embeddings. Cada pipeline possui ambiente e lockfile `uv` próprios para impedir conflitos de dependências.
+A monorepo for comparing six Retrieval-Augmented Generation (RAG) architectures against one shared dataset of 90 questions and reference answers. It measures quality with RAGAS, latency, and token usage; uses Chroma for vector indexing; and supports OpenRouter as the default LLM and embedding provider. Every pipeline has its own `uv` environment and lockfile to prevent dependency conflicts.
 
-## O que existe neste repositório
+## Repository contents
 
-| Diretório | Estratégia | Recuperação / enriquecimento |
+| Directory | Strategy | Retrieval / enrichment |
 |---|---|---|
-| `rags/context-rag/` | RAG clássico | top-5 por similaridade vetorial; resposta restrita ao contexto |
-| `rags/graph-rag/` | Graph RAG experimental | Chroma + grafo `networkx` extraído por LLM; agente LangGraph |
-| `rags/hybrid-rag/` | RAG híbrido | BM25 (peso 0,4) + Chroma (peso 0,6) |
-| `rags/knowledge-enhanced-rag/` | Knowledge-Enhanced RAG | Chroma + grafo pedagógico curado no Neo4j |
-| `rags/memory-augmented-rag/` | RAG com memória | agente LangGraph com `MemorySaver` e ferramenta de recuperação |
-| `rags/self-rag/` | Self-RAG simplificado | geração, autocrítica binária e até um refinamento |
-| `eval-dataset/` | Dataset compartilhado | 90 itens (`Q001`–`Q090`) com pergunta, resposta e fonte |
+| `app/rags/context-rag/` | Classic RAG | vector top-5; answer restricted to retrieved context |
+| `app/rags/graph-rag/` | Experimental Graph RAG | Chroma + an LLM-extracted NetworkX graph; LangGraph agent |
+| `app/rags/hybrid-rag/` | Hybrid RAG | BM25 (0.4 weight) + Chroma (0.6 weight) |
+| `app/rags/knowledge-enhanced-rag/` | Knowledge-Enhanced RAG | Chroma + a curated Neo4j learning graph |
+| `app/rags/memory-augmented-rag/` | Memory-Augmented RAG | LangGraph agent with `MemorySaver` and a retrieval tool |
+| `app/rags/self-rag/` | Simplified Self-RAG | generation, binary self-critique, and at most one refinement |
+| `data/evaluation/` | Shared dataset | 90 items (`Q001`–`Q090`) with question, answer, and source |
 
-Os projetos preservam suas implementações e notebooks para facilitar inspeção e comparação. A instalação, o provedor de modelos, o dataset e a política de execução são compartilhados pela raiz.
+The original implementations and notebooks remain available for inspection. Installation, model-provider configuration, dataset selection, and execution policy are managed from the repository root.
 
-## Execução sequencial e retomável
+## Sequential, resumable execution
 
-As novas execuções usam `resultados/<rag>/<experiment_id>`. O checkpoint v2 salva
-resposta e evidências antes do juiz e registra cada métrica separadamente. Retomar
-um experimento compatível reaproveita suas etapas concluídas. Configuração, corpus,
-código ou dataset diferentes geram outro identificador; resultados antigos ficam
-preservados em `rags/<rag>/results/`.
+New runs write to `resultados/<rag>/<experiment_id>`. The v2 checkpoint persists
+answers and evidence before judging, then each metric separately. Resuming a
+compatible experiment reuses completed stages. Changed code, configuration,
+corpus or dataset creates another identity. Historical outputs remain unchanged
+under `app/rags/<rag>/results/` and v1 checkpoints are not resumed automatically.
 
-`--questions` limita tentativas por RAG, não sucessos. Falhas têm prioridade por
-padrão; `--selection pending` permite selecionar somente casos novos. Erros de
-configuração/crédito/orçamento suspendem o lote e falhas repetidas acionam a pausa.
-Ao executar vários pipelines, a CLI para no primeiro que retorna erro.
+`--questions` limits attempts per RAG, not successful answers. Failed cases take
+priority by default; use `--selection pending` for new cases. Configuration,
+credit and budget errors pause the batch, as do repeated equivalent failures.
+Multiple-pipeline execution stops on the first failing process.
 
-`results.csv` mantém as nove colunas originais dos scripts RSPLE, com `;` e UTF-8 BOM.
-`<rag>-run-<repetição>_1.csv` é uma cópia compatível com os gráficos anteriores;
-`results_detailed.csv` contém os campos adicionais. Somente casos completos entram
-no CSV principal. Consulte a [auditoria de compatibilidade](docs/compatibilidade.md).
+`results.csv` preserves the nine original RSPLE columns, semicolon delimiter and UTF-8 BOM.
+`<rag>-run-<repetition>_1.csv` is an identical copy for existing plotting scripts;
+`results_detailed.csv` contains extra fields. Only complete cases enter the primary
+CSV. See the [compatibility audit](docs/compatibility.md).
 
-`errors.json` mostra falhas atuais e
-`events.jsonl` mantém o histórico. `summary.json` inclui cobertura e denominadores
-das médias. Gravação atômica e bloqueios protegem o estado local.
+`errors.json` describes current failures,
+`events.jsonl` preserves history, and `summary.json` includes coverage and metric
+denominators. Atomic writes and process locks protect local state.
 
-Consulte o [guia de confiabilidade](docs/confiabilidade.md) para migração explícita,
-limites, pausas, avaliação de respostas congeladas e controle pelo Telegram.
-A [implantação](deployment/README.md) descreve o socket local, a `.env` única, IDs autorizados
-e a fila persistente. O [aceite](docs/aceite.md) separa verificações sem consumo e piloto real.
-Os checkpoints v1 preservados não são retomados automaticamente pelo código novo.
+See the [operations guide](docs/reliability.md) for migration, budgets, pause,
+frozen-answer evaluation and Telegram control.
+The [deployment guide](deployment/README.md) covers the local socket, single `.env`,
+authorized IDs and durable queue. The [acceptance matrix](docs/acceptance.md)
+separates offline checks from the live pilot.
 
 
-## Comandos no terminal e Telegram
+## Terminal and Telegram commands
 
 ```bash
-uv run --locked python main.py telegram-check
-uv run --locked python main.py run all --questions 1 --max-calls 200 --max-seconds 3600
-uv run --locked python main.py resume context-rag EXP --questions 3
+uv run --locked python -m app telegram-check
+uv run --locked python -m app run all --questions 1 --max-calls 200 --max-seconds 3600
+uv run --locked python -m app resume context-rag EXP --questions 3
 ```
 
 ```text
@@ -75,56 +75,51 @@ uv run --locked python main.py resume context-rag EXP --questions 3
 /status
 ```
 
-`EXP` é o ID completo exibido por `/status`. `/start` mostra ajuda na conversa
-privada com o bot quando os serviços estão ativos. O canal recebe resultados.
-As flags compartilhadas e os limites de comparação estão no
-[protocolo de compatibilidade](docs/compatibilidade.md). Knowledge compartilha os
-últimos cinco pares pergunta/resposta entre as 90 perguntas, inclusive após retomada.
+`EXP` is the complete ID shown by `/status`. `/start` shows help in the private
+bot conversation when services are running. The channel receives results. Shared
+flags and comparison limits are in the [compatibility protocol](docs/compatibility.md).
+Knowledge shares the last five question/answer pairs across the 90 questions,
+including after a resumed process.
 
-## Requisitos e instalação com uv
+## Requirements and uv installation
 
-- Python 3.11, 3.12 ou 3.13 para execução local;
+- Python 3.11, 3.12, or 3.13 for local execution;
 - [`uv`](https://docs.astral.sh/uv/);
-- Docker Desktop com Docker Compose apenas se você quiser executar um Neo4j local em container;
-- chave do OpenRouter ou da OpenAI;
-- Neo4j apenas para o modo de grafo `required`; o modo `snapshot` funciona sem banco;
-- PDFs próprios ou com autorização de redistribuição para formar os corpora locais.
+- Docker Desktop with Docker Compose only if you want to run Neo4j locally in a container;
+- an OpenRouter or OpenAI API key;
+- Neo4j only for `required` graph mode; `snapshot` mode does not need a database;
+- locally supplied PDFs that you are authorized to use.
 
 ```bash
 git clone https://github.com/RSPLE/benchmarking-rags-dataset.git
 cd benchmarking-rags-dataset
 uv sync
-```
-
-O `pyproject.toml` e o `uv.lock` da raiz contêm somente o orquestrador. Cada diretório em `rags/` tem seu próprio `pyproject.toml`, `uv.lock` e `.venv`, criados sob demanda pelo `main.py`. Não há arquivos `requirements.txt`. Essa separação permite que um pipeline evolua suas bibliotecas sem alterar o ambiente dos demais.
-
-Toda configuração operacional fica na **`.env` da raiz**, incluindo modelos, Neo4j
-e Telegram. Veja [onde preencher token, canal privado e IDs autorizados](docs/configuracao.md).
-Não há teto monetário obrigatório. O Knowledge usa os mesmos sete PDFs e Neo4j;
-o snapshot JSON adicional fica inativo.
-
-Somente em uma instalação nova, crie a configuração local sem substituir uma `.env` existente:
-
-```bash
 cp -n .env.example .env
 ```
 
-No PowerShell:
+PowerShell equivalent for the final command:
 
 ```powershell
 if (!(Test-Path .env)) { Copy-Item .env.example .env }
 ```
 
+The root `pyproject.toml` and `uv.lock` contain only orchestration dependencies. Each directory under `app/rags/` has its own `pyproject.toml`, `uv.lock`, and on-demand `.venv`. There are no `requirements.txt` files, so one pipeline can evolve its dependency set without changing another pipeline's environment.
+
+All operational settings belong in the **root `.env`**, including models, Neo4j
+and Telegram. See [where to enter the private channel and bot settings](docs/configuration.md).
+There is no mandatory dollar cap. Knowledge uses the same seven PDFs and Neo4j;
+the additional JSON snapshot is inactive. Preserve existing `.env` values when upgrading.
+
 ## OpenRouter
 
-O OpenRouter é o padrão tanto para chat quanto para embeddings. A integração usa sua API compatível com OpenAI em `https://openrouter.ai/api/v1`, conforme o [guia oficial](https://openrouter.ai/docs/quickstart) e a [API de embeddings](https://openrouter.ai/docs/api/reference/embeddings).
+OpenRouter is the default for chat and embeddings through its OpenAI-compatible `https://openrouter.ai/api/v1` endpoint. See the official [quickstart](https://openrouter.ai/docs/quickstart) and [Embeddings API](https://openrouter.ai/docs/api/reference/embeddings).
 
-Configuração mínima:
+Minimal configuration:
 
 ```env
 LLM_PROVIDER=openrouter
 OPENROUTER_API_KEY=sk-or-v1-...
-OPENROUTER_MODEL=<ID_EXATO_DO_MODELO_CONFIGURADO>
+OPENROUTER_MODEL=<EXACT_CONFIGURED_MODEL_ID>
 LLM_MAX_TOKENS=1024
 RAGAS_MAX_TOKENS=2048
 LLM_TIMEOUT_SECONDS=600
@@ -132,12 +127,13 @@ RAGAS_TIMEOUT_SECONDS=600
 RAGAS_MAX_WORKERS=1
 RAGAS_MAX_ATTEMPTS=1
 OPENROUTER_JUDGE_MODEL=
+LLM_MAX_TOKENS=4096
 
 EMBEDDING_PROVIDER=openrouter
 OPENROUTER_EMBEDDING_MODEL=openai/text-embedding-3-small
 ```
 
-LLM e embeddings são configurados separadamente. Por exemplo, é possível gerar pelo OpenRouter e manter embeddings diretamente na OpenAI:
+The providers are independent. To generate through OpenRouter while creating embeddings directly through OpenAI:
 
 ```env
 LLM_PROVIDER=openrouter
@@ -148,221 +144,188 @@ OPENAI_API_KEY=sk-...
 OPENAI_EMBEDDING_MODEL=text-embedding-3-large
 ```
 
-Para usar somente OpenAI, defina ambos os provedores como `openai`. Ao trocar o modelo de embeddings, use um novo `CHROMA_PERSIST_DIR` ou remova conscientemente o índice antigo, pois dimensões diferentes não podem compartilhar a mesma coleção.
+Set both providers to `openai` to bypass OpenRouter. When changing embedding models, choose a new `CHROMA_PERSIST_DIR` or deliberately remove the previous index; vector dimensions from different models cannot share a collection.
 
-## Corpora locais
+## Local corpora
 
-Os PDFs estão presentes nas seguintes pastas:
+PDF files are not distributed by this monorepo. This keeps the Git repository manageable and avoids redistributing works without verified permission. Place documents you are entitled to use under:
 
 ```text
-rags/context-rag/docs/
-rags/graph-rag/docs/
-rags/hybrid-rag/docs/
-rags/knowledge-enhanced-rag/data/apostilas/
-rags/memory-augmented-rag/docs/
-rags/self-rag/docs/
+app/rags/context-rag/docs/
+app/rags/graph-rag/docs/
+app/rags/hybrid-rag/docs/
+app/rags/knowledge-enhanced-rag/data/apostilas/
+app/rags/memory-augmented-rag/docs/
+app/rags/self-rag/docs/
 ```
 
-Cada pipeline cria seu próprio índice Chroma na primeira execução. Índices, resultados, segredos e ambientes virtuais estão no `.gitignore`.
+Each pipeline creates its own Chroma index on first run. Indexes, results, secrets, and virtual environments are ignored by Git.
 
-## Neo4j local opcional
+## Optional local Neo4j
 
-Os benchmarks podem ser controlados pela CLI ou, com os serviços ativos, pela conversa privada com o bot Telegram. Docker não é necessário para os cinco RAGs que não usam Neo4j. Para executar o `knowledge-enhanced-rag` com o Neo4j local incluído no Compose, ajuste o `.env`:
+Benchmarks can be controlled through the CLI or, with services running, through the private Telegram bot conversation. Docker is not required for the five RAGs that do not use Neo4j. To run `knowledge-enhanced-rag` with the local Neo4j service included in Compose, update `.env`:
 
 ```env
 NEO4J_URI=bolt://127.0.0.1:7687
 NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=uma-senha-local-segura
+NEO4J_PASSWORD=a-secure-local-password
 ```
 
-Inicie o banco:
+Start only the database:
 
 ```bash
-docker compose up -d neo4j
+docker compose up --detach neo4j
 ```
 
-O banco fica disponível para a CLI em `127.0.0.1:7687`. O volume `neo4j-data` conserva os dados e a senha usada na primeira inicialização; se ele já existir, mantenha essa senha no `.env`. Para acompanhar ou encerrar apenas o banco:
+The database is available to the CLI at `127.0.0.1:7687`. The `neo4j-data` volume retains its data and the password used on first initialization; if it already exists, keep that password in `.env`. To follow or stop the database service:
 
 ```bash
 docker compose logs -f neo4j
 docker compose down
 ```
 
-Ordem recomendada para testar o `knowledge-enhanced-rag` com Neo4j local:
+Recommended order for testing `knowledge-enhanced-rag` with local Neo4j:
 
 ```bash
 docker compose up --detach neo4j
-uv run python main.py doctor
-uv run python main.py run knowledge-enhanced-rag --questions 3
+uv run python -m app doctor
+uv run python -m app run knowledge-enhanced-rag --questions 3
 ```
 
-### Neo4j hospedado
+### Hosted Neo4j
 
-Para usar Neo4j Aura ou outra instância hospedada, não inicie o serviço local `neo4j`. O painel pode continuar rodando em Docker. Crie o banco hospedado, copie as credenciais fornecidas pelo serviço e configure o `.env`:
+To use Neo4j Aura or another hosted instance, do not start the local `neo4j` service. The dashboard can still run in Docker. Create the hosted database, copy the credentials provided by the service, and configure `.env`:
 
 ```env
-NEO4J_URI=neo4j+s://seu-id.databases.neo4j.io
+NEO4J_URI=neo4j+s://your-id.databases.neo4j.io
 NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=sua_senha
+NEO4J_PASSWORD=your_password
 ```
 
-Depois execute diretamente o benchmark:
+Then run the benchmark directly:
 
 ```bash
-uv run python main.py run knowledge-enhanced-rag --questions 3
+uv run python -m app run knowledge-enhanced-rag --questions 3
 ```
 
-O `doctor` confere configuração e arquivos locais; não comprova conexão com Neo4j.
-O benchmark não popula o banco. Com `BENCHMARK_KG_MODE=required`, grafo ausente ou
-vazio interrompe a execução, sem fallback silencioso para busca vetorial.
-Consulte a [preparação e o controle de reconstrução do grafo](docs/confiabilidade.md#knowledge-e-neo4j)
-antes de usar o endpoint de construção da API histórica. O modo explícito
-`disabled` cria outro experimento e não corresponde ao protocolo original do Knowledge.
+`doctor` checks local settings and files; it does not prove Neo4j connectivity.
+The benchmark does not populate the database. With `BENCHMARK_KG_MODE=required`,
+missing or empty Neo4j data stops execution; there is no silent vector-only fallback.
+See [graph preparation and rebuild controls](docs/reliability.md#knowledge-and-neo4j)
+before using the historical API's graph-building endpoint. Explicit `disabled`
+mode creates another experiment and is not the original Knowledge protocol.
 
-## Uso
+## Usage
 
-## Execução passo a passo
+## Step-by-step execution
 
-Antes dos testes, confirme a configuração e a quantidade de PDFs:
-
-```bash
-uv sync
-uv run python main.py doctor
-```
-
-O `uv sync` instala dependências, mas não faz a ingestão. A ingestão é feita quando o RAG é iniciado. Cada RAG possui seu próprio índice Chroma e suas novas saídas ficam em `resultados/<pipeline>/<experiment_id>/`.
-
-
-1. Coloque os PDFs diretamente na pasta `docs/` de cada RAG. Para o `knowledge-enhanced-rag`, use `data/apostilas/`.
-2. Configure a chave e o modelo no `.env`.
-3. Execute o script, que valida os PDFs, roda `uv sync`, verifica a configuração e inicia os seis pipelines:
+1. Place the PDFs directly in each RAG's `docs/` directory. For `knowledge-enhanced-rag`, use `data/apostilas/`.
+2. Configure the key and model in `.env`.
+3. Run the script. It validates the PDFs, runs `uv sync`, checks the configuration, and starts all six pipelines:
 
 ```bash
 bash scripts/run_benchmark.sh
 ```
 
-Por padrão, o script testa uma pergunta por pipeline. Para testar outro lote:
+The script tests one question per pipeline by default. To test another batch size:
 
 ```bash
 QUESTIONS=10 bash scripts/run_benchmark.sh
 ```
 
-A ingestão ocorre automaticamente durante a inicialização de cada pipeline. O pipeline carrega os PDFs, divide o texto em chunks, gera embeddings e grava o índice Chroma antes de processar as perguntas.
+Ingestion happens automatically while each pipeline starts. The pipeline loads the PDFs, splits the text into chunks, generates embeddings, and writes the Chroma index before processing questions.
 
-Para testar cada RAG individualmente com até três perguntas:
-
-```bash
-uv run python main.py run context-rag --questions 3
-uv run python main.py run graph-rag --questions 3
-uv run python main.py run hybrid-rag --questions 3
-uv run python main.py run knowledge-enhanced-rag --questions 3
-uv run python main.py run memory-augmented-rag --questions 3
-uv run python main.py run self-rag --questions 3
-```
-
-Listar pipelines:
+To test each RAG individually with up to three questions:
 
 ```bash
-uv run python main.py list
+uv run python -m app run context-rag --questions 3
+uv run python -m app run graph-rag --questions 3
+uv run python -m app run hybrid-rag --questions 3
+uv run python -m app run knowledge-enhanced-rag --questions 3
+uv run python -m app run memory-augmented-rag --questions 3
+uv run python -m app run self-rag --questions 3
 ```
 
-Verificar chaves e quantidade de PDFs:
+Before testing, check the configuration and PDF counts:
 
 ```bash
-uv run python main.py doctor
+uv sync
+uv run python -m app doctor
 ```
 
-Executar ou retomar um RAG:
+`uv sync` installs dependencies but does not ingest documents. Ingestion happens when each RAG starts. Each RAG has its own Chroma index and stores new results in `resultados/<pipeline>/<experiment_id>/`.
 
 ```bash
-uv run python main.py run self-rag
+# List the available pipelines
+uv run python -m app list
+
+# Check provider keys and local PDF counts
+uv run python -m app doctor
+
+# Run or resume one RAG
+uv run python -m app run self-rag
+
+# Run only the next 10 unresolved questions
+uv run python -m app run self-rag --questions 10
+
+# Run two or more RAGs in the requested order
+uv run python -m app run context-rag hybrid-rag self-rag
+
+# Run a batch of 15 questions in each selected RAG
+uv run python -m app run context-rag hybrid-rag self-rag --questions 15
+
+# Run or resume all six RAGs sequentially in isolated environments
+uv run python -m app run all
+
+# Run the next 5 questions in each of the six RAGs
+uv run python -m app run all --questions 5
+
+# Override the LLM provider for one run
+uv run python -m app run hybrid-rag --provider openai
+
 ```
 
-Executar somente as próximas 10 perguntas ainda não concluídas:
+The previous `uv run python -m app run-all` command remains available as an alias.
+`--limit` is an alias for `--questions`. The limit applies independently to every selected RAG; it is not divided among them.
+
+A successful batch exits with code `0`, even when the selected limit leaves pending questions. The command exits with code `1` when one or more questions attempted in that run fail. This makes partial successful batches safe to use in CI scripts.
+
+## Recommended execution flows
+
+Process the dataset in batches of 10:
 
 ```bash
-uv run python main.py run self-rag --questions 10
+uv run python -m app run self-rag --questions 10
+# Repeat until the summary reports 90 successes and no pending questions.
 ```
 
-Executar dois ou mais RAGs, na ordem informada:
+Resume after a failure, cancellation, or restart by running the same command:
 
 ```bash
-uv run python main.py run context-rag hybrid-rag self-rag
+uv run python -m app run self-rag --questions 10
 ```
 
-Executar um lote de 15 perguntas em cada um dos RAGs selecionados:
+No offset is required. The checkpoint skips successes, retries failures first, and continues from the next pending item. Do not edit only the CSV to change progress; `checkpoint.json` holds the authoritative state.
 
-```bash
-uv run python main.py run context-rag hybrid-rag self-rag --questions 15
-```
+For valid comparisons, keep the generation model, embedding model, documents, and remaining `.env` settings equal across pipelines. `--provider` overrides the LLM provider for that invocation only; embeddings remain controlled by `EMBEDDING_PROVIDER`.
 
-Executar ou retomar os seis RAGs sequencialmente, cada um em seu ambiente isolado:
+## Dataset and metrics
 
-```bash
-uv run python main.py run all
-```
+`data/evaluation/qa_dataset_90.json` has 90 objects with a stable `id`, `question`, `ground_truth`, and `source_book`. Each question is evaluated for `faithfulness`, `answer_relevancy`, `context_precision`, and `context_recall`. The CSV also records response time and input, output, and total token counts.
 
-Executar as próximas 5 perguntas de cada um dos seis RAGs:
-
-```bash
-uv run python main.py run all --questions 5
-```
-
-`--limit` é um alias de `--questions`. O limite é aplicado individualmente a cada RAG selecionado, e não dividido entre eles.
-
-O comando anterior `uv run python main.py run-all` continua disponível como alias.
-
-Um lote bem-sucedido retorna código `0`, mesmo que ainda existam perguntas pendentes por causa do limite escolhido. A execução retorna código `1` quando uma ou mais perguntas tentadas naquela rodada falham. Isso permite usar o comando em scripts e pipelines de CI sem tratar um lote parcial bem-sucedido como erro.
-
-Selecionar OpenAI apenas para uma execução:
-
-```bash
-uv run python main.py run hybrid-rag --provider openai
-```
-
-## Fluxos de execução recomendados
-
-Processar o dataset em lotes de 10 perguntas:
-
-```bash
-uv run python main.py run self-rag --questions 10
-# Repita o mesmo comando até o resumo indicar 90 sucessos e 0 pendentes.
-```
-
-Retomar depois de falha, cancelamento ou reinicialização:
-
-```bash
-uv run python main.py run self-rag --questions 10
-```
-
-Não é necessário informar um deslocamento: o checkpoint ignora os sucessos, tenta primeiro as falhas e continua do próximo item pendente. Também não edite apenas o CSV para alterar o progresso; o estado oficial está no `checkpoint.json`.
-
-Antes de uma comparação entre pipelines, mantenha iguais o modelo de geração, o modelo de embeddings, os documentos e as demais configurações do `.env`. A opção `--provider` altera o provedor do LLM somente naquela execução; o provedor de embeddings continua sendo controlado por `EMBEDDING_PROVIDER`.
-
-## Dataset e métricas
-
-`eval-dataset/qa_dataset_90.json` contém 90 objetos com:
-
-- `id`: identificador estável;
-- `question`: pergunta de avaliação;
-- `ground_truth`: resposta de referência;
-- `source_book`: obra usada como origem conceitual.
-
-Para cada pergunta, o RAGAS calcula `faithfulness`, `answer_relevancy`, `context_precision` e `context_recall`. O CSV também registra `answer_response_time_seconds`, `answer_input_tokens`, `answer_output_tokens` e `answer_total_tokens`.
-
-## Estrutura
+## Layout
 
 ```text
 .
-├── main.py                  # CLI única do monorepo
-├── benchmark_runner.py      # checkpoint e retomada por pergunta
-├── rag_provider.py          # OpenRouter/OpenAI compartilhado
-├── docker-compose.yml       # Neo4j local opcional
+├── main.py                  # monorepo CLI
+├── app/benchmark/runner.py      # per-question checkpoints and resume logic
+├── app/providers/models.py          # shared OpenRouter/OpenAI configuration
+├── docker-compose.yml       # optional local Neo4j
 ├── pyproject.toml
-├── uv.lock                 # somente dependências do orquestrador
+├── uv.lock                 # orchestrator dependencies only
 ├── .env.example
-├── eval-dataset/
-└── rags/
+├── data/evaluation/
+└── app/rags/
     ├── context-rag/
     ├── graph-rag/
     ├── hybrid-rag/
@@ -371,31 +334,31 @@ Para cada pergunta, o RAGAS calcula `faithfulness`, `answer_relevancy`, `context
     └── self-rag/
 ```
 
-Cada diretório de pipeline contém ainda seu próprio `pyproject.toml` e `uv.lock`. O único arquivo de configuração de segredos é `/.env`; os subdiretórios não possuem cópias de `.env.example`.
+Each pipeline directory also contains its own `pyproject.toml` and `uv.lock`. `/.env` is the only secrets configuration file; subdirectories do not keep duplicate `.env.example` files.
 
-## Observações metodológicas
+## Methodology notes
 
-- O Graph RAG deste projeto não é a implementação GraphRAG da Microsoft; ele usa um grafo NetworkX menor, extraído de uma amostra dos chunks.
-- O Self-RAG é uma aproximação por prompting, sem tokens de reflexão treinados.
-- A memória do Memory-Augmented RAG é de processo; no benchmark, cada pergunta permanece isolada para comparação justa.
-- O Knowledge-Enhanced RAG usa um grafo Neo4j curado; os demais pipelines não exigem Neo4j.
-- O dataset tem 90 itens, mas os corpora locais podem variar. Comparações só são válidas quando modelos, documentos e parâmetros são controlados.
+- This repository's Graph RAG is not Microsoft's GraphRAG implementation; it uses a smaller NetworkX graph extracted from a chunk sample.
+- Self-RAG is a prompting-based approximation without trained reflection tokens.
+- Memory-Augmented RAG keeps in-process memory; benchmark questions remain isolated for fair comparison.
+- Knowledge-Enhanced RAG uses a curated Neo4j graph; the other pipelines do not require Neo4j.
+- Comparisons are meaningful only when models, corpora, and parameters are controlled across pipelines.
 
-## Problemas comuns
+## Common problems
 
-- **Checkpoint incompatível:** preserve o arquivo e confira o manifesto. Use a migração explícita para arquivos v1; mudanças de método exigem novo experimento.
-- **Chave ausente:** execute `uv run python main.py doctor` e confira o `.env` da raiz. Os seis RAGs compartilham esse arquivo.
-- **Neo4j em Docker:** como os benchmarks rodam no host pela CLI, use `NEO4J_URI=bolt://127.0.0.1:7687` no `.env`.
-- **Neo4j Aura:** use a URI `neo4j+s://...` fornecida pela instância e as credenciais correspondentes. Não misture a senha do banco local persistido no volume com a senha da instância Aura.
-- **Modelo de embeddings alterado:** use outro `CHROMA_PERSIST_DIR` ou recrie conscientemente o índice; modelos com dimensões distintas não devem compartilhar a mesma coleção.
+- **Incompatible checkpoint:** preserve the file and inspect its manifest. Use explicit migration for v1 archives; changed methodology requires a new experiment.
+- **Missing API key:** run `uv run python -m app doctor` and inspect the root `.env`, which is shared by all six RAGs.
+- **Neo4j in Docker:** because benchmarks run on the host through the CLI, use `NEO4J_URI=bolt://127.0.0.1:7687` in `.env`.
+- **Neo4j Aura:** use the instance-provided `neo4j+s://...` URI and matching credentials. Do not mix the password of the local persistent database with Aura credentials.
+- **Changed embedding model:** choose another `CHROMA_PERSIST_DIR` or deliberately rebuild the index; different vector dimensions must not share a collection.
 
-## Testes de desenvolvimento
+## Development checks
 
 ```bash
 uv run python -m unittest discover -s tests -v
-uv run ruff check main.py benchmark_runner.py tests
+uv run ruff check main.py app/benchmark/runner.py tests
 ```
 
-Os testes cobrem seleção de um, vários ou todos os RAGs, validação do limite, execução incremental sem duplicatas, prioridade de retomada das falhas e atualização do `errors.json` após uma tentativa bem-sucedida.
+The suite covers one/many/all RAG selection, limit validation, incremental runs without duplicate rows, failure-first resumption, and removal of recovered entries from `errors.json`.
 
-## Licença
+## License

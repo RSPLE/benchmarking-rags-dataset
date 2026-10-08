@@ -48,7 +48,7 @@ services:
   dashboard:
     build: &dashboard_build
       context: .
-      dockerfile: dashboard/Dockerfile
+      dockerfile: app/dashboard/Dockerfile
     pull_policy: build
     restart: unless-stopped
     environment:
@@ -82,7 +82,7 @@ services:
     build: *dashboard_build
     pull_policy: build
     restart: unless-stopped
-    command: [python, -m, dashboard.auth_server]
+    command: [python, -m, app.dashboard.auth_server]
     environment:
       <<: *dashboard_environment
       DASHBOARD_USERNAME: ${DASHBOARD_USERNAME:?Defina DASHBOARD_USERNAME na .env}
@@ -105,7 +105,7 @@ services:
     build: *dashboard_build
     pull_policy: build
     restart: unless-stopped
-    command: [python, -m, dashboard.monitor]
+    command: [python, -m, app.dashboard.monitor]
     environment: *dashboard_environment
     depends_on:
       dashboard:
@@ -117,7 +117,7 @@ services:
         source: ${BENCHMARK_OUTPUT_DIR:-./resultados}
         target: /results
         read_only: true
-      - ./rags:/legacy:ro
+      - ./app/rags:/legacy:ro
     healthcheck:
       test: [CMD, python, -c, "import sqlite3,datetime; d=sqlite3.connect('file:/state/dashboard.sqlite3?mode=ro',uri=True); t=d.execute(\"SELECT value FROM metadata WHERE key='last_sync'\").fetchone()[0]; assert (datetime.datetime.now(datetime.UTC)-datetime.datetime.fromisoformat(t)).total_seconds()<120"]
       interval: 30s
@@ -151,15 +151,15 @@ services:
       - type: bind
         source: ${BENCHMARK_OUTPUT_DIR:-./resultados}
         target: /app/resultados
-      - ./rags/context-rag/docs:/corpus:ro
+      - ./app/rags/context-rag/docs:/corpus:ro
       - control-state:/state
       - control-socket:/run/benchmark
-      - index-context-rag:/app/rags/context-rag/chroma_v2
-      - index-graph-rag:/app/rags/graph-rag/chroma_v2
-      - index-hybrid-rag:/app/rags/hybrid-rag/chroma_v2
-      - index-knowledge-enhanced-rag:/app/rags/knowledge-enhanced-rag/chroma_v2
-      - index-memory-augmented-rag:/app/rags/memory-augmented-rag/chroma_v2
-      - index-self-rag:/app/rags/self-rag/chroma_v2
+      - index-context-rag:/app/app/rags/context-rag/chroma_v2
+      - index-graph-rag:/app/app/rags/graph-rag/chroma_v2
+      - index-hybrid-rag:/app/app/rags/hybrid-rag/chroma_v2
+      - index-knowledge-enhanced-rag:/app/app/rags/knowledge-enhanced-rag/chroma_v2
+      - index-memory-augmented-rag:/app/app/rags/memory-augmented-rag/chroma_v2
+      - index-self-rag:/app/app/rags/self-rag/chroma_v2
     read_only: true
     tmpfs:
       - /tmp:size=512m
@@ -178,7 +178,7 @@ services:
     build: *benchmark_build
     pull_policy: build
     restart: unless-stopped
-    command: [python, service_entrypoint.py, telegram, --from-environment]
+    command: [python, -m, app.services.entrypoint, telegram, --from-environment]
     environment:
       TELEGRAM_ENABLED: ${TELEGRAM_ENABLED:-false}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}

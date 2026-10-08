@@ -6,7 +6,7 @@ import shutil
 import unittest
 from pathlib import Path
 
-from benchmark_runner import run_resumable_benchmark
+from app.benchmark.runner import run_resumable_benchmark
 
 
 class BenchmarkRunnerTests(unittest.TestCase):

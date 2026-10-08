@@ -19,12 +19,12 @@ if [[ ! -f "$ROOT/.env" ]]; then
 fi
 
 directories=(
-    "rags/context-rag/docs"
-    "rags/graph-rag/docs"
-    "rags/hybrid-rag/docs"
-    "rags/memory-augmented-rag/docs"
-    "rags/self-rag/docs"
-    "rags/knowledge-enhanced-rag/data/apostilas"
+    "app/rags/context-rag/docs"
+    "app/rags/graph-rag/docs"
+    "app/rags/hybrid-rag/docs"
+    "app/rags/memory-augmented-rag/docs"
+    "app/rags/self-rag/docs"
+    "app/rags/knowledge-enhanced-rag/data/apostilas"
 )
 
 printf '%s\n' "[1/4] Verificando PDFs..."
@@ -48,7 +48,7 @@ printf '%s\n' "[2/4] Sincronizando o ambiente raiz..."
 uv sync
 
 printf '%s\n' "[3/4] Validando configuracao..."
-uv run python main.py doctor
+uv run python -m app doctor
 
 printf '%s\n' "[4/4] Executando ate $QUESTIONS pergunta(s) por pipeline..."
-exec uv run python main.py run all --questions "$QUESTIONS"
+exec uv run python -m app run all --questions "$QUESTIONS"

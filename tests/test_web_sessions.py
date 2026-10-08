@@ -6,11 +6,11 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from dashboard.auth import authenticate, bootstrap_account
-from dashboard.config import Settings
-from dashboard.database import connect
-from dashboard.operations import build_command, request_control
-from dashboard.sessions import create_session, revoke_session, session_identity
+from app.dashboard.auth import authenticate, bootstrap_account
+from app.dashboard.config import Settings
+from app.dashboard.database import connect
+from app.dashboard.operations import build_command, request_control
+from app.dashboard.sessions import create_session, revoke_session, session_identity
 
 
 class WebSessionTests(unittest.TestCase):
@@ -37,7 +37,7 @@ class WebSessionTests(unittest.TestCase):
         self.assertEqual(session_identity(self.database, self.token)["username"], "tester")
 
     def test_logout_and_expiry_reject_old_cookie(self):
-        with patch("dashboard.sessions.time.time", return_value=time.time() + 3601):
+        with patch("app.dashboard.sessions.time.time", return_value=time.time() + 3601):
             self.assertIsNone(session_identity(self.database, self.token))
         revoke_session(self.database, self.token)
         self.assertIsNone(session_identity(self.database, self.token))
@@ -50,7 +50,7 @@ class WebSessionTests(unittest.TestCase):
 
     def test_forged_cookie_cannot_submit_commands(self):
         for token in (None, "", "wrong", "a" * 43):
-            with self.subTest(token=token), patch("dashboard.operations.call_control") as call:
+            with self.subTest(token=token), patch("app.dashboard.operations.call_control") as call:
                 with self.assertRaises(PermissionError):
                     request_control(self.settings, token, "/executar context-rag --questions 1")
                 call.assert_not_called()
@@ -66,7 +66,9 @@ class WebSessionTests(unittest.TestCase):
             provider="openrouter",
             max_calls=5,
         )
-        with patch("dashboard.operations.call_control", return_value={"state": "queued"}) as call:
+        with patch(
+            "app.dashboard.operations.call_control", return_value={"state": "queued"}
+        ) as call:
             request_control(self.settings, self.token, command, "web:stable-request")
             request = call.call_args.args[1]
         self.assertEqual(request["user_id"], 123)
@@ -88,7 +90,7 @@ class WebSessionTests(unittest.TestCase):
         bootstrap_account(self.database, "operator.name", self.password)
         identity = authenticate(self.database, "operator.name", self.password)
         token = create_session(self.database, identity, 3600)
-        with patch("dashboard.operations.call_control", return_value={}) as call:
+        with patch("app.dashboard.operations.call_control", return_value={}) as call:
             request_control(self.settings, token, "/status")
         self.assertRegex(call.call_args.args[1]["command_id"], r"^web:[a-f0-9]{32}$")
 

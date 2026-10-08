@@ -6,7 +6,7 @@ import os
 import unittest
 from unittest.mock import patch
 
-import main as cli
+from app import cli
 
 
 class CliTests(unittest.TestCase):

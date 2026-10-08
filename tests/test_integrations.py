@@ -36,7 +36,7 @@ class IntegrationTests(unittest.TestCase):
         )
         self.env.start()
         self.addCleanup(self.env.stop)
-        from ragas_compat import ensure_ragas_langchain_compat
+        from app.providers.ragas_compat import ensure_ragas_langchain_compat
 
         ensure_ragas_langchain_compat()
 
@@ -45,9 +45,11 @@ class IntegrationTests(unittest.TestCase):
             self.skipTest("Plotting environment")
         import runpy
 
-        from benchmark_export import RESULT_COLUMNS, result_bytes
+        from app.benchmark.export import RESULT_COLUMNS, result_bytes
 
-        module = runpy.run_path(str(ROOT / "rags/context-rag/plot_graph.py"), run_name="test_plot")
+        module = runpy.run_path(
+            str(ROOT / "app/rags/context-rag/plot_graph.py"), run_name="test_plot"
+        )
         directory = Path(self.temp.name)
         path = directory / "context-rag-run-1_1.csv"
         row = {key: 0.75 for key in RESULT_COLUMNS[1:]}
@@ -66,20 +68,21 @@ class IntegrationTests(unittest.TestCase):
 
     def test_pipeline_import_has_no_model_calls_or_index_creation(self):
         project = os.getenv("TEST_PROJECT") or Path(sys.executable).absolute().parents[2].name
-        if project not in {p.name for p in (ROOT / "rags").iterdir()}:
+        if project not in {p.name for p in (ROOT / "app" / "rags").iterdir()}:
             project = "context-rag"
         import runpy
 
-        project_dir = ROOT / "rags" / project
+        project_dir = ROOT / "app" / "rags" / project
         sys.path.insert(0, str(project_dir))
         self.addCleanup(sys.path.remove, str(project_dir))
         with (
             patch("dotenv.load_dotenv"),
             patch(
-                "rag_provider.build_llm", side_effect=AssertionError("model construction at import")
+                "app.providers.models.build_llm",
+                side_effect=AssertionError("model construction at import"),
             ),
             patch(
-                "rag_provider.build_embeddings",
+                "app.providers.models.build_embeddings",
                 side_effect=AssertionError("embedding construction at import"),
             ),
         ):
@@ -87,7 +90,7 @@ class IntegrationTests(unittest.TestCase):
             self.assertIn("prepare", module)
 
     def test_role_credentials_and_judge_only_scope(self):
-        from rag_provider import build_embeddings, build_llm
+        from app.providers.models import build_embeddings, build_llm
 
         with patch.dict(
             os.environ,
@@ -117,7 +120,7 @@ class IntegrationTests(unittest.TestCase):
         from langchain_core.documents import Document
         from langchain_core.embeddings import Embeddings
 
-        from benchmark_index import ensure_index
+        from app.benchmark.index import ensure_index
 
         class Embedding(Embeddings):
             def __init__(self):
@@ -148,11 +151,11 @@ class IntegrationTests(unittest.TestCase):
         from pypdf import PdfWriter
         from pypdf.errors import PdfReadError
 
-        from benchmark_index import load_index
+        from app.benchmark.index import load_index
 
         docs = Path(self.temp.name) / "docs"
         docs.mkdir()
-        with patch("rag_provider.build_embeddings") as embeddings:
+        with patch("app.providers.models.build_embeddings") as embeddings:
             for content in (b"", b"not a pdf"):
                 (docs / "book.pdf").write_bytes(content)
                 with self.assertRaises((ValueError, PdfReadError)):
@@ -172,7 +175,7 @@ class IntegrationTests(unittest.TestCase):
         from langchain_core.messages import AIMessage, ToolMessage
 
         project = Path(sys.executable).absolute().parents[2].name
-        project_dir = ROOT / "rags" / project
+        project_dir = ROOT / "app" / "rags" / project
         sys.path.insert(0, str(project_dir))
         self.addCleanup(sys.path.remove, str(project_dir))
         with patch("dotenv.load_dotenv"):
@@ -252,10 +255,10 @@ class IntegrationTests(unittest.TestCase):
         from langchain_core.documents import Document
         from langchain_core.messages import AIMessage, HumanMessage
 
-        from benchmark_runner import run_resumable_benchmark
-        from benchmark_storage import atomic_json
+        from app.benchmark.runner import run_resumable_benchmark
+        from app.benchmark.storage import atomic_json
 
-        project = ROOT / "rags/knowledge-enhanced-rag"
+        project = ROOT / "app/rags/knowledge-enhanced-rag"
         sys.path.insert(0, str(project))
         self.addCleanup(sys.path.remove, str(project))
         with patch("dotenv.load_dotenv"):
@@ -330,13 +333,13 @@ class IntegrationTests(unittest.TestCase):
 
         import httpx
 
-        import benchmark_usage
-        from benchmark_usage import UsageLedger
-        from rag_provider import build_embeddings, build_llm, build_ragas_llm
+        import app.benchmark.usage
+        from app.benchmark.usage import UsageLedger
+        from app.providers.models import build_embeddings, build_llm, build_ragas_llm
 
         ledger = UsageLedger(Path(self.temp.name) / "usage.jsonl")
-        benchmark_usage.ACTIVE_LEDGER = ledger
-        self.addCleanup(setattr, benchmark_usage, "ACTIVE_LEDGER", None)
+        app.benchmark.usage.ACTIVE_LEDGER = ledger
+        self.addCleanup(setattr, app.benchmark.usage, "ACTIVE_LEDGER", None)
         seen = []
 
         def response(request):
@@ -398,10 +401,10 @@ class IntegrationTests(unittest.TestCase):
     def test_http_retry_and_budget_are_enforced_below_sdk(self):
         import httpx
 
-        import benchmark_usage
-        from benchmark_runner import error_category
-        from benchmark_usage import UsageLedger
-        from rag_provider import build_llm
+        import app.benchmark.usage
+        from app.benchmark.runner import error_category
+        from app.benchmark.usage import UsageLedger
+        from app.providers.models import build_llm
 
         for status, limit, expected in [(403, 10, 1), (429, 10, 2), (503, 1, 1), (200, 10, 1)]:
             with (
@@ -409,8 +412,8 @@ class IntegrationTests(unittest.TestCase):
                 patch.dict(os.environ, {"BENCHMARK_MAX_CALLS": str(limit)}),
             ):
                 ledger = UsageLedger(Path(self.temp.name) / f"{status}.jsonl")
-                benchmark_usage.ACTIVE_LEDGER = ledger
-                self.addCleanup(setattr, benchmark_usage, "ACTIVE_LEDGER", None)
+                app.benchmark.usage.ACTIVE_LEDGER = ledger
+                self.addCleanup(setattr, app.benchmark.usage, "ACTIVE_LEDGER", None)
                 calls = []
 
                 def respond(_transport, request, calls=calls, status=status):
@@ -447,7 +450,7 @@ class IntegrationTests(unittest.TestCase):
 
                 with (
                     patch.object(httpx.HTTPTransport, "handle_request", respond),
-                    patch("benchmark_usage.sleep") as sleep,
+                    patch("app.benchmark.usage.sleep") as sleep,
                 ):
                     if status == 429:
                         self.assertEqual(build_llm().invoke("question").content, "answer")
@@ -467,8 +470,8 @@ class IntegrationTests(unittest.TestCase):
         from langchain_core.outputs import Generation, LLMResult
         from ragas.llms.base import BaseRagasLLM
 
-        from benchmark_config import METRICS
-        from benchmark_evaluation import MetricEvaluator
+        from app.benchmark.config import METRICS
+        from app.benchmark.evaluation import MetricEvaluator
 
         class Judge(BaseRagasLLM):
             def is_finished(self, response):
@@ -524,7 +527,7 @@ class IntegrationTests(unittest.TestCase):
         from langchain_core.documents import Document
         from langchain_core.embeddings import Embeddings
 
-        from benchmark_index import ensure_index
+        from app.benchmark.index import ensure_index
 
         class FakeEmbeddings(Embeddings):
             calls = 0

@@ -6,14 +6,14 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from dashboard.auth import (
+from app.dashboard.auth import (
     authenticate,
     bootstrap_account,
     valid_session,
 )
-from dashboard.config import Settings
-from dashboard.database import backup_database, connect
-from dashboard.server import main as server_main
+from app.dashboard.config import Settings
+from app.dashboard.database import backup_database, connect
+from app.dashboard.server import main as server_main
 
 
 class DashboardAccessTests(unittest.TestCase):
@@ -21,15 +21,15 @@ class DashboardAccessTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
-        self.database = self.root / "state" / "dashboard.sqlite3"
+        self.database = self.root / "state" / "app.dashboard.sqlite3"
         self.password = "local-test-password-only"
 
     def test_no_account_refuses_startup_before_launching_server(self):
         settings = Settings(self.database, self.root, self.root, self.root)
         with (
-            patch("dashboard.server.Settings.from_environment", return_value=settings),
-            patch("dashboard.server.os.execv") as execute,
-            patch("sys.argv", ["dashboard.server"]),
+            patch("app.dashboard.server.Settings.from_environment", return_value=settings),
+            patch("app.dashboard.server.os.execv") as execute,
+            patch("sys.argv", ["app.dashboard.server"]),
             self.assertRaises(SystemExit) as stopped,
         ):
             server_main()
@@ -59,10 +59,10 @@ class DashboardAccessTests(unittest.TestCase):
             password=self.password,
         )
         with (
-            patch("dashboard.server.Settings.from_environment", return_value=settings),
-            patch("dashboard.server.os.execv") as execute,
-            patch("dashboard.server.os.chdir"),
-            patch("sys.argv", ["dashboard.server"]),
+            patch("app.dashboard.server.Settings.from_environment", return_value=settings),
+            patch("app.dashboard.server.os.execv") as execute,
+            patch("app.dashboard.server.os.chdir"),
+            patch("sys.argv", ["app.dashboard.server"]),
         ):
             server_main()
         execute.assert_called_once()
@@ -112,7 +112,7 @@ class DashboardAccessTests(unittest.TestCase):
         (self.root / ".env").write_text(
             f"DASHBOARD_USERNAME=tester\nDASHBOARD_PASSWORD='{password}'\n"
         )
-        with patch.dict(os.environ, {}, clear=True), patch("dashboard.config.ROOT", self.root):
+        with patch.dict(os.environ, {}, clear=True), patch("app.dashboard.config.ROOT", self.root):
             settings = Settings.from_environment()
         self.assertEqual(settings.username, "tester")
         self.assertEqual(settings.password, password)

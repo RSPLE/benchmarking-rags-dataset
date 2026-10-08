@@ -13,13 +13,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from benchmark_admin import migrate
-from benchmark_config import METRICS, build_manifest
-from benchmark_index import cached_extraction, ensure_index
-from benchmark_pipeline import critique_decision, frozen_answers, tool_evidence
-from benchmark_runner import run_resumable_benchmark, validate_metrics
-from benchmark_storage import atomic_json, exclusive_lock, file_hash, fingerprint, sanitize
-from benchmark_usage import BudgetExceeded, UsageLedger, retry_delay
+from app.benchmark.admin import migrate
+from app.benchmark.config import METRICS, build_manifest
+from app.benchmark.index import cached_extraction, ensure_index
+from app.benchmark.pipeline import critique_decision, frozen_answers, tool_evidence
+from app.benchmark.runner import run_resumable_benchmark, validate_metrics
+from app.benchmark.storage import atomic_json, exclusive_lock, file_hash, fingerprint, sanitize
+from app.benchmark.usage import BudgetExceeded, UsageLedger, retry_delay
 
 
 class ReliabilityTests(unittest.TestCase):
@@ -75,7 +75,7 @@ class ReliabilityTests(unittest.TestCase):
         script = """
 import os,sys
 from pathlib import Path
-from benchmark_runner import run_resumable_benchmark
+from app.benchmark.runner import run_resumable_benchmark
 run_resumable_benchmark('test', lambda q: {'answer':'Candidate','contexts':['Evidence']},
     dataset_path=Path(sys.argv[1]), output_dir=Path(sys.argv[2]), question_limit=1,
     metric_evaluators={'faithfulness':lambda a:{'faithfulness':0},
@@ -92,8 +92,8 @@ run_resumable_benchmark('test', lambda q: {'answer':'Candidate','contexts':['Evi
         self.second.assert_called_once()
 
     def test_evaluation_mode_never_prepares_a_pipeline(self):
-        from benchmark_pipeline import execute_pipeline
-        from benchmark_storage import atomic_json
+        from app.benchmark.pipeline import execute_pipeline
+        from app.benchmark.storage import atomic_json
 
         rows = [
             {
@@ -122,8 +122,8 @@ run_resumable_benchmark('test', lambda q: {'answer':'Candidate','contexts':['Evi
                     "BENCHMARK_OUTPUT_DIR": str(self.output),
                 },
             ),
-            patch("benchmark_pipeline.DEFAULT_DATASET", self.dataset),
-            patch("benchmark_pipeline.MetricEvaluator.handlers", return_value=handlers),
+            patch("app.benchmark.pipeline.DEFAULT_DATASET", self.dataset),
+            patch("app.benchmark.pipeline.MetricEvaluator.handlers", return_value=handlers),
             contextlib.redirect_stdout(io.StringIO()),
         ):
             execute_pipeline("context-rag", prepare)
@@ -159,7 +159,7 @@ run_resumable_benchmark('test', lambda q: {'answer':'Candidate','contexts':['Evi
             command = [
                 sys.executable,
                 "-c",
-                "from benchmark_storage import exclusive_lock; import sys;\nwith exclusive_lock(sys.argv[1]): pass",
+                "from app.benchmark.storage import exclusive_lock; import sys;\nwith exclusive_lock(sys.argv[1]): pass",
                 str(self.output / ".lock"),
             ]
             result = subprocess.run(command, capture_output=True, text=True)

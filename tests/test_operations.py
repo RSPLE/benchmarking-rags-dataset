@@ -10,14 +10,14 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from benchmark_control import Control, Worker, call_control, environment_profiles, parse_command
-from benchmark_knowledge import read_snapshot
-from benchmark_reconcile import reconcile
-from benchmark_storage import append_event, atomic_json
-from benchmark_usage import BudgetExceeded, UsageLedger, historical_usage
-from service_entrypoint import role_environment, service_command
-from telegram_gateway import Gateway
-from telegram_notifier import Notifier
+from app.benchmark.control import Control, Worker, call_control, environment_profiles, parse_command
+from app.benchmark.knowledge import read_snapshot
+from app.benchmark.reconcile import reconcile
+from app.benchmark.storage import append_event, atomic_json
+from app.benchmark.usage import BudgetExceeded, UsageLedger, historical_usage
+from app.services.entrypoint import role_environment, service_command
+from app.telegram.gateway import Gateway
+from app.telegram.notifier import Notifier
 
 
 class OperationsTests(unittest.TestCase):
@@ -101,7 +101,7 @@ class OperationsTests(unittest.TestCase):
         )
         atomic_json(directory / "summary.json", {"operation": "paused"})
         atomic_json(directory / "public_results.json", {"rows": []})
-        with patch("benchmark_control.subprocess.Popen") as popen:
+        with patch("app.benchmark.control.subprocess.Popen") as popen:
             for i, command in enumerate(("status", "pausar", "falhas", "resultado", "pergunta")):
                 text = f"/{command} context-rag {experiment}" + (
                     " Q001" if command == "pergunta" else ""
@@ -145,7 +145,7 @@ class OperationsTests(unittest.TestCase):
         self.addCleanup(notifier.db.close)
         gateway = Gateway(notifier, "unused.sock", {123})
         with patch(
-            "telegram_gateway.call_control", side_effect=lambda path, req: control.handle(req)
+            "app.telegram.gateway.call_control", side_effect=lambda path, req: control.handle(req)
         ) as dispatch:
             gateway.poll()
             gateway.poll()
@@ -175,13 +175,13 @@ class OperationsTests(unittest.TestCase):
             raise OSError("Lost response")
 
         with (
-            patch("telegram_gateway.call_control", side_effect=dropped),
+            patch("app.telegram.gateway.call_control", side_effect=dropped),
             self.assertRaises(OSError),
         ):
             gateway.poll()
         self.assertEqual(notifier.db.execute("SELECT offset FROM telegram_cursor").fetchone()[0], 0)
         with patch(
-            "telegram_gateway.call_control", side_effect=lambda path, req: control.handle(req)
+            "app.telegram.gateway.call_control", side_effect=lambda path, req: control.handle(req)
         ):
             gateway.poll()
         self.assertEqual(control.db.execute("SELECT count(*) FROM jobs").fetchone()[0], 1)
@@ -270,7 +270,7 @@ class OperationsTests(unittest.TestCase):
     def test_worker_refuses_monetary_limit_without_reservation(self):
         control = self.control()
         control.handle({"user_id": 123, "command_id": "one", "text": "/executar context-rag 1 1"})
-        with patch("benchmark_control.subprocess.Popen") as popen:
+        with patch("app.benchmark.control.subprocess.Popen") as popen:
             Worker(control).tick()
             popen.assert_not_called()
         self.assertEqual(control.db.execute("SELECT state FROM jobs").fetchone()[0], "failed")
@@ -284,7 +284,7 @@ class OperationsTests(unittest.TestCase):
         worker = Worker(control)
         with (
             patch.dict(os.environ, {"BENCHMARK_MAX_CALLS": "200", "TELEGRAM_BOT_TOKEN": "private"}),
-            patch("benchmark_control.subprocess.Popen") as popen,
+            patch("app.benchmark.control.subprocess.Popen") as popen,
         ):
             worker.tick()
         self.addCleanup(worker.log.close)
@@ -309,7 +309,7 @@ class OperationsTests(unittest.TestCase):
             patch.dict(
                 os.environ, {"BENCHMARK_MAX_COST_USD": "1", "BENCHMARK_RESERVE_COST_USD": "0.1"}
             ),
-            patch("benchmark_control.subprocess.Popen") as popen,
+            patch("app.benchmark.control.subprocess.Popen") as popen,
         ):
             worker.tick()
         self.addCleanup(worker.log.close)
@@ -349,9 +349,8 @@ class OperationsTests(unittest.TestCase):
             self.assertEqual(env["PYTHON_DOTENV_DISABLED"], "1")
 
     def test_service_launcher_executes_notifier_without_model_secrets(self):
-        root = Path(__file__).resolve().parents[1]
         result = subprocess.run(
-            [sys.executable, str(root / "service_entrypoint.py"), "telegram", "--from-environment"],
+            [sys.executable, "-m", "app.services.entrypoint", "telegram", "--from-environment"],
             env={
                 **os.environ,
                 "TELEGRAM_ENABLED": "false",
@@ -381,7 +380,6 @@ class OperationsTests(unittest.TestCase):
                 self.assertEqual(set(environment_profiles()), {"context-rag"})
 
     def test_control_socket_lifecycle_without_model_credentials(self):
-        root = Path(__file__).resolve().parents[1]
         profiles = self.root / "profiles.json"
         atomic_json(profiles, {})
         path = self.root / "control.sock"
@@ -389,7 +387,8 @@ class OperationsTests(unittest.TestCase):
             process = subprocess.Popen(
                 [
                     sys.executable,
-                    str(root / "benchmark_control.py"),
+                    "-m",
+                    "app.benchmark.control",
                     "--socket",
                     str(path),
                     "--database",
@@ -437,7 +436,7 @@ class OperationsTests(unittest.TestCase):
             self.assertFalse(path.exists())
 
     def test_retry_cooldown_and_stage_limit_preserve_saved_answer(self):
-        from benchmark_runner import run_resumable_benchmark
+        from app.benchmark.runner import run_resumable_benchmark
 
         dataset = self.root / "dataset.json"
         atomic_json(dataset, [{"id": "Q001", "question": "Question", "ground_truth": "Reference"}])
@@ -458,7 +457,7 @@ class OperationsTests(unittest.TestCase):
                 os.environ,
                 {"BENCHMARK_RETRY_COOLDOWN_SECONDS": "60", "BENCHMARK_MAX_STAGE_ATTEMPTS": "2"},
             ),
-            patch("benchmark_runner.time.time", return_value=100),
+            patch("app.benchmark.runner.time.time", return_value=100),
         ):
             run()
             self.assertEqual(run()["attempted"], 0)
@@ -467,7 +466,7 @@ class OperationsTests(unittest.TestCase):
                 os.environ,
                 {"BENCHMARK_RETRY_COOLDOWN_SECONDS": "0", "BENCHMARK_MAX_STAGE_ATTEMPTS": "2"},
             ),
-            patch("benchmark_runner.time.time", return_value=200),
+            patch("app.benchmark.runner.time.time", return_value=200),
         ):
             run()
             self.assertEqual(run()["attempted"], 0)
@@ -475,9 +474,9 @@ class OperationsTests(unittest.TestCase):
         self.assertEqual(judge.call_count, 2)
 
     def test_frozen_export_roundtrip_preserves_actual_evidence(self):
-        from benchmark_admin import export_frozen
-        from benchmark_pipeline import frozen_answers
-        from benchmark_runner import run_resumable_benchmark
+        from app.benchmark.admin import export_frozen
+        from app.benchmark.pipeline import frozen_answers
+        from app.benchmark.runner import run_resumable_benchmark
 
         dataset = self.root / "dataset.json"
         questions = [{"id": "Q001", "question": "Question", "ground_truth": "Reference"}]
@@ -507,7 +506,7 @@ class OperationsTests(unittest.TestCase):
             metric_evaluators={"faithfulness": lambda a: {"faithfulness": 1}},
         )
         target = self.root / "frozen.json"
-        with patch("benchmark_admin.DEFAULT_DATASET", dataset):
+        with patch("app.benchmark.admin.DEFAULT_DATASET", dataset):
             export_frozen(output, target)
         restored = frozen_answers(target, "context-rag", questions)
         self.assertEqual(restored["Q001"]["contexts"], ["Exact evidence"])
@@ -515,7 +514,10 @@ class OperationsTests(unittest.TestCase):
         self.assertEqual(restored["Q001"]["generation_contexts"], ["Full tool evidence"])
         self.assertEqual(restored["Q001"]["answer_total_tokens"], 18)
         self.assertEqual(restored["Q001"]["answer_response_time_seconds"], 2.5)
-        with patch("benchmark_admin.DEFAULT_DATASET", dataset), self.assertRaises(FileExistsError):
+        with (
+            patch("app.benchmark.admin.DEFAULT_DATASET", dataset),
+            self.assertRaises(FileExistsError),
+        ):
             export_frozen(output, target)
 
     def test_supervisor_stops_only_its_process_group_at_deadline(self):
@@ -530,20 +532,20 @@ class OperationsTests(unittest.TestCase):
         worker.job, worker.started = "deadline", 0
         with (
             patch.dict(os.environ, {"BENCHMARK_MAX_SECONDS": "1"}),
-            patch("benchmark_control.time.monotonic", return_value=2),
-            patch("benchmark_control.os.killpg") as kill,
+            patch("app.benchmark.control.time.monotonic", return_value=2),
+            patch("app.benchmark.control.os.killpg") as kill,
         ):
             worker.tick()
             kill.assert_called_once_with(12345, __import__("signal").SIGTERM)
         with (
-            patch("benchmark_control.time.monotonic", return_value=18),
-            patch("benchmark_control.os.killpg") as kill,
+            patch("app.benchmark.control.time.monotonic", return_value=18),
+            patch("app.benchmark.control.os.killpg") as kill,
         ):
             worker.stop()
             kill.assert_called_once_with(12345, __import__("signal").SIGKILL)
 
     def test_scientific_repetition_has_an_independent_identity(self):
-        from benchmark_config import build_manifest
+        from app.benchmark.config import build_manifest
 
         docs = self.root / "docs"
         docs.mkdir()
@@ -577,7 +579,7 @@ class OperationsTests(unittest.TestCase):
         self.assertEqual(notifier.client.call.call_count, 2)
 
     def test_doctor_accepts_separate_role_keys_without_general_key(self):
-        import main
+        from app import cli as main
 
         for name in main.PROJECTS:
             docs = (
@@ -588,8 +590,8 @@ class OperationsTests(unittest.TestCase):
             docs.mkdir(parents=True)
             (docs / "book.pdf").write_bytes(b"presence check")
         with (
-            patch("main.RAGS_ROOT", self.root),
-            patch("main.load_environment"),
+            patch("app.cli.RAGS_ROOT", self.root),
+            patch("app.cli.load_environment"),
             patch.dict(
                 os.environ,
                 {

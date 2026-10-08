@@ -1,0 +1,162 @@
+{
+  "current_shared": {
+    "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "app/__main__.py": "04a6d11b7cfd43b5f4c475d10446f3bdb3abf682c523b72ab009c2573c0b1a4e",
+    "app/benchmark/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "app/benchmark/admin.py": "11025e7f1e142baf594da71c4cbe68b4e04dfaeccda422b77427fd592f34d0ef",
+    "app/benchmark/archive.py": "1b1e5527670ca127cbaea75d151e575852abf215f8f75bc0e5410669c052c130",
+    "app/benchmark/config.py": "e50c3d3bc13b5791d3a41b2b5c4f7de3b05496ec70bf959082e756cf4c4779fb",
+    "app/benchmark/control.py": "93bc66986debd0e2306bcf6727be8bdc95de6a47505312bf564ec6676719b822",
+    "app/benchmark/evaluate_saved.py": "473fb75bbef328d3993f373e5bc53e67ff40fad5d236c603d57bca8572108626",
+    "app/benchmark/evaluation.py": "812421df0435fcec89bedffcdbc0fc75b57b05df39961e7d688bda32d44a45d7",
+    "app/benchmark/export.py": "1098fed36d1602a1bd5d7deafaf5ac890d686ee1cb67a01471c51d43a1b35c23",
+    "app/benchmark/index.py": "b6e77c9f4e4d71b201338c724c1280fa9ae7be88ea52cbfde36e35d7d125f546",
+    "app/benchmark/knowledge.py": "8fcc66107b25fe5f077f7f86b4bdc444fde6e5bb0d9bbbf348e2d6de3e6e2fc8",
+    "app/benchmark/layout.py": "240b13cd769b82c1227f988cf2facf5ad457efaa551c7036f742426e1f3bf22e",
+    "app/benchmark/options.py": "a5640b8723efe083cabf1a083034b6f24c511aa2dd4c3fa5ece2476aa26840c8",
+    "app/benchmark/pipeline.py": "3ccdde4a973cb999deb01dcfdb917ce1dedda970db1497c4b4772919857ecadd",
+    "app/benchmark/reconcile.py": "56c896e842bcd81a32feb9dadd9d514ef6f3991c906210f7ef480d02650d2f3d",
+    "app/benchmark/runner.py": "d87f134eced51356d8d70540b580aec392cd4c2323ab9786fbef5e1f9ca63047",
+    "app/benchmark/storage.py": "fbcf19b3956f09163576c59a2a6813c9884c4609cc1db03a1be9265aaa5050ac",
+    "app/benchmark/usage.py": "84099dfe5d4bf9a3277f1d21481eac62c3d83913bbe2443a3414368295f5ec41",
+    "app/cli.py": "af49e9a0bb8d259befed68c49b4d36d346f461b8918c2057a1fd80c0a217273b",
+    "app/paths.py": "6652fd347d47512c4380c1ddcd92b2d4ab974ea281ba061224481eb07467e6a7",
+    "app/providers/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "app/providers/models.py": "b8997e22ea7a3f2875a45e69e795b0ebcd9ba06e455790525786b23367ea88a5",
+    "app/providers/ragas_compat.py": "bba748e15cbcb07b468dee1d21c67a8cc45c63e0de857332f5a2ba5b675e05c3",
+    "app/services/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "app/services/entrypoint.py": "a910b2fcd40e47dac71a4f293d207b3975e71d41796d32ab2943510f49cfb2b3",
+    "app/telegram/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "app/telegram/gateway.py": "c53240e63e017ff90f07270227ccba2558e0583c8d9fa7ad6cacf2f02c19a53a",
+    "app/telegram/notifier.py": "189e6d2ce4dd395e0850d05f0850f2e08cdc105a893d7e3f2f7c442d563dd64f",
+    "app/telegram/setup.py": "0e32c37ba0eb3eaaf7ccda37a82f5025dcc5772f8cbc2b8461e54e099335d6eb"
+  },
+  "legacy_revision": "11bb3b0327e4db0737097869f49e7aaf2525c02f",
+  "legacy_shared": {
+    "benchmark_admin.py": "2c754f8bf32fb2e09f67bada4d53f08ab5c3ae9cab46c020c7db3669a2dabd96",
+    "benchmark_archive.py": "30878db9d3675c48bfa0ab85f9e37352d53ce2901a19f521f2348232dcc85881",
+    "benchmark_config.py": "f8c27fd3e394eb0fd931fbb4649d74a6068aae1a2725a3b6dac38a819bf162b2",
+    "benchmark_control.py": "a0d3a179f90f9e43a418c1e14d736d8d927d980a1d80a29c57f73f2760a2297d",
+    "benchmark_evaluation.py": "a7d9233f69e364ec6129179ca3df7b4507bb0c4608b84a5caf976fa7be1539a4",
+    "benchmark_export.py": "c3c45e585f07d7a5a3069cb96b00234d758292d55f3a117e1e53b4452fe4c382",
+    "benchmark_index.py": "d074241458a5b28e0839a275230940b2eb5952580b7ece314e19162e0a0e8464",
+    "benchmark_knowledge.py": "2fc6bf1b20a61fc88e486b38d78024be019fbdc0b27286b7955de2a3dc1c0d49",
+    "benchmark_options.py": "a5640b8723efe083cabf1a083034b6f24c511aa2dd4c3fa5ece2476aa26840c8",
+    "benchmark_pipeline.py": "024df91dea67844dde461f5d28e34af1f7c72b2144cb47dd9db6f8b75dbb8fa9",
+    "benchmark_reconcile.py": "be03f2e86c7d4156d5b6d5f6b6f887bcee699664a6434c3d7edd61bfb13e004c",
+    "benchmark_runner.py": "0db88e7d55b8bb22cbd7ea6ff41c08830028235ea9853b496d5737a9f6cc8fd0",
+    "benchmark_storage.py": "fbcf19b3956f09163576c59a2a6813c9884c4609cc1db03a1be9265aaa5050ac",
+    "benchmark_usage.py": "f75a11bb8c9bb29d324c7a0ede14d3ba27bddc89ac3ee9b38edc9949453612c4",
+    "evaluate_saved.py": "c2d480b3428c7d19b8ec836d9eaf46042bf7057d9a00da67d2bb64df890b5bf1",
+    "main.py": "ac1fc7a6eae08eb2e87f00a79d9495ed435643f358e342e63cbaf8bc3495e3f9",
+    "rag_provider.py": "7e3e3869511713773f22a587808fffb448ac0668d0f64f60d2841b378ae536eb",
+    "ragas_compat.py": "bba748e15cbcb07b468dee1d21c67a8cc45c63e0de857332f5a2ba5b675e05c3",
+    "service_entrypoint.py": "ba47f9caf3afe8fc9bb18e8cf89a79b4044a8a5f526c1b6f5330eff28c8917e5",
+    "telegram_gateway.py": "ccb239ed893472275697f6e62331c1f92b92500a77e7badb8af92bb83283cf41",
+    "telegram_notifier.py": "3b9e88d4a570f9e1faff13af3e7eaadfc0be044968153e661afb7ba49a213bd1",
+    "telegram_setup.py": "39a209abdc2af866b195cda1aa8eb55e076531b3839a6cbb0a614e8007dc4ac8"
+  },
+  "projects": {
+    "context-rag": {
+      "current": {
+        "app/rags/context-rag/main.py": "b27c3c9d589eeb19892ecc06f183fcfa6bc63b5765549fa89beabce87d7813c1",
+        "app/rags/context-rag/main_backup.py": "cee1feaf9cbe75ad14e87b3cf64ffe874c88717525323d4b39e41a98fc2476c8",
+        "app/rags/context-rag/plot_graph.py": "4c2ece759076046dee71829b4944beae11c7302f43fa121a0873b02f52377a53",
+        "app/rags/context-rag/pyproject.toml": "868d8ed6bc69408682a533670b934f625831b9561a8b4742c716f716f248cdb5",
+        "app/rags/context-rag/uv.lock": "bcccd28cc7ac869225a35749827285c62fbb9936bf79e0d1379cf6104ed7e4ff"
+      },
+      "legacy": {
+        "rags/context-rag/main.py": "5d6da863b1cb2ee375a67daaa41fb05651b06c115a31cf8d57a65f9d553c1b44",
+        "rags/context-rag/main_backup.py": "cee1feaf9cbe75ad14e87b3cf64ffe874c88717525323d4b39e41a98fc2476c8",
+        "rags/context-rag/plot_graph.py": "4c2ece759076046dee71829b4944beae11c7302f43fa121a0873b02f52377a53",
+        "rags/context-rag/pyproject.toml": "868d8ed6bc69408682a533670b934f625831b9561a8b4742c716f716f248cdb5",
+        "rags/context-rag/uv.lock": "bcccd28cc7ac869225a35749827285c62fbb9936bf79e0d1379cf6104ed7e4ff"
+      }
+    },
+    "graph-rag": {
+      "current": {
+        "app/rags/graph-rag/main.py": "d784d0821b49c35a06458a7949eeff409ed4779d73585999c094b58a1c9ece32",
+        "app/rags/graph-rag/pyproject.toml": "6202444001b241b51bd80ada7e9f186c942c1e8a50eab82b5b6fafaffd76cc13",
+        "app/rags/graph-rag/rag_settings.py": "02a18d88057a2bcc5a7ad772e42628a610906e801504505e9a71230e7f743e14",
+        "app/rags/graph-rag/uv.lock": "64ed30471bbaae1534cc1935ef4028cc3779ca8f93382c53f74c39d7401aa196"
+      },
+      "legacy": {
+        "rags/graph-rag/main.py": "0f1e58b0d7d0723cc04aeb9c9e45338b992fe149074c1ccd1b9a9d717ca2851b",
+        "rags/graph-rag/pyproject.toml": "6202444001b241b51bd80ada7e9f186c942c1e8a50eab82b5b6fafaffd76cc13",
+        "rags/graph-rag/rag_settings.py": "f0f575a3d8fc04bafa83aefc63d52f0bd8e0c1bdc093510879b9d11514050bcb",
+        "rags/graph-rag/uv.lock": "64ed30471bbaae1534cc1935ef4028cc3779ca8f93382c53f74c39d7401aa196"
+      }
+    },
+    "hybrid-rag": {
+      "current": {
+        "app/rags/hybrid-rag/main.py": "1a4f200c2ca92a046fb472e9fed2f6d160d36e45aeac3db920387f72e603e3e1",
+        "app/rags/hybrid-rag/pyproject.toml": "2875f9f9720d729b87dd6801d0a07e11bb2550e98a4203c083216dd4ca74533d",
+        "app/rags/hybrid-rag/rag_settings.py": "f4c743f1fb6cbb573ca353cb4577a8f4d871d4dc2866216601fdb07514b8721d",
+        "app/rags/hybrid-rag/uv.lock": "21a82f983ace79d49b4b05a81117df81de9a65af8df9bcc7001fc53f245edef6"
+      },
+      "legacy": {
+        "rags/hybrid-rag/main.py": "f195f387add5b76296ec5b01248a3e69d3f0c3c7f2180a7680d7515c8cf3ea90",
+        "rags/hybrid-rag/pyproject.toml": "2875f9f9720d729b87dd6801d0a07e11bb2550e98a4203c083216dd4ca74533d",
+        "rags/hybrid-rag/rag_settings.py": "8535d21ac0a62fb7f837a3c30802570c711f1a6d050255b96c8d792fea557aef",
+        "rags/hybrid-rag/uv.lock": "21a82f983ace79d49b4b05a81117df81de9a65af8df9bcc7001fc53f245edef6"
+      }
+    },
+    "knowledge-enhanced-rag": {
+      "current": {
+        "app/rags/knowledge-enhanced-rag/api.py": "a6a8d553ba03687510928293df540f0099a2178f1ee948f16f991691546b747e",
+        "app/rags/knowledge-enhanced-rag/evaluate.py": "893709ffa398b9af14feb92f3c1ae4a3c1d0ec3ab9d0d5016afc88c9286b111f",
+        "app/rags/knowledge-enhanced-rag/main.py": "da1785a688c72006a611606dcfc8d7f572b31d7e6ffd0a7a1c819020a739c43e",
+        "app/rags/knowledge-enhanced-rag/pyproject.toml": "f94c9593f1ce9565039308067b11a40c96ce0ae52ab81451992c45a0069f082b",
+        "app/rags/knowledge-enhanced-rag/rag_settings.py": "02a18d88057a2bcc5a7ad772e42628a610906e801504505e9a71230e7f743e14",
+        "app/rags/knowledge-enhanced-rag/src/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "app/rags/knowledge-enhanced-rag/src/chatbot.py": "ca2403b27a90eecd76996bfa41d300a147b6163e92ba25c88368c1dbc24d7240",
+        "app/rags/knowledge-enhanced-rag/src/ingestion.py": "89b90d4714c71b8f414c5e34784b73d87354f7e3647fdb9b366f64e7059deb6a",
+        "app/rags/knowledge-enhanced-rag/src/knowledge_graph.py": "278c2239d66124fa517c2bf81f3b872ef1fea1c7626de366dcc411f8724246f8",
+        "app/rags/knowledge-enhanced-rag/src/retriever.py": "ba37569c254682b399a6cb574e55f51145e95f943741362405938e9fb0f2178c",
+        "app/rags/knowledge-enhanced-rag/uv.lock": "4a53e0a3ab021781b869716c0bccddb3eb881a791152d0a866ae0f3b2f0ee165"
+      },
+      "legacy": {
+        "rags/knowledge-enhanced-rag/app.py": "a6a8d553ba03687510928293df540f0099a2178f1ee948f16f991691546b747e",
+        "rags/knowledge-enhanced-rag/evaluate.py": "893709ffa398b9af14feb92f3c1ae4a3c1d0ec3ab9d0d5016afc88c9286b111f",
+        "rags/knowledge-enhanced-rag/main.py": "a2e34d50f7d2cb44c95ce3369b5615d12f98aa21590cf17b4cc33156e0300df8",
+        "rags/knowledge-enhanced-rag/pyproject.toml": "f94c9593f1ce9565039308067b11a40c96ce0ae52ab81451992c45a0069f082b",
+        "rags/knowledge-enhanced-rag/rag_settings.py": "f0f575a3d8fc04bafa83aefc63d52f0bd8e0c1bdc093510879b9d11514050bcb",
+        "rags/knowledge-enhanced-rag/src/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "rags/knowledge-enhanced-rag/src/chatbot.py": "ca2403b27a90eecd76996bfa41d300a147b6163e92ba25c88368c1dbc24d7240",
+        "rags/knowledge-enhanced-rag/src/ingestion.py": "3ad7ae34443297051ca9eef3cdc10b21d99132d094293c85f36c93951c05c5dc",
+        "rags/knowledge-enhanced-rag/src/knowledge_graph.py": "d342225081d5b7a5cea9d909340e7afdcf15b0c15fe2e545a628de2cc40444bd",
+        "rags/knowledge-enhanced-rag/src/retriever.py": "ba37569c254682b399a6cb574e55f51145e95f943741362405938e9fb0f2178c",
+        "rags/knowledge-enhanced-rag/uv.lock": "4a53e0a3ab021781b869716c0bccddb3eb881a791152d0a866ae0f3b2f0ee165"
+      }
+    },
+    "memory-augmented-rag": {
+      "current": {
+        "app/rags/memory-augmented-rag/main.py": "13866a4dd93cc34318fda4c108b2b89ace0edb6f25abfcb49e9a02c1048d24ca",
+        "app/rags/memory-augmented-rag/pyproject.toml": "a72aa48dd960af7d9163ac6ad5d9f1f619b7c992527e88c9658e359edb4e1b87",
+        "app/rags/memory-augmented-rag/rag_settings.py": "02a18d88057a2bcc5a7ad772e42628a610906e801504505e9a71230e7f743e14",
+        "app/rags/memory-augmented-rag/uv.lock": "9eb9b07c4aaa59afd23536603d0ea9fe7a57da10d286d03a34173110e99102b1"
+      },
+      "legacy": {
+        "rags/memory-augmented-rag/main.py": "a040fb056d807714fc745a7504e4068f0b5803ad12d156599ad4268625ec9a35",
+        "rags/memory-augmented-rag/pyproject.toml": "a72aa48dd960af7d9163ac6ad5d9f1f619b7c992527e88c9658e359edb4e1b87",
+        "rags/memory-augmented-rag/rag_settings.py": "f0f575a3d8fc04bafa83aefc63d52f0bd8e0c1bdc093510879b9d11514050bcb",
+        "rags/memory-augmented-rag/uv.lock": "9eb9b07c4aaa59afd23536603d0ea9fe7a57da10d286d03a34173110e99102b1"
+      }
+    },
+    "self-rag": {
+      "current": {
+        "app/rags/self-rag/main.py": "ffaff90e3f02230d3ea8d8c98b845c29101b8165f3e3f9a7dc3e282986d245fc",
+        "app/rags/self-rag/pyproject.toml": "15af4cb83a9b46bb3d7b724844e62d9f98a8279bd1afb15de5cbd0527fb7482c",
+        "app/rags/self-rag/rag_settings.py": "02a18d88057a2bcc5a7ad772e42628a610906e801504505e9a71230e7f743e14",
+        "app/rags/self-rag/uv.lock": "e452421c6f87ece70271f01f98eef842ee1989b37c1fea0986672d21bc854928"
+      },
+      "legacy": {
+        "rags/self-rag/main.py": "c4f1ecc746a9f035bf88053ab3afd2947f566dff6c9a1bbdb919761050911527",
+        "rags/self-rag/pyproject.toml": "15af4cb83a9b46bb3d7b724844e62d9f98a8279bd1afb15de5cbd0527fb7482c",
+        "rags/self-rag/rag_settings.py": "f0f575a3d8fc04bafa83aefc63d52f0bd8e0c1bdc093510879b9d11514050bcb",
+        "rags/self-rag/uv.lock": "e452421c6f87ece70271f01f98eef842ee1989b37c1fea0986672d21bc854928"
+      }
+    }
+  },
+  "schema": 1
+}

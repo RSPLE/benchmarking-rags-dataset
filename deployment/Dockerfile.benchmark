@@ -4,12 +4,16 @@ COPY --from=uv /uv /usr/local/bin/uv
 ENV UV_LINK_MODE=copy UV_NO_SYNC=1 PYTHONUNBUFFERED=1 PYTHON_DOTENV_DISABLED=1 UV_CACHE_DIR=/tmp/uv-cache
 WORKDIR /app
 COPY pyproject.toml uv.lock /app/
-COPY rags /app/rags
-RUN uv sync --frozen --no-dev --python /usr/local/bin/python && for project in rags/*; do uv sync --project "$project" --frozen --python /usr/local/bin/python; done
-COPY *.py /app/
-COPY eval-dataset/*.json /app/eval-dataset/
+COPY app/rags /app/app/rags
+RUN uv sync --frozen --no-dev --python /usr/local/bin/python && for project in app/rags/*; do uv sync --project "$project" --frozen --python /usr/local/bin/python; done
+COPY app/*.py /app/app/
+COPY app/benchmark /app/app/benchmark
+COPY app/providers /app/app/providers
+COPY app/services /app/app/services
+COPY app/telegram /app/app/telegram
+COPY app/tools /app/app/tools
 COPY data /app/data
-RUN groupadd --gid 1000 benchmark && useradd --uid 1000 --gid 1000 --create-home benchmark && mkdir -p /state /run/benchmark /app/resultados && chown benchmark:benchmark /state /run/benchmark /app/resultados && for project in /app/rags/*; do mkdir -p "$project/chroma_v2"; chown benchmark:benchmark "$project/chroma_v2"; done
+RUN groupadd --gid 1000 benchmark && useradd --uid 1000 --gid 1000 --create-home benchmark && mkdir -p /state /run/benchmark /app/resultados && chown benchmark:benchmark /state /run/benchmark /app/resultados && for project in /app/app/rags/*; do mkdir -p "$project/chroma_v2"; chown benchmark:benchmark "$project/chroma_v2"; done
 USER benchmark
 ENV PATH=/app/.venv/bin:$PATH
-CMD ["python", "service_entrypoint.py", "control", "--from-environment"]
+CMD ["python", "-m", "app.services.entrypoint", "control", "--from-environment"]

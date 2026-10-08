@@ -28,7 +28,7 @@ tmp/implementation-*/
 tmp/startup-check/
 tmp/web-check/
 *.queue.db
-dashboard/state/
+app/dashboard/state/
 backups/
 **/*.sqlite3-wal
 **/*.sqlite3-shm
