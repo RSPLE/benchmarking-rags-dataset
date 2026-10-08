@@ -22,7 +22,7 @@ from app.cli import build_parser
 from app.telegram.notifier import Notifier, TelegramClient
 from app.telegram.setup import check_configuration
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 class ContractTests(unittest.TestCase):
@@ -35,7 +35,7 @@ class ContractTests(unittest.TestCase):
         self.addCleanup(self.env.stop)
 
     def test_original_prompts_match_pinned_upstream_revisions(self):
-        contracts = json.loads((ROOT / "tests/fixtures/upstream_contracts.json").read_text())
+        contracts = json.loads((ROOT / "app/tests/fixtures/upstream_contracts.json").read_text())
         for project, contract in contracts.items():
             self.assertEqual(contract["columns"], list(RESULT_COLUMNS))
             for spec in contract["prompts"]:

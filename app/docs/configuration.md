@@ -18,7 +18,7 @@ The root Caddyfile publishes HTTPS; allow TCP 80/443 on the VPS. Login survives
 reloads. There is no default account or post-start registration.
 Application images build locally without profiles or registry login. SQLite stores
 a password hash; keep `.env` private with mode `0600`. See
-[access, persistence and password changes](../app/dashboard/README.md).
+[access, persistence and password changes](../dashboard/README.md).
 
 ## Where Telegram values belong
 

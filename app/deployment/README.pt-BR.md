@@ -2,7 +2,7 @@
 
 [English](README.md) · [Configuração única](../docs/configuration.pt-BR.md) · [Operação](../docs/reliability.pt-BR.md)
 
-Para a interface Streamlit, siga o [guia do painel](../app/dashboard/README.pt-BR.md), incluindo
+Para a interface Streamlit, siga o [guia do painel](../dashboard/README.pt-BR.md), incluindo
 o único comando `docker compose up -d`, credenciais na `.env` antes de subir,
 HTTPS pelo Caddyfile da raiz e acesso em `https://<DASHBOARD_PUBLIC_HOST>`. Libere TCP
 80/443 no firewall da VPS/provedor. Banco, fila e Telegram não precisam de portas
@@ -57,8 +57,8 @@ preserve os endereços e credenciais corretos do Neo4j da VPS.
 
 ```bash
 uv run --locked python -m app telegram-check
-sudo install -m 0644 deployment/control.service /etc/systemd/system/benchmark-control.service
-sudo install -m 0644 deployment/telegram.service /etc/systemd/system/benchmark-telegram.service
+sudo install -m 0644 app/deployment/control.service /etc/systemd/system/benchmark-control.service
+sudo install -m 0644 app/deployment/telegram.service /etc/systemd/system/benchmark-telegram.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now benchmark-control.service benchmark-telegram.service
 sudo systemctl status benchmark-control.service benchmark-telegram.service

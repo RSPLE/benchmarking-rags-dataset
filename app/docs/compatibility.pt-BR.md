@@ -6,7 +6,7 @@
 
 A comparação de 7 de outubro de 2026 usa os scripts Python dos repositórios abaixo.
 Os notebooks permanecem históricos. Os hashes dos prompts e o cabeçalho original
-estão em `tests/fixtures/upstream_contracts.json`, com regressão automatizada.
+estão em `app/tests/fixtures/upstream_contracts.json`, com regressão automatizada.
 
 | RAG | Revisão original | Recuperação preservada |
 | --- | --- | --- |

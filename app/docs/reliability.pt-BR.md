@@ -217,12 +217,12 @@ Não são enviados prompts, respostas, contextos, chaves ou traceback bruto.
 
 ## Implantação e validação
 
-Consulte [deployment/README.md](../deployment/README.pt-BR.md) e os exemplos de serviço.
+Consulte [app/deployment/README.md](../deployment/README.pt-BR.md) e os exemplos de serviço.
 Não habilitar execução remota antes de preparar ambientes, verificar backups,
 configurar a `.env`, limites técnicos e destino do bot. Os exemplos não instalam serviços.
 
 ```bash
-uv run --locked python -m unittest discover -s tests -v
+uv run --locked python -m unittest discover -s app/tests -v
 uv run --locked python -m app.tools.verify_integrations
 uv run --locked python -m app preflight
 uv run --locked ruff check --exclude '*.ipynb' .

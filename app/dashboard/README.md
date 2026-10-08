@@ -1,6 +1,6 @@
 # Web dashboard, execution and VPS publishing
 
-[Português](README.pt-BR.md) · [Deployment](../../deployment/README.md)
+[Português](README.pt-BR.md) · [Deployment](../deployment/README.md)
 
 ## Start
 
@@ -177,5 +177,5 @@ Validate the dashboard without paid model calls:
 ```bash
 uv sync --project app/dashboard --frozen
 uv run --project app/dashboard --frozen python -m unittest discover -s app/dashboard/tests -v
-uv run --locked python -m unittest discover -s tests -v
+uv run --locked python -m unittest discover -s app/tests -v
 ```

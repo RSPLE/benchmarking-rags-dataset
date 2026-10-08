@@ -14,7 +14,7 @@ class ComposeDashboardTests(unittest.TestCase):
     def configuration(self, extra=""):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            source = Path(__file__).resolve().parents[1] / "docker-compose.yml"
+            source = Path(__file__).resolve().parents[2] / "docker-compose.yml"
             (root / "docker-compose.yml").write_bytes(source.read_bytes())
             (root / ".env").write_text(
                 "BENCHMARK_OUTPUT_DIR=resultados\nNEO4J_USERNAME=hosted-user\n"

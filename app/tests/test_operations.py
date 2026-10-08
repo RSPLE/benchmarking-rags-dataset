@@ -258,7 +258,7 @@ class OperationsTests(unittest.TestCase):
         self.assertEqual(len((self.root / "budget.jsonl").read_text().splitlines()), 2)
 
     def test_snapshot_is_validated_and_independent_from_live_database(self):
-        source = Path(__file__).resolve().parents[1] / "data/knowledge-graph.json"
+        source = Path(__file__).resolve().parents[2] / "data/knowledge-graph.json"
         graph = read_snapshot(source)
         self.assertEqual(len(graph["nodes"]), 14)
         changed = json.loads(source.read_text())

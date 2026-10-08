@@ -6,7 +6,7 @@
 
 The October 7, 2026 comparison uses the Python scripts in the repositories below.
 Notebooks remain historical material. Original prompt fingerprints and the CSV
-header are pinned in `tests/fixtures/upstream_contracts.json` and regression-tested.
+header are pinned in `app/tests/fixtures/upstream_contracts.json` and regression-tested.
 
 | RAG | Original revision | Preserved retrieval |
 | --- | --- | --- |

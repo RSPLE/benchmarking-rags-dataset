@@ -133,7 +133,7 @@ services:
   control:
     build: &benchmark_build
       context: .
-      dockerfile: deployment/Dockerfile.benchmark
+      dockerfile: app/deployment/Dockerfile.benchmark
     pull_policy: build
     restart: unless-stopped
     env_file: .env

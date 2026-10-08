@@ -209,12 +209,12 @@ answers, contexts, keys and raw tracebacks are not published.
 
 ## Deployment and verification
 
-See [deployment/README.en.md](../deployment/README.md) and service examples.
+See [app/deployment/README.en.md](../deployment/README.md) and service examples.
 Do not enable remote execution before preparing environments, checking backups,
 configuring `.env`, technical limits and the bot destination. Examples do not install services.
 
 ```bash
-uv run --locked python -m unittest discover -s tests -v
+uv run --locked python -m unittest discover -s app/tests -v
 uv run --locked python -m app.tools.verify_integrations
 uv run --locked python -m app preflight
 uv run --locked ruff check --exclude '*.ipynb' .

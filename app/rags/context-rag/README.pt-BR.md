@@ -1,8 +1,8 @@
 # Context RAG
 
-> Operação atual / Current operation: [Português](../../../docs/reliability.pt-BR.md) · [English](../../../docs/reliability.md).
+> Operação atual / Current operation: [Português](../../docs/reliability.pt-BR.md) · [English](../../docs/reliability.md).
 > Compatibilidade de CSV, prompts e memória / CSV, prompt and memory compatibility:
-> [Português](../../../docs/compatibility.pt-BR.md) · [English](../../../docs/compatibility.md).
+> [Português](../../docs/compatibility.pt-BR.md) · [English](../../docs/compatibility.md).
 > Da raiz / From the repository root: `uv run --locked python main.py run context-rag`.
 > Configuração única / Single configuration: `.env` na raiz / at the root (`../../.env`).
 > Saídas / Outputs: `resultados/<rag>/<experiment_id>/`; checkpoint v2.

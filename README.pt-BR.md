@@ -2,7 +2,7 @@
 
 > **Execução atual:** os pipelines usam checkpoint v2 e saídas isoladas em
 > `resultados/<rag>/<experiment_id>`. Resultados antigos em `app/rags/*/results/`
-> permanecem intactos. Consulte [confiabilidade e operação](docs/reliability.pt-BR.md)
+> permanecem intactos. Consulte [confiabilidade e operação](app/docs/reliability.pt-BR.md)
 > antes de executar novos lotes. Esse guia substitui as instruções históricas
 > abaixo sobre retomada, diretórios, ingestão e configuração de avaliação.
 
@@ -47,16 +47,16 @@ Ao executar vários pipelines, a CLI para no primeiro que retorna erro.
 `results.csv` mantém as nove colunas originais dos scripts RSPLE, com `;` e UTF-8 BOM.
 `<rag>-run-<repetição>_1.csv` é uma cópia compatível com os gráficos anteriores;
 `results_detailed.csv` contém os campos adicionais. Somente casos completos entram
-no CSV principal. Consulte a [auditoria de compatibilidade](docs/compatibility.pt-BR.md).
+no CSV principal. Consulte a [auditoria de compatibilidade](app/docs/compatibility.pt-BR.md).
 
 `errors.json` mostra falhas atuais e
 `events.jsonl` mantém o histórico. `summary.json` inclui cobertura e denominadores
 das médias. Gravação atômica e bloqueios protegem o estado local.
 
-Consulte o [guia de confiabilidade](docs/reliability.pt-BR.md) para migração explícita,
+Consulte o [guia de confiabilidade](app/docs/reliability.pt-BR.md) para migração explícita,
 limites, pausas, avaliação de respostas congeladas e controle pelo Telegram.
-A [implantação](deployment/README.pt-BR.md) descreve o socket local, a `.env` única, IDs autorizados
-e a fila persistente. O [aceite](docs/acceptance.pt-BR.md) separa verificações sem consumo e piloto real.
+A [implantação](app/deployment/README.pt-BR.md) descreve o socket local, a `.env` única, IDs autorizados
+e a fila persistente. O [aceite](app/docs/acceptance.pt-BR.md) separa verificações sem consumo e piloto real.
 Os checkpoints v1 preservados não são retomados automaticamente pelo código novo.
 
 
@@ -78,7 +78,7 @@ uv run --locked python -m app resume context-rag EXP --questions 3
 `EXP` é o ID completo exibido por `/status`. `/start` mostra ajuda na conversa
 privada com o bot quando os serviços estão ativos. O canal recebe resultados.
 As flags compartilhadas e os limites de comparação estão no
-[protocolo de compatibilidade](docs/compatibility.pt-BR.md). Knowledge compartilha os
+[protocolo de compatibilidade](app/docs/compatibility.pt-BR.md). Knowledge compartilha os
 últimos cinco pares pergunta/resposta entre as 90 perguntas, inclusive após retomada.
 
 ## Requisitos e instalação com uv
@@ -99,7 +99,7 @@ uv sync
 O `pyproject.toml` e o `uv.lock` da raiz contêm somente o orquestrador. Cada diretório em `app/rags/` tem seu próprio `pyproject.toml`, `uv.lock` e `.venv`, criados sob demanda pelo `main.py`. Não há arquivos `requirements.txt`. Essa separação permite que um pipeline evolua suas bibliotecas sem alterar o ambiente dos demais.
 
 Toda configuração operacional fica na **`.env` da raiz**, incluindo modelos, Neo4j
-e Telegram. Veja [onde preencher token, canal privado e IDs autorizados](docs/configuration.pt-BR.md).
+e Telegram. Veja [onde preencher token, canal privado e IDs autorizados](app/docs/configuration.pt-BR.md).
 Não há teto monetário obrigatório. O Knowledge usa os mesmos sete PDFs e Neo4j;
 o snapshot JSON adicional fica inativo.
 
@@ -215,7 +215,7 @@ uv run python -m app run knowledge-enhanced-rag --questions 3
 O `doctor` confere configuração e arquivos locais; não comprova conexão com Neo4j.
 O benchmark não popula o banco. Com `BENCHMARK_KG_MODE=required`, grafo ausente ou
 vazio interrompe a execução, sem fallback silencioso para busca vetorial.
-Consulte a [preparação e o controle de reconstrução do grafo](docs/reliability.pt-BR.md#knowledge-e-neo4j)
+Consulte a [preparação e o controle de reconstrução do grafo](app/docs/reliability.pt-BR.md#knowledge-e-neo4j)
 antes de usar o endpoint de construção da API histórica. O modo explícito
 `disabled` cria outro experimento e não corresponde ao protocolo original do Knowledge.
 
@@ -238,13 +238,13 @@ O `uv sync` instala dependências, mas não faz a ingestão. A ingestão é feit
 3. Execute o script, que valida os PDFs, roda `uv sync`, verifica a configuração e inicia os seis pipelines:
 
 ```bash
-bash scripts/run_benchmark.sh
+bash app/scripts/run_benchmark.sh
 ```
 
 Por padrão, o script testa uma pergunta por pipeline. Para testar outro lote:
 
 ```bash
-QUESTIONS=10 bash scripts/run_benchmark.sh
+QUESTIONS=10 bash app/scripts/run_benchmark.sh
 ```
 
 A ingestão ocorre automaticamente durante a inicialização de cada pipeline. O pipeline carrega os PDFs, divide o texto em chunks, gera embeddings e grava o índice Chroma antes de processar as perguntas.
@@ -392,7 +392,7 @@ Cada diretório de pipeline contém ainda seu próprio `pyproject.toml` e `uv.lo
 ## Testes de desenvolvimento
 
 ```bash
-uv run python -m unittest discover -s tests -v
+uv run python -m unittest discover -s app/tests -v
 uv run ruff check main.py app/benchmark/runner.py tests
 ```
 

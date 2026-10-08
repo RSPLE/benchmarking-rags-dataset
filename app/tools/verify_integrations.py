@@ -16,7 +16,7 @@ def main():
             "unittest",
             "discover",
             "-s",
-            "tests",
+            "app/tests",
             "-p",
             "test_integrations.py",
             "-v",

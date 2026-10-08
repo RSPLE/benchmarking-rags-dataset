@@ -197,6 +197,7 @@ def store_source(db, path, boundary, project, origin):
     )
     source = str(path.resolve())
     current = db.execute("SELECT id,revision FROM experiments WHERE source=?", (source,)).fetchone()
+    relocated = False
     if current is None and origin == "legacy" and boundary.parent.name == "app":
         prior_source = str(boundary.parent.parent / "rags" / path.relative_to(boundary))
         current = db.execute(
@@ -207,10 +208,11 @@ def store_source(db, path, boundary, project, origin):
             if current["revision"] != revision:
                 raise ValueError("Historical source changed during layout transition")
             db.execute("UPDATE experiments SET source=? WHERE id=?", (source, current["id"]))
+            relocated = True
     identifier = current["id"] if current else fingerprint({"project": project, "source": source})
     if current and current["revision"] == revision:
         db.execute("DELETE FROM sync_errors WHERE source=?", (str(path),))
-        return False
+        return relocated
     external_id = manifest.get("experiment_id") or "legacy-" + identifier[:12]
     configuration = manifest.get("configuration", {})
     prefix = configuration.get("LLM_PROVIDER", "").upper()

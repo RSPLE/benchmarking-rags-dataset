@@ -19,7 +19,7 @@ O Caddyfile da raiz publica HTTPS; libere TCP 80/443 na VPS. A sessão persiste 
 recarregar. Não há usuário padrão nem cadastro posterior.
 As imagens da aplicação são construídas localmente, sem perfis ou login em registro.
 No SQLite, a senha é armazenada como hash; a `.env` permanece privada com modo
-`0600`. Veja [acesso, persistência e troca de senha](../app/dashboard/README.pt-BR.md).
+`0600`. Veja [acesso, persistência e troca de senha](../dashboard/README.pt-BR.md).
 
 ## Onde colocar os dados do Telegram
 

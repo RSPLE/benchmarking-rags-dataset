@@ -2,7 +2,7 @@
 
 > **Current execution:** pipelines use v2 checkpoints and isolated outputs under
 > `resultados/<rag>/<experiment_id>`. Historical files in `app/rags/*/results/` remain
-> unchanged. See the [reliability and operations guide](docs/reliability.md)
+> unchanged. See the [reliability and operations guide](app/docs/reliability.md)
 > before starting new batches. That guide supersedes the historical instructions
 > below about resuming, output directories, ingestion and evaluation settings.
 
@@ -47,16 +47,16 @@ Multiple-pipeline execution stops on the first failing process.
 `results.csv` preserves the nine original RSPLE columns, semicolon delimiter and UTF-8 BOM.
 `<rag>-run-<repetition>_1.csv` is an identical copy for existing plotting scripts;
 `results_detailed.csv` contains extra fields. Only complete cases enter the primary
-CSV. See the [compatibility audit](docs/compatibility.md).
+CSV. See the [compatibility audit](app/docs/compatibility.md).
 
 `errors.json` describes current failures,
 `events.jsonl` preserves history, and `summary.json` includes coverage and metric
 denominators. Atomic writes and process locks protect local state.
 
-See the [operations guide](docs/reliability.md) for migration, budgets, pause,
+See the [operations guide](app/docs/reliability.md) for migration, budgets, pause,
 frozen-answer evaluation and Telegram control.
-The [deployment guide](deployment/README.md) covers the local socket, single `.env`,
-authorized IDs and durable queue. The [acceptance matrix](docs/acceptance.md)
+The [deployment guide](app/deployment/README.md) covers the local socket, single `.env`,
+authorized IDs and durable queue. The [acceptance matrix](app/docs/acceptance.md)
 separates offline checks from the live pilot.
 
 
@@ -77,7 +77,7 @@ uv run --locked python -m app resume context-rag EXP --questions 3
 
 `EXP` is the complete ID shown by `/status`. `/start` shows help in the private
 bot conversation when services are running. The channel receives results. Shared
-flags and comparison limits are in the [compatibility protocol](docs/compatibility.md).
+flags and comparison limits are in the [compatibility protocol](app/docs/compatibility.md).
 Knowledge shares the last five question/answer pairs across the 90 questions,
 including after a resumed process.
 
@@ -106,7 +106,7 @@ if (!(Test-Path .env)) { Copy-Item .env.example .env }
 The root `pyproject.toml` and `uv.lock` contain only orchestration dependencies. Each directory under `app/rags/` has its own `pyproject.toml`, `uv.lock`, and on-demand `.venv`. There are no `requirements.txt` files, so one pipeline can evolve its dependency set without changing another pipeline's environment.
 
 All operational settings belong in the **root `.env`**, including models, Neo4j
-and Telegram. See [where to enter the private channel and bot settings](docs/configuration.md).
+and Telegram. See [where to enter the private channel and bot settings](app/docs/configuration.md).
 There is no mandatory dollar cap. Knowledge uses the same seven PDFs and Neo4j;
 the additional JSON snapshot is inactive. Preserve existing `.env` values when upgrading.
 
@@ -211,7 +211,7 @@ uv run python -m app run knowledge-enhanced-rag --questions 3
 `doctor` checks local settings and files; it does not prove Neo4j connectivity.
 The benchmark does not populate the database. With `BENCHMARK_KG_MODE=required`,
 missing or empty Neo4j data stops execution; there is no silent vector-only fallback.
-See [graph preparation and rebuild controls](docs/reliability.md#knowledge-and-neo4j)
+See [graph preparation and rebuild controls](app/docs/reliability.md#knowledge-and-neo4j)
 before using the historical API's graph-building endpoint. Explicit `disabled`
 mode creates another experiment and is not the original Knowledge protocol.
 
@@ -224,13 +224,13 @@ mode creates another experiment and is not the original Knowledge protocol.
 3. Run the script. It validates the PDFs, runs `uv sync`, checks the configuration, and starts all six pipelines:
 
 ```bash
-bash scripts/run_benchmark.sh
+bash app/scripts/run_benchmark.sh
 ```
 
 The script tests one question per pipeline by default. To test another batch size:
 
 ```bash
-QUESTIONS=10 bash scripts/run_benchmark.sh
+QUESTIONS=10 bash app/scripts/run_benchmark.sh
 ```
 
 Ingestion happens automatically while each pipeline starts. The pipeline loads the PDFs, splits the text into chunks, generates embeddings, and writes the Chroma index before processing questions.
@@ -355,7 +355,7 @@ Each pipeline directory also contains its own `pyproject.toml` and `uv.lock`. `/
 ## Development checks
 
 ```bash
-uv run python -m unittest discover -s tests -v
+uv run python -m unittest discover -s app/tests -v
 uv run ruff check main.py app/benchmark/runner.py tests
 ```
 

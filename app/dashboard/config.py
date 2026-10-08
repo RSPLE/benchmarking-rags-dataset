@@ -41,7 +41,7 @@ class Settings:
             return (ROOT / values.get(name, default)).resolve()
 
         return cls(
-            path("DASHBOARD_DATABASE", "app/dashboard/state/app.dashboard.sqlite3"),
+            path("DASHBOARD_DATABASE", "app/dashboard/state/dashboard.sqlite3"),
             path("DASHBOARD_RESULTS_DIR", values.get("BENCHMARK_OUTPUT_DIR", "resultados")),
             path("DASHBOARD_LEGACY_DIR", "app/rags"),
             path("DASHBOARD_BACKUP_DIR", "backups/dashboard"),
