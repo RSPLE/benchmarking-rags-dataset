@@ -187,3 +187,29 @@ the proxy must use the current image, verifying the HTTP session before upgradin
 
 For deployment without Compose, see the [systemd guide](systemd.md). Do not run
 both supervisors against the same jobs or Telegram polling session.
+
+## Public IP access and TLS diagnostics
+
+On the VPS, open `https://<DASHBOARD_PUBLIC_HOST>` without `:8501`. Port 8501 is
+published only on `127.0.0.1` for local access. A timeout when another computer
+requests `http://IP:8501` is consistent with that restriction.
+
+The Caddyfile sets `default_sni {$DASHBOARD_PUBLIC_HOST}` to select the configured
+certificate for clients without SNI, needed for this IP deployment behind Docker.
+See the [Caddy documentation](https://caddyserver.com/docs/caddyfile/options#default-sni).
+The address still comes exclusively from `.env`, without a hardcoded IP.
+
+To diagnose without disabling certificate verification:
+
+```bash
+curl --head http://VPS_IP
+curl --head https://VPS_IP/auth/login
+docker compose logs --tail 80 proxy
+```
+
+Replace `VPS_IP` with the actual address. HTTP should redirect to HTTPS, and the
+login page should return 200 with a trusted certificate. `health: starting` just
+after startup is transient; the local healthcheck does not validate public HTTPS.
+If 80/443 already respond, inspect TLS logs before changing firewall rules.
+After a Caddyfile update, `docker compose up -d` applies the new image.
+To update only this service, use `docker compose up -d --no-deps proxy`.

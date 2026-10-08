@@ -184,3 +184,7 @@ O Caddyfile é copiado para a imagem do proxy. `docker compose up -d` reconstró
 e recria esse serviço quando o arquivo muda. A verificação de autenticação remove
 os cabeçalhos de upgrade apenas da consulta HTTP de sessão; o WebSocket autenticado
 é encaminhado ao Streamlit. Isso evita manter a configuração antiga em memória.
+
+No acesso por IP, o Caddy usa `default_sni {$DASHBOARD_PUBLIC_HOST}` para clientes
+sem SNI. O endereço público é `https://<DASHBOARD_PUBLIC_HOST>`; `:8501` continua
+restrito ao próprio servidor. Consulte o [diagnóstico de TLS](../deployment/README.pt-BR.md#acesso-público-por-ip-e-diagnóstico-de-tls).

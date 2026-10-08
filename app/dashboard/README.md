@@ -182,3 +182,7 @@ uv sync --project app/dashboard --frozen
 uv run --project app/dashboard --frozen python -m unittest discover -s app/tests/dashboard -v
 uv run --locked python -m unittest discover -s app/tests -v
 ```
+
+For IP access, Caddy uses `default_sni {$DASHBOARD_PUBLIC_HOST}` for clients without
+SNI. The public URL is `https://<DASHBOARD_PUBLIC_HOST>`; `:8501` remains local to
+the server. See [TLS diagnostics](../deployment/README.md#public-ip-access-and-tls-diagnostics).
