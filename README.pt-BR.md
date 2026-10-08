@@ -7,6 +7,12 @@
 > abaixo sobre retomada, diretórios, ingestão e configuração de avaliação.
 
 [English version](README.md)
+**Instalação na VPS:** siga [o passo a passo com containers](app/deployment/README.pt-BR.md).
+Código, suporte de implantação, scripts, documentação e testes ficam em `app/`.
+O [guia de estrutura e migração](app/docs/layout.pt-BR.md) descreve os novos comandos
+e a validação para retomar experimentos criados na estrutura anterior.
+Os arquivos principais são os `README.md` em inglês; português fica em `README.pt-BR.md`.
+
 
 **Interface web:** consulte [primeiro acesso ao painel](app/dashboard/README.pt-BR.md) para
 preencher `DASHBOARD_USERNAME`, `DASHBOARD_PASSWORD` e `DASHBOARD_PUBLIC_HOST` na `.env`. Depois execute
@@ -96,7 +102,7 @@ cd benchmarking-rags-dataset
 uv sync
 ```
 
-O `pyproject.toml` e o `uv.lock` da raiz contêm somente o orquestrador. Cada diretório em `app/rags/` tem seu próprio `pyproject.toml`, `uv.lock` e `.venv`, criados sob demanda pelo `main.py`. Não há arquivos `requirements.txt`. Essa separação permite que um pipeline evolua suas bibliotecas sem alterar o ambiente dos demais.
+O `pyproject.toml` e o `uv.lock` da raiz contêm somente o orquestrador. Cada diretório em `app/rags/` tem seu próprio `pyproject.toml`, `uv.lock` e `.venv`, criados sob demanda pelo `app/cli.py`. Não há arquivos `requirements.txt`. Essa separação permite que um pipeline evolua suas bibliotecas sem alterar o ambiente dos demais.
 
 Toda configuração operacional fica na **`.env` da raiz**, incluindo modelos, Neo4j
 e Telegram. Veja [onde preencher token, canal privado e IDs autorizados](app/docs/configuration.pt-BR.md).
@@ -354,21 +360,33 @@ Para cada pergunta, o RAGAS calcula `faithfulness`, `answer_relevancy`, `context
 
 ```text
 .
-├── main.py                  # CLI única do monorepo
-├── app/benchmark/runner.py      # checkpoint e retomada por pergunta
-├── app/providers/models.py          # OpenRouter/OpenAI compartilhado
-├── docker-compose.yml       # Neo4j local opcional
-├── pyproject.toml
-├── uv.lock                 # somente dependências do orquestrador
+├── app/
+│   ├── __main__.py
+│   ├── cli.py
+│   ├── paths.py
+│   ├── benchmark/
+│   ├── dashboard/
+│   ├── deployment/
+│   ├── docs/
+│   ├── providers/
+│   ├── rags/
+│   ├── scripts/
+│   ├── services/
+│   ├── telegram/
+│   ├── tests/
+│   └── tools/
+├── data/
+│   ├── evaluation/
+│   └── knowledge-graph.json
+├── resultados/
+├── backups/
 ├── .env.example
-├── data/evaluation/
-└── app/rags/
-    ├── context-rag/
-    ├── graph-rag/
-    ├── hybrid-rag/
-    ├── knowledge-enhanced-rag/
-    ├── memory-augmented-rag/
-    └── self-rag/
+├── Caddyfile
+├── docker-compose.yml
+├── pyproject.toml
+├── uv.lock
+├── README.md
+└── README.pt-BR.md
 ```
 
 Cada diretório de pipeline contém ainda seu próprio `pyproject.toml` e `uv.lock`. O único arquivo de configuração de segredos é `/.env`; os subdiretórios não possuem cópias de `.env.example`.
@@ -393,7 +411,7 @@ Cada diretório de pipeline contém ainda seu próprio `pyproject.toml` e `uv.lo
 
 ```bash
 uv run python -m unittest discover -s app/tests -v
-uv run ruff check main.py app/benchmark/runner.py tests
+uv run ruff check app --exclude '*.ipynb'
 ```
 
 Os testes cobrem seleção de um, vários ou todos os RAGs, validação do limite, execução incremental sem duplicatas, prioridade de retomada das falhas e atualização do `errors.json` após uma tentativa bem-sucedida.

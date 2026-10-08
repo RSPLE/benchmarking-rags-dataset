@@ -17,7 +17,7 @@ See [configuration](configuration.md) and [upstream compatibility](compatibility
 ## Preservation and experiment identity
 
 Historical results and datasets remain at their original paths. Do not edit them
-to accommodate the new runner. `main.py migrate SOURCE DEST` is a dry run; `--apply`
+to accommodate the new runner. `python -m app migrate SOURCE DEST` is a dry run; `--apply`
 creates an independent archive while preserving the source. Legacy checkpoints
 without context text cannot reproduce the original evidence-based evaluation.
 
@@ -37,7 +37,7 @@ Knowledge uses the same seven PDFs as the other architectures.
 `python -m app.tools.prepare_corpus` creates this copy with hash verification and
 refuses to overwrite a different corpus. A new deployment
 must transfer them; a repository clone does not guarantee their presence.
-`main.py preflight` checks all six environments and extracts PDF text locally,
+`python -m app preflight` checks all six environments and extracts PDF text locally,
 without calling models.
 
 No additional byte limit or global document deduplication is applied to retrieval
@@ -209,7 +209,7 @@ answers, contexts, keys and raw tracebacks are not published.
 
 ## Deployment and verification
 
-See [app/deployment/README.en.md](../deployment/README.md) and service examples.
+See [Deployment guide](../deployment/README.md) and service examples.
 Do not enable remote execution before preparing environments, checking backups,
 configuring `.env`, technical limits and the bot destination. Examples do not install services.
 

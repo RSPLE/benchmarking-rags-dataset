@@ -19,7 +19,7 @@ The systemd workflow below covers execution and Telegram.
 3. Transfer verified code and PDFs without replacing historical results, `.env`,
    databases or indices. Sync the root and all six environments with
    `uv sync --locked --python 3.12`, adding `--project app/rags/NAME` for each child.
-4. Run `main.py preflight` and the documented suites; resolve blockers.
+4. Run `python -m app preflight` and the documented suites; resolve blockers.
 5. Create system users `benchmark` and `benchmark-notifier`, both in group
    `benchmark`. The latter must not read credentials/checkpoints. Grant the worker
    write access to results, indices and `/var/lib/benchmark`. Deployed code must be

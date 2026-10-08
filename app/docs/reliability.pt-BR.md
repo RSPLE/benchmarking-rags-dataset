@@ -17,7 +17,7 @@ Consulte [configuração](configuration.pt-BR.md) e [compatibilidade original](c
 ## Preservação e identidade
 
 Os resultados e datasets históricos permanecem nos caminhos anteriores. Não
-editar esses arquivos para acomodar o novo runner. `main.py migrate SOURCE DEST`
+editar esses arquivos para acomodar o novo runner. `python -m app migrate SOURCE DEST`
 é uma simulação; `--apply` cria um arquivo separado, preservando o original.
 Resultados legados sem textos dos contextos não podem ser reavaliados como se
 as evidências originais estivessem disponíveis.
@@ -38,7 +38,7 @@ O Knowledge utiliza os mesmos sete PDFs das demais arquiteturas.
 `python -m app.tools.prepare_corpus` prepara essa cópia com verificação de hash, sem
 sobrescrever um corpus diferente. Uma instalação
 nova precisa transferir esses PDFs: eles não devem ser presumidos presentes por
-um simples clone. `main.py preflight` verifica os seis ambientes e extrai texto
+um simples clone. `python -m app preflight` verifica os seis ambientes e extrai texto
 dos PDFs localmente, sem chamar modelos.
 
 Não há corte adicional de contexto em bytes, deduplicação global de documentos ou

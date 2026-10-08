@@ -19,7 +19,7 @@ O fluxo systemd abaixo se refere ao executor e ao Telegram.
 3. Transferir código validado e PDFs sem substituir resultados, `.env`, bancos ou
    índices históricos. Sincronizar raiz e seis ambientes com
    `uv sync --locked --python 3.12`; usar `--project app/rags/NOME` em cada ambiente.
-4. Executar `main.py preflight` e as suítes descritas no guia. Corrigir bloqueios.
+4. Executar `python -m app preflight` e as suítes descritas no guia. Corrigir bloqueios.
 5. Criar usuários de sistema `benchmark` e `benchmark-notifier`, ambos com grupo
    `benchmark`. O segundo não pode ler credenciais ou checkpoints. Dar escrita ao
    primeiro em resultados, índices e `/var/lib/benchmark`. O código implantado deve

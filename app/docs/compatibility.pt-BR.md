@@ -111,7 +111,7 @@ condições; não misturar resultados legados com novos experimentos sob o mesmo
 
 ## Flags compartilhadas
 
-As mesmas opções são reconhecidas por `main.py run`, `run-all`, `resume` e pelos
+As mesmas opções são reconhecidas por `python -m app run`, `run-all`, `resume` e pelos
 comandos `/executar` e `/retomar` do bot:
 
 | Flag | Efeito |

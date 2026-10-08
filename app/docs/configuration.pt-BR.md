@@ -124,7 +124,7 @@ o token do Telegram. Nas unidades systemd, o gerenciador lê a `.env` antes de
 torná-la inacessível aos processos dos serviços. Use permissão `0600` no arquivo
 e mantenha o proprietário administrativo na VPS. O arquivo é ignorado pelo Git.
 
-Para iniciar manualmente na raiz, use `uv run --locked python app/services/entrypoint.py
-control` ou `uv run --locked python app/services/entrypoint.py telegram`, com os
+Para iniciar manualmente na raiz, use `uv run --locked python -m app.services.entrypoint
+control` ou `uv run --locked python -m app.services.entrypoint telegram`, com os
 diretórios configurados acessíveis ao usuário. Esses comandos iniciam serviços:
-não são testes secos. `main.py` também carrega a `.env` única para a CLI de RAGs.
+não são testes secos. `app/cli.py` também carrega a `.env` única para a CLI de RAGs.

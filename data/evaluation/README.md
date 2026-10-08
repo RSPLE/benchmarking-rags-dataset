@@ -1,5 +1,16 @@
 # Evaluation dataset — 90 questions and answers (`qa_dataset_90.json`)
 
+
+[Português](README.pt-BR.md) · [Repository](../../README.md)
+
+**Current integration:** all six Python pipelines now load `qa_dataset_90.json`
+through `app/benchmark/runner.py`. The English translation remains a separate,
+explicit dataset; the default experimental dataset has not changed. Both JSON
+files were moved without modifying their contents. The notes below describe the
+original dataset construction and the state before its integration.
+
+## Historical construction notes
+
 > **Monorepo update:** this dataset is now consumed by all six pipelines through `../app/benchmark/runner.py`. Each item runs once, successful IDs are checkpointed, and subsequent runs retry only failed or interrupted items. Statements below describing the JSON as not integrated refer to its original standalone release.
 
 > **Language:** `qa_dataset_90.json` is the Brazilian Portuguese (PT-BR) version — it matches the language of the source corpus (all seven books are in Portuguese) and of the answers the pipelines generate. The original English wording is preserved verbatim in `qa_dataset_90.en.json`. Both files share the same `id`, order, and `source_book` values; only `question` and `ground_truth` differ. The benchmark reads `qa_dataset_90.json`.

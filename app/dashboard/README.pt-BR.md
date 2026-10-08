@@ -174,6 +174,6 @@ Para validar o painel sem modelos pagos:
 
 ```bash
 uv sync --project app/dashboard --frozen
-uv run --project app/dashboard --frozen python -m unittest discover -s app/dashboard/tests -v
+uv run --project app/dashboard --frozen python -m unittest discover -s app/tests/dashboard -v
 uv run --locked python -m unittest discover -s app/tests -v
 ```

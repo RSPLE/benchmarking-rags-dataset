@@ -1,13 +1,35 @@
 # Graph RAG
 
-> Operação atual / Current operation: [Português](../../docs/reliability.pt-BR.md) · [English](../../docs/reliability.md).
-> Compatibilidade de CSV, prompts e memória / CSV, prompt and memory compatibility:
-> [Português](../../docs/compatibility.pt-BR.md) · [English](../../docs/compatibility.md).
-> Da raiz / From the repository root: `uv run --locked python main.py run graph-rag`.
-> Configuração única / Single configuration: `.env` na raiz / at the root (`../../.env`).
-> Saídas / Outputs: `resultados/<rag>/<experiment_id>/`; checkpoint v2.
-> Os detalhes abaixo registram a versão histórica e não substituem os guias atuais.
-> Details below describe the historical version and do not override current guides.
+[English](README.md) · [Repositório](../../../README.pt-BR.md) · [Implantação](../../deployment/README.pt-BR.md)
+
+Recuperação no Chroma e grafo NetworkX extraído por LLM dos primeiros 20 chunks. Chunking 1000/200, top-3 vetorial e agente LangGraph com consulta ao grafo. É o experimento original da RSPLE, não o Microsoft GraphRAG.
+
+## Execução atual
+
+Execute na raiz do repositório, usando somente a `.env` da raiz:
+
+```bash
+docker compose exec control python -m app run graph-rag --questions 1
+```
+
+Esse comando inicia chamadas reais aos modelos, inclusive preparação quando
+necessária. Fora dos containers, use `uv run --locked python -m app run graph-rag
+--questions 1`. A CLI seleciona o ambiente isolado deste RAG automaticamente.
+
+O dataset compartilhado está em `data/evaluation/qa_dataset_90.json`. No Compose,
+todos os RAGs usam os mesmos sete PDFs montados em `/corpus`. Resultados novos
+ficam em `resultados/graph-rag/<experiment_id>/`; os arquivos históricos em
+`results/` são preservados. O CSV principal mantém as nove colunas originais.
+
+Para retomar, use `python -m app resume graph-rag ID_COMPLETO --questions 3`
+no executor, mantendo modelos, corpus e protocolo. Consulte a
+[compatibilidade científica](../../docs/compatibility.pt-BR.md), a
+[estrutura atual](../../docs/layout.pt-BR.md) e o
+[dashboard](../../dashboard/README.pt-BR.md).
+
+Os detalhes abaixo documentam o experimento original e seus comandos de pesquisa.
+Para operar o monorepo atual, prevalecem as instruções acima e os guias vinculados;
+não crie outro `.env` nem use os antigos diretórios de saída como novos experimentos.
 
 ## Referência histórica / Historical reference
 

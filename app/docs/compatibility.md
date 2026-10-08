@@ -111,7 +111,7 @@ conditions; do not mix legacy and new experiments under one ID.
 
 ## Shared flags
 
-`main.py run`, `run-all`, `resume` and bot commands `/executar` and `/retomar`
+`python -m app run`, `run-all`, `resume` and bot commands `/executar` and `/retomar`
 recognize the same options:
 
 | Flag | Effect |

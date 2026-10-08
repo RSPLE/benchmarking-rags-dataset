@@ -123,7 +123,7 @@ token. With the systemd units, the manager reads `.env` before making it inacces
 inside service processes. Keep the file mode `0600` and administrative ownership
 on the VPS. Git ignores it.
 
-For manual startup from the root, use `uv run --locked python app/services/entrypoint.py
-control` or `uv run --locked python app/services/entrypoint.py telegram`, with configured
+For manual startup from the root, use `uv run --locked python -m app.services.entrypoint
+control` or `uv run --locked python -m app.services.entrypoint telegram`, with configured
 directories accessible to the current user. These commands start services; they
-are not dry runs. `main.py` also loads the same `.env` for RAG CLI execution.
+are not dry runs. `app/cli.py` also loads the same `.env` for RAG CLI execution.

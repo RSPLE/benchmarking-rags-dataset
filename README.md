@@ -6,7 +6,13 @@
 > before starting new batches. That guide supersedes the historical instructions
 > below about resuming, output directories, ingestion and evaluation settings.
 
-[Versão em português](README.pt-BR.md)
+[Português](README.pt-BR.md)
+**VPS installation:** follow [the container deployment steps](app/deployment/README.md).
+All application code, deployment support, scripts, documentation and tests live in
+`app/`. The [layout and migration guide](app/docs/layout.md) lists the new entrypoints
+and the checks used before resuming an experiment created under the former layout.
+English `README.md` files are primary; Portuguese translations use `README.pt-BR.md`.
+
 
 **Web interface:** see [dashboard first login](app/dashboard/README.md) to start
 by setting `DASHBOARD_USERNAME`, `DASHBOARD_PASSWORD` and `DASHBOARD_PUBLIC_HOST` in `.env`. Then run
@@ -85,7 +91,7 @@ including after a resumed process.
 
 - Python 3.11, 3.12, or 3.13 for local execution;
 - [`uv`](https://docs.astral.sh/uv/);
-- Docker Desktop with Docker Compose only if you want to run Neo4j locally in a container;
+- Docker Engine with the Compose plugin for the complete container deployment;
 - an OpenRouter or OpenAI API key;
 - Neo4j only for `required` graph mode; `snapshot` mode does not need a database;
 - locally supplied PDFs that you are authorized to use.
@@ -317,21 +323,33 @@ For valid comparisons, keep the generation model, embedding model, documents, an
 
 ```text
 .
-├── main.py                  # monorepo CLI
-├── app/benchmark/runner.py      # per-question checkpoints and resume logic
-├── app/providers/models.py          # shared OpenRouter/OpenAI configuration
-├── docker-compose.yml       # optional local Neo4j
-├── pyproject.toml
-├── uv.lock                 # orchestrator dependencies only
+├── app/
+│   ├── __main__.py
+│   ├── cli.py
+│   ├── paths.py
+│   ├── benchmark/
+│   ├── dashboard/
+│   ├── deployment/
+│   ├── docs/
+│   ├── providers/
+│   ├── rags/
+│   ├── scripts/
+│   ├── services/
+│   ├── telegram/
+│   ├── tests/
+│   └── tools/
+├── data/
+│   ├── evaluation/
+│   └── knowledge-graph.json
+├── resultados/
+├── backups/
 ├── .env.example
-├── data/evaluation/
-└── app/rags/
-    ├── context-rag/
-    ├── graph-rag/
-    ├── hybrid-rag/
-    ├── knowledge-enhanced-rag/
-    ├── memory-augmented-rag/
-    └── self-rag/
+├── Caddyfile
+├── docker-compose.yml
+├── pyproject.toml
+├── uv.lock
+├── README.md
+└── README.pt-BR.md
 ```
 
 Each pipeline directory also contains its own `pyproject.toml` and `uv.lock`. `/.env` is the only secrets configuration file; subdirectories do not keep duplicate `.env.example` files.
@@ -348,7 +366,7 @@ Each pipeline directory also contains its own `pyproject.toml` and `uv.lock`. `/
 
 - **Incompatible checkpoint:** preserve the file and inspect its manifest. Use explicit migration for v1 archives; changed methodology requires a new experiment.
 - **Missing API key:** run `uv run python -m app doctor` and inspect the root `.env`, which is shared by all six RAGs.
-- **Neo4j in Docker:** because benchmarks run on the host through the CLI, use `NEO4J_URI=bolt://127.0.0.1:7687` in `.env`.
+- **Neo4j in Docker:** set `NEO4J_CONTAINER_URI=bolt://neo4j:7687` for workers in Compose; host CLI access uses `NEO4J_URI=bolt://127.0.0.1:7687`.
 - **Neo4j Aura:** use the instance-provided `neo4j+s://...` URI and matching credentials. Do not mix the password of the local persistent database with Aura credentials.
 - **Changed embedding model:** choose another `CHROMA_PERSIST_DIR` or deliberately rebuild the index; different vector dimensions must not share a collection.
 
@@ -356,7 +374,7 @@ Each pipeline directory also contains its own `pyproject.toml` and `uv.lock`. `/
 
 ```bash
 uv run python -m unittest discover -s app/tests -v
-uv run ruff check main.py app/benchmark/runner.py tests
+uv run ruff check app --exclude '*.ipynb'
 ```
 
 The suite covers one/many/all RAG selection, limit validation, incremental runs without duplicate rows, failure-first resumption, and removal of recovered entries from `errors.json`.
