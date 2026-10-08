@@ -1,0 +1,42 @@
+{
+	admin off
+}
+
+(dashboard_routes) {
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		X-Frame-Options DENY
+		-Server
+	}
+	@authentication path /auth/*
+	handle @authentication {
+		request_body {
+			max_size 8KB
+		}
+		reverse_proxy auth:8080
+	}
+	handle {
+		forward_auth auth:8080 {
+			uri /auth/verify
+			header_up -Connection
+			header_up -Upgrade
+		}
+		reverse_proxy dashboard:8501
+	}
+}
+
+http://:8080 {
+	import dashboard_routes
+}
+
+https://{$DASHBOARD_PUBLIC_HOST} {
+	tls {
+		issuer acme {
+			dir https://acme-v02.api.letsencrypt.org/directory
+			profile shortlived
+		}
+	}
+	header Strict-Transport-Security "max-age=31536000"
+	import dashboard_routes
+}

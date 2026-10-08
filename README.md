@@ -9,8 +9,10 @@
 [English version](README.en.md)
 
 **Interface web:** consulte [primeiro acesso ao painel](dashboard/README.md) para
-preencher `DASHBOARD_USERNAME` e `DASHBOARD_PASSWORD` na `.env`. Depois execute
-`docker compose up -d` e acesse <http://127.0.0.1:8501>. Todos os serviços sobem
+preencher `DASHBOARD_USERNAME`, `DASHBOARD_PASSWORD` e `DASHBOARD_PUBLIC_HOST` na `.env`. Depois execute
+`docker compose up -d`. Na VPS, acesse `https://<DASHBOARD_PUBLIC_HOST>`; localmente,
+<http://127.0.0.1:8501>. O [Caddyfile](Caddyfile) publica o painel com HTTPS.
+O menu lateral permite iniciar/retomar lotes e acompanhar pendências. Todos os serviços sobem
 sem perfis e as imagens da aplicação são construídas localmente. Não há credenciais padrão.
 
 Monorepo para comparar seis arquiteturas de Retrieval-Augmented Generation (RAG) sobre um dataset comum de 90 perguntas e respostas de referência. O projeto mede qualidade com RAGAS, latência e consumo de tokens, usa Chroma como índice vetorial e oferece OpenRouter como provedor padrão de LLM e embeddings. Cada pipeline possui ambiente e lockfile `uv` próprios para impedir conflitos de dependências.

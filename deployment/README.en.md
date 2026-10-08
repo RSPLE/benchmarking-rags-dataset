@@ -3,8 +3,11 @@
 [Português](README.md) · [Single configuration](../docs/configuration.en.md) · [Operations](../docs/reliability.en.md)
 
 For Streamlit, follow the [dashboard guide](../dashboard/README.en.md), including
-Docker commands, account creation, persistence and access recovery. The systemd
-workflow below covers execution and Telegram.
+the single `docker compose up -d` command, credentials set in `.env` before startup,
+HTTPS through the root Caddyfile and access at `https://<DASHBOARD_PUBLIC_HOST>`. Allow TCP
+80/443 in the VPS/provider firewall. Database, queue and Telegram do not need public
+ports. The dashboard starts and resumes jobs through the same queue as the bot.
+The systemd workflow below covers execution and Telegram.
 
 ## Preparation without paid execution
 

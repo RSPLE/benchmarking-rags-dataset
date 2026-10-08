@@ -6,6 +6,7 @@ WORKDIR /app
 COPY dashboard/pyproject.toml dashboard/uv.lock /app/dashboard/
 RUN uv sync --project dashboard --frozen --no-dev --python /usr/local/bin/python
 COPY benchmark_export.py benchmark_config.py benchmark_storage.py benchmark_archive.py /app/
+COPY benchmark_control.py benchmark_options.py main.py service_entrypoint.py /app/
 COPY rags/context-rag/plot_graph.py /app/rags/context-rag/plot_graph.py
 COPY dashboard /app/dashboard
 RUN groupadd --gid 1000 benchmark && useradd --uid 1000 --gid 1000 --create-home benchmark && mkdir -p /state /backups && chown benchmark:benchmark /state /backups

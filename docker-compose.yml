@@ -1,4 +1,35 @@
 services:
+  proxy:
+    image: caddy:2.11.7-alpine
+    restart: unless-stopped
+    environment:
+      DASHBOARD_PUBLIC_HOST: ${DASHBOARD_PUBLIC_HOST:?Defina DASHBOARD_PUBLIC_HOST na .env}
+    ports:
+      - "${DASHBOARD_HTTP_PORT:-80}:80"
+      - "${DASHBOARD_HTTPS_PORT:-443}:443"
+      - "127.0.0.1:${DASHBOARD_PORT:-8501}:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      auth:
+        condition: service_healthy
+      dashboard:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wget, -q, --spider, http://127.0.0.1:8080/auth/login]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+
   neo4j:
     image: neo4j:5-community
     restart: unless-stopped
@@ -31,13 +62,41 @@ services:
         DASHBOARD_SESSION_SECONDS: ${DASHBOARD_SESSION_SECONDS:-28800}
       DASHBOARD_USERNAME: ${DASHBOARD_USERNAME:?Defina DASHBOARD_USERNAME na .env}
       DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:?Defina DASHBOARD_PASSWORD na .env}
-    ports:
-      - "${DASHBOARD_BIND_ADDRESS:-127.0.0.1}:${DASHBOARD_PORT:-8501}:8501"
+      BENCHMARK_CONTROL_SOCKET: /run/benchmark/control.sock
+      DASHBOARD_CONTROL_USER_ID: ${DASHBOARD_CONTROL_USER_ID:-}
+      TELEGRAM_ALLOWED_USER_IDS: ${TELEGRAM_ALLOWED_USER_IDS:-}
     volumes:
       - dashboard-state:/state
+      - control-socket:/run/benchmark:ro
+    depends_on:
+      auth:
+        condition: service_healthy
     read_only: true
     tmpfs:
       - /tmp:size=256m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+
+  auth:
+    build: *dashboard_build
+    pull_policy: build
+    restart: unless-stopped
+    command: [python, -m, dashboard.auth_server]
+    environment:
+      <<: *dashboard_environment
+      DASHBOARD_USERNAME: ${DASHBOARD_USERNAME:?Defina DASHBOARD_USERNAME na .env}
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:?Defina DASHBOARD_PASSWORD na .env}
+    volumes:
+      - dashboard-state:/state
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/_health',timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
     security_opt:
       - no-new-privileges:true
     cap_drop: [ALL]
@@ -149,6 +208,8 @@ services:
     cap_drop: [ALL]
 
 volumes:
+  caddy-data:
+  caddy-config:
   neo4j-data:
   dashboard-state:
   dashboard-backups:

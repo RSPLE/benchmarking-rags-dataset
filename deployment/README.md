@@ -3,7 +3,10 @@
 [English](README.en.md) · [Configuração única](../docs/configuracao.md) · [Operação](../docs/confiabilidade.md)
 
 Para a interface Streamlit, siga o [guia do painel](../dashboard/README.md), incluindo
-os comandos Docker, cadastro de usuário/senha, persistência e recuperação de acesso.
+o único comando `docker compose up -d`, credenciais na `.env` antes de subir,
+HTTPS pelo Caddyfile da raiz e acesso em `https://<DASHBOARD_PUBLIC_HOST>`. Libere TCP
+80/443 no firewall da VPS/provedor. Banco, fila e Telegram não precisam de portas
+públicas. O painel permite iniciar e retomar os lotes pela mesma fila do bot.
 O fluxo systemd abaixo se refere ao executor e ao Telegram.
 
 ## Preparação sem execução paga

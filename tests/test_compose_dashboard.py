@@ -19,6 +19,7 @@ class ComposeDashboardTests(unittest.TestCase):
             (root / ".env").write_text(
                 "BENCHMARK_OUTPUT_DIR=resultados\nNEO4J_USERNAME=hosted-user\n"
                 "DASHBOARD_USERNAME=tester\nDASHBOARD_PASSWORD=local-test-password\n"
+                "DASHBOARD_PUBLIC_HOST=203.0.113.10\n"
                 "NEO4J_PASSWORD='test-$-quoted-password'\n"
                 "NEO4J_URI=neo4j+s://example.invalid\n" + extra
             )
@@ -77,12 +78,23 @@ class ComposeDashboardTests(unittest.TestCase):
         self.assertEqual(dashboard["environment"]["DASHBOARD_PASSWORD"], "local-test-password")
         self.assertNotIn("OPENROUTER_API_KEY", dashboard["environment"])
         self.assertNotIn("TELEGRAM_BOT_TOKEN", dashboard["environment"])
-        self.assertEqual(dashboard["ports"][0]["host_ip"], "127.0.0.1")
+        self.assertNotIn("ports", dashboard)
+        self.assertNotIn("ports", services["auth"])
+        local_port = next(port for port in services["proxy"]["ports"] if port["target"] == 8080)
+        self.assertEqual(local_port["host_ip"], "127.0.0.1")
+        public_ports = [
+            port["target"]
+            for port in services["proxy"]["ports"]
+            if port.get("host_ip") != "127.0.0.1"
+        ]
+        self.assertEqual(public_ports, [80, 443])
 
     def test_plain_compose_builds_all_application_images_locally(self):
         services = self.configuration()["services"]
-        self.assertEqual(set(services), {"neo4j", "dashboard", "monitor", "control", "telegram"})
-        for name in ("dashboard", "monitor", "control", "telegram"):
+        self.assertEqual(
+            set(services), {"neo4j", "dashboard", "monitor", "control", "telegram", "proxy", "auth"}
+        )
+        for name in ("dashboard", "monitor", "control", "telegram", "auth"):
             with self.subTest(service=name):
                 self.assertNotIn("profiles", services[name])
                 self.assertNotIn("image", services[name])

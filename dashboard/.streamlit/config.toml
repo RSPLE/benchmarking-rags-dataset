@@ -7,10 +7,47 @@ maxUploadSize = 10
 [browser]
 gatherUsageStats = false
 
+[client]
+toolbarMode = "viewer"
+showErrorDetails = "none"
+
 [theme]
-base = "light"
-primaryColor = "#237A73"
-backgroundColor = "#F6F8F7"
-secondaryBackgroundColor = "#E8EFEB"
-textColor = "#193D36"
-font = "sans serif"
+base = "dark"
+font = "sans-serif"
+baseFontSize = 16
+baseFontWeight = 400
+headingFontWeights = [650, 600, 600]
+headingFontSizes = ["2.25rem", "1.65rem", "1.25rem"]
+metricValueFontSize = "2rem"
+baseRadius = "0.625rem"
+buttonRadius = "0.5rem"
+showWidgetBorder = true
+showSidebarBorder = true
+
+[theme.dark]
+primaryColor = "#2563EB"
+backgroundColor = "#0B1220"
+secondaryBackgroundColor = "#142035"
+textColor = "#EDF2FA"
+borderColor = "#2A3B52"
+linkColor = "#93C5FD"
+dataframeHeaderBackgroundColor = "#1A2B44"
+
+[theme.dark.sidebar]
+backgroundColor = "#101B2D"
+secondaryBackgroundColor = "#1A2B44"
+textColor = "#EDF2FA"
+
+[theme.light]
+primaryColor = "#2563EB"
+backgroundColor = "#F6F8FC"
+secondaryBackgroundColor = "#EAF0F8"
+textColor = "#17253A"
+borderColor = "#CFDAE8"
+linkColor = "#1D4ED8"
+dataframeHeaderBackgroundColor = "#E4EBF5"
+
+[theme.light.sidebar]
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#EAF0F8"
+textColor = "#17253A"

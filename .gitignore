@@ -26,6 +26,7 @@ tmp/*.txt
 
 tmp/implementation-*/
 tmp/startup-check/
+tmp/web-check/
 *.queue.db
 dashboard/state/
 backups/

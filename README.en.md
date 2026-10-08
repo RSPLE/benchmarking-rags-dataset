@@ -9,8 +9,10 @@
 [Versão em português](README.md)
 
 **Web interface:** see [dashboard first login](dashboard/README.en.md) to start
-by setting `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` in `.env`. Then run
-`docker compose up -d` and open <http://127.0.0.1:8501>. All services start without
+by setting `DASHBOARD_USERNAME`, `DASHBOARD_PASSWORD` and `DASHBOARD_PUBLIC_HOST` in `.env`. Then run
+`docker compose up -d`. On the VPS, open `https://<DASHBOARD_PUBLIC_HOST>`; locally,
+<http://127.0.0.1:8501>. The [Caddyfile](Caddyfile) publishes the dashboard over HTTPS.
+The sidebar provides execution/resume and pending cases. All services start without
 profiles and application images build locally. There are no default credentials.
 
 A monorepo for comparing six Retrieval-Augmented Generation (RAG) architectures against one shared dataset of 90 questions and reference answers. It measures quality with RAGAS, latency, and token usage; uses Chroma for vector indexing; and supports OpenRouter as the default LLM and embedding provider. Every pipeline has its own `uv` environment and lockfile to prevent dependency conflicts.

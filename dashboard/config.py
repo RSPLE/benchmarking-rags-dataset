@@ -18,6 +18,8 @@ class Settings:
     session_seconds: int = 28800
     username: str = ""
     password: str = field(default="", repr=False)
+    control_socket: Path = Path("/run/benchmark/control.sock")
+    control_user_id: int = 0
 
     @classmethod
     def from_environment(cls):
@@ -29,6 +31,11 @@ class Settings:
             else {}
         )
         values = {**configured, **os.environ}
+        control_user = (
+            values.get("DASHBOARD_CONTROL_USER_ID")
+            or str(values.get("TELEGRAM_ALLOWED_USER_IDS", "") or "").split(",")[0].strip()
+            or "0"
+        )
 
         def path(name, default):
             return (ROOT / values.get(name, default)).resolve()
@@ -43,4 +50,6 @@ class Settings:
             max(300, int(values.get("DASHBOARD_SESSION_SECONDS", "28800"))),
             values.get("DASHBOARD_USERNAME", "") or "",
             values.get("DASHBOARD_PASSWORD", "") or "",
+            path("BENCHMARK_CONTROL_SOCKET", "/run/benchmark/control.sock"),
+            int(control_user),
         )

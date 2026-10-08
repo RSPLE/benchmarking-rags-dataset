@@ -12,9 +12,11 @@ são mais necessários.
 
 ## Acesso web antes de subir
 
-Preencha `DASHBOARD_USERNAME` e `DASHBOARD_PASSWORD` na mesma `.env`. Escolha uma
+Preencha `DASHBOARD_USERNAME`, `DASHBOARD_PASSWORD` e `DASHBOARD_PUBLIC_HOST` na mesma `.env`. Escolha uma
 senha com pelo menos 12 caracteres. Depois execute somente `docker compose up -d`
-e acesse <http://127.0.0.1:8501>. Não há usuário padrão nem cadastro posterior.
+e acesse `https://<DASHBOARD_PUBLIC_HOST>` na VPS ou <http://127.0.0.1:8501> localmente.
+O Caddyfile da raiz publica HTTPS; libere TCP 80/443 na VPS. A sessão persiste após
+recarregar. Não há usuário padrão nem cadastro posterior.
 As imagens da aplicação são construídas localmente, sem perfis ou login em registro.
 No SQLite, a senha é armazenada como hash; a `.env` permanece privada com modo
 `0600`. Veja [acesso, persistência e troca de senha](../dashboard/README.md).

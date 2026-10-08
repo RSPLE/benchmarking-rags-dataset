@@ -50,6 +50,11 @@ CREATE TABLE IF NOT EXISTS backups (
     id TEXT PRIMARY KEY, path TEXT NOT NULL, sha256 TEXT NOT NULL, created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS web_sessions (
+    token_hash TEXT PRIMARY KEY, username TEXT NOT NULL REFERENCES users(username),
+    version INTEGER NOT NULL, issued_at REAL NOT NULL, expires_at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS web_sessions_expiry ON web_sessions(expires_at);
 """
 
 

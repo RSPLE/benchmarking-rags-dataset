@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import sys
 from datetime import UTC, datetime
+from html import escape
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -10,27 +12,47 @@ import pandas as pd
 import streamlit as st
 
 from dashboard.analytics import common_questions, experiments, extrema, frames, response_totals
-from dashboard.auth import authenticate, valid_session
 from dashboard.charts import render
 from dashboard.config import Settings
 from dashboard.database import connect
+from dashboard.execution import execution_view, pending_view
+from dashboard.sessions import COOKIE_NAME, csrf_token, session_identity
 
-st.set_page_config(page_title="Observatório RAG · LogiBots", page_icon="📊", layout="wide")
+st.set_page_config(
+    page_title="Observatório RAG · LogiBots",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="auto",
+)
 settings = Settings.from_environment()
+SECTIONS = [
+    "Visão geral",
+    "Executar e retomar",
+    "Pendências e falhas",
+    "Gráficos originais",
+    "Tokens e tempo",
+    "Questões",
+    "Chamadas e modelos",
+    "Arquivos e backups",
+]
 st.markdown(
     """<style>
-.stApp {background: #f6f8f7;}
-.block-container {max-width: 1200px; padding-top: 2.5rem; padding-bottom: 3rem;}
-h1,h2,h3 {letter-spacing: -0.035em; color: #153f39;}
-[data-testid="stMetric"] {background: white; border: 1px solid #dfe8e3; border-radius: 14px; padding: 1rem;}
-[data-testid="stMetricLabel"] {color: #526961;}
-.eyebrow {color: #237a73; font-size: .75rem; font-weight: 700; letter-spacing: .14em; margin: 0;}
+.block-container {max-width: 1320px; padding: 2.6rem 2.3rem 3rem;}
+h1 {letter-spacing: -.035em; font-weight: 650;}
+h2,h3 {letter-spacing: -.02em;}
+[data-testid="stMetric"] {border: 1px solid rgba(130,148,172,.24); border-radius: 12px; padding: 1rem 1.2rem;}
+[data-testid="stMetricValue"] {font-variant-numeric: tabular-nums;}
+.eyebrow {opacity: .75; font-size: .72rem; font-weight: 700; letter-spacing: .14em; margin: 0;}
 [data-testid="stButton"] button,[data-testid="stDownloadButton"] button {min-height: 44px;}
+[data-testid="stSidebar"] [role="radiogroup"] {gap: .3rem;}
+[data-testid="stSidebar"] [role="radiogroup"] label {padding: .45rem .5rem; min-height:44px; border-radius:8px;}
+.session-exit button {font:inherit; color:inherit; background:transparent; width:100%; border:1px solid rgba(130,148,172,.4); border-radius:9px; padding:10px 16px; cursor:pointer; min-height:44px;}
+.session-exit button:focus-visible {outline:3px solid #60a5fa; outline-offset:3px;}
 @media (max-width: 640px) {
- .block-container {padding: 1.2rem .8rem 2rem;}
+ .block-container {padding: 1.3rem 1rem 2rem;}
  h1 {font-size: 1.85rem !important;}
- [data-testid="stHorizontalBlock"] {flex-wrap: wrap; gap: .7rem;}
- [data-testid="stColumn"] {min-width: min(100%, 260px); flex: 1 1 260px !important;}
+ [data-testid="stHorizontalBlock"] {flex-wrap: wrap; gap: .75rem;}
+ [data-testid="stColumn"] {min-width: min(100%, 240px); flex: 1 1 240px !important;}
 }
 </style>""",
     unsafe_allow_html=True,
@@ -38,38 +60,15 @@ h1,h2,h3 {letter-spacing: -0.035em; color: #153f39;}
 
 
 def login():
-    if valid_session(settings.database, st.session_state.get("identity"), settings.session_seconds):
-        return
-    st.session_state.pop("identity", None)
-    st.markdown('<p class="eyebrow">LOGIBOTS / ÁREA PRIVADA</p>', unsafe_allow_html=True)
-    st.title("Observatório RAG")
-    st.write("Resultados, métricas e consumo dos seus experimentos em um só lugar.")
-    with connect(settings.database) as db:
-        configured = db.execute("SELECT count(*) FROM users").fetchone()[0]
-    if not configured:
-        st.info(
-            "Defina DASHBOARD_USERNAME e DASHBOARD_PASSWORD na .env da raiz "
-            "antes de iniciar a aplicação. Use uma senha com pelo menos 12 caracteres."
-        )
-        st.code(
-            "docker compose up -d",
-            language="bash",
-        )
-        st.caption("O painel não possui credenciais padrão. Guia completo: dashboard/README.md.")
+    token = st.context.cookies.get(COOKIE_NAME, "")
+    identity = session_identity(settings.database, token)
+    if identity is None:
+        st.session_state.clear()
+        st.title("Sua sessão foi encerrada")
+        st.write("Entre novamente para acessar os resultados e controlar as execuções.")
+        st.link_button("Entrar no painel", "/auth/login", type="primary")
         st.stop()
-    with st.form("login", clear_on_submit=True):
-        username = st.text_input("Usuário", max_chars=64)
-        password = st.text_input("Senha", type="password", max_chars=1024)
-        submit = st.form_submit_button("Entrar", type="primary", width="stretch")
-    if submit:
-        identity = authenticate(settings.database, username, password)
-        if identity:
-            st.session_state["identity"] = identity
-            st.rerun()
-        st.error(
-            "Não foi possível entrar. Confira os dados ou aguarde cinco minutos após várias tentativas."
-        )
-    st.stop()
+    return token, identity
 
 
 def downloads(kind, frame, name, title="", metric=None):
@@ -104,17 +103,24 @@ def downloads(kind, frame, name, title="", metric=None):
 
 
 def dashboard():
-    if not valid_session(
-        settings.database, st.session_state.get("identity"), settings.session_seconds
-    ):
-        st.rerun()
+    token, _ = login()
     records = experiments(settings.database)
+    section = st.session_state.get("section", "Visão geral")
+    if section == "Executar e retomar":
+        execution_view(settings, token, records)
+        return
+    if section == "Pendências e falhas":
+        pending_view(settings, token, records)
+        return
     with connect(settings.database) as db:
         last = db.execute("SELECT value FROM metadata WHERE key='last_sync'").fetchone()
         problems = [dict(row) for row in db.execute("SELECT * FROM sync_errors")]
     if last:
         elapsed = (datetime.now(UTC) - datetime.fromisoformat(last[0])).total_seconds()
-        st.caption(f"Última sincronização: {last[0]} · atualização a cada {settings.poll_seconds}s")
+        local_time = datetime.fromisoformat(last[0]).astimezone(ZoneInfo("America/Belem"))
+        st.caption(
+            f"Atualizado em {local_time:%d/%m/%Y às %H:%M:%S} · Brasília · a cada {settings.poll_seconds}s"
+        )
         if elapsed > settings.poll_seconds * 3:
             st.warning(
                 "A sincronização está atrasada. Os dados salvos continuam disponíveis; confira o serviço monitor."
@@ -130,7 +136,7 @@ def dashboard():
             "Nenhum resultado importado ainda. Assim que um benchmark salvar resultados, eles aparecerão aqui."
         )
         return
-    with st.expander("Escolher experimentos", expanded=True):
+    with st.expander("Filtrar experimentos", expanded=False):
         groups = sorted({row["comparison_key"] for row in records})
         selected_group = st.selectbox(
             "Protocolo de comparação",
@@ -190,18 +196,6 @@ def dashboard():
     a.metric("Experimentos", len(selected))
     b.metric("Casos com sucesso", len(successes))
     c.metric("Casos no recorte", len(comparison))
-    section = st.selectbox(
-        "Explorar",
-        [
-            "Visão geral",
-            "Gráficos originais",
-            "Tokens e tempo",
-            "Questões",
-            "Chamadas e modelos",
-            "Arquivos e backups",
-        ],
-        key="section",
-    )
     if section == "Visão geral":
         st.subheader("Cobertura antes da comparação")
         st.dataframe(overview, hide_index=True, width="stretch")
@@ -373,11 +367,28 @@ def dashboard():
         )
 
 
-login()
-st.markdown('<p class="eyebrow">LOGIBOTS / BENCHMARKS</p>', unsafe_allow_html=True)
-st.title("Observatório RAG")
-st.write("Compare qualidade, acompanhe consumo e preserve os resultados.")
-if st.button("Sair", key="logout"):
-    st.session_state.clear()
-    st.rerun()
+token, identity = login()
+if "navigate_to" in st.session_state:
+    st.session_state["section"] = st.session_state.pop("navigate_to")
+if "section" not in st.session_state:
+    saved = st.query_params.get("view", "Visão geral")
+    st.session_state["section"] = saved if saved in SECTIONS else "Visão geral"
+with st.sidebar:
+    st.markdown('<p class="eyebrow">LOGIBOTS / PESQUISA</p>', unsafe_allow_html=True)
+    st.title("Observatório RAG")
+    st.caption("Experimentos, consumo e resultados")
+    st.divider()
+    section = st.radio("Navegação", SECTIONS, key="section", label_visibility="collapsed")
+    st.divider()
+    st.caption("Tema claro ou escuro no menu ⋮ → Theme. A preferência fica salva no navegador.")
+    st.caption(f"Conectado como {identity['username']}")
+    st.markdown(
+        f'<form class="session-exit" action="/auth/logout" method="post"><input type="hidden" name="csrf" value="{escape(csrf_token(token), quote=True)}"><button type="submit">Sair da conta</button></form>',
+        unsafe_allow_html=True,
+    )
+st.query_params["view"] = section
+st.markdown('<p class="eyebrow">AMBIENTE DE BENCHMARK</p>', unsafe_allow_html=True)
+st.title(section)
+if section == "Visão geral":
+    st.write("Qualidade, cobertura e resultados dos seus experimentos.")
 st.fragment(run_every=settings.poll_seconds)(dashboard)()
