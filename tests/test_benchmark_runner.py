@@ -53,7 +53,9 @@ class BenchmarkRunnerTests(unittest.TestCase):
         )
 
     def csv_rows(self) -> list[dict[str, str]]:
-        with (self.output_dir / "results.csv").open(encoding="utf-8-sig", newline="") as file:
+        with (self.output_dir / "results_detailed.csv").open(
+            encoding="utf-8-sig", newline=""
+        ) as file:
             return list(csv.DictReader(file, delimiter=";"))
 
     def errors(self) -> dict[str, object]:

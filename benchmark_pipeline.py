@@ -7,6 +7,7 @@ from pathlib import Path
 import benchmark_usage
 from benchmark_config import METRICS, ROOT, build_manifest, experiment_directory
 from benchmark_evaluation import MetricEvaluator
+from benchmark_export import ARTIFACT_EXTRAS
 from benchmark_runner import (
     DEFAULT_DATASET,
     _load_dataset,
@@ -56,6 +57,7 @@ def frozen_answers(path, project, questions):
                 "ground_truth": row["reference"],
                 "answer": row["response"],
                 "contexts": row["retrieved_contexts"],
+                **{key: row[key] for key in ARTIFACT_EXTRAS if key in row},
                 "provenance": {
                     key: row[key]
                     for key in ("experiment_id", "generation_fingerprint", "evidence_metadata")
@@ -99,7 +101,11 @@ def execute_pipeline(project, prepare=None):
                 raise ValueError("Knowledge graph changed during experiment")
         if prepared is None:
             ledger.set_stage(question["id"], "preparation")
-            prepared = prepare()
+            prepared = (
+                prepare(checkpoint=output / "checkpoint.json")
+                if project == "knowledge-enhanced-rag"
+                else prepare()
+            )
         ledger.set_stage(question["id"], "generation")
         return prepared(question)
 
@@ -169,6 +175,27 @@ def tool_evidence(messages):
             }
         )
     return contexts, metadata
+
+
+def evaluation_documents(messages, query, store, *, tool_name, k):
+    calls = {}
+    for message in messages:
+        for call in getattr(message, "tool_calls", []) or []:
+            calls[call.get("id")] = call
+        if getattr(message, "type", None) != "tool":
+            continue
+        call = calls.get(getattr(message, "tool_call_id", None), {})
+        documents = getattr(message, "artifact", None)
+        if (
+            call.get("name") == tool_name
+            and call.get("args", {}).get("query") == query
+            and getattr(message, "status", "success") == "success"
+            and isinstance(documents, list)
+            and documents
+            and all(hasattr(doc, "page_content") for doc in documents)
+        ):
+            return documents
+    return store.similarity_search(query, k=k)
 
 
 def critique_decision(text):

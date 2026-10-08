@@ -11,7 +11,6 @@ from rag_settings import (
     start_usage_tracker,
 )
 
-from benchmark_context import select_documents
 from benchmark_index import load_index
 from benchmark_pipeline import critique_decision, execute_pipeline
 
@@ -32,7 +31,7 @@ def build_vectorstore():
 
 
 def self_rag(query, retriever, llm, callbacks=None):
-    docs = select_documents(retriever.invoke(query))
+    docs = retriever.invoke(query)
     contexts = [d.page_content for d in docs]
     context = "\n\n".join(contexts)
     callback_config = build_callback_config(callbacks)
@@ -50,7 +49,6 @@ def self_rag(query, retriever, llm, callbacks=None):
     response = extract_response_text(llm.invoke(prompt, config=callback_config))
 
     critique_prompt = f"""
-    Contexto: {context}
     Pergunta: {query}
     Resposta: {response}
 

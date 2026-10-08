@@ -102,15 +102,20 @@ class Chatbot:
 
         return {
             "answer": resposta_texto,
-            "contexts": [
+            "contexts": [doc.page_content for doc in docs],
+            "generation_contexts": [
                 contexto_docs,
                 kg_facts or "Nenhum fato do Knowledge Graph disponível.",
                 prereqs_texto,
                 proximos_texto,
             ],
-            "evidence_metadata": [
+            "evidence_metadata": [doc.metadata for doc in docs],
+            "generation_evidence_metadata": [
                 {"sources": [doc.metadata for doc in docs], "kg_mode": resultado["kg_mode"]}
             ],
             "prerequisites": prerequisites,
             "next_concepts": next_concepts,
+            "conversation_history": [
+                {"role": message.type, "content": message.content} for message in memoria
+            ],
         }

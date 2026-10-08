@@ -8,11 +8,11 @@ O projeto executa seis arquiteturas sobre o dataset canônico de 90 perguntas.
 O controle remoto usa exclusivamente Python, uma interface local por socket Unix
 e a Telegram Bot API. Não existe integração com agentes administrativos externos.
 
-A ordem acordada é concluir código e verificações sem consumo, conectar o Telegram
-e somente então iniciar os testes na VPS pelo bot. O operador retirou o teto
-monetário do projeto e informou que já possui bot e canal privado. Faltam configurar
-o token, o ID do canal e os IDs dos usuários autorizados na `.env` única da raiz.
-Nenhuma chamada paga foi feita nesta etapa. Consulte o [guia de configuração](configuracao.md).
+A `.env` única contém bot, canal privado verificado e ID humano autorizado.
+Consultas reais somente de leitura à Bot API confirmaram autenticação, permissão
+de publicação no canal e ausência de webhook. Não houve chamada a modelos, envio
+de mensagens ou implantação na VPS nesta revisão. Não há teto em dólares.
+Consulte [configuração](configuracao.md) e [compatibilidade original](compatibilidade.md).
 
 ## Preservação e identidade
 
@@ -41,13 +41,13 @@ nova precisa transferir esses PDFs: eles não devem ser presumidos presentes por
 um simples clone. `main.py preflight` verifica os seis ambientes e extrai texto
 dos PDFs localmente, sem chamar modelos.
 
-A recuperação remove documentos de texto idêntico e seleciona documentos inteiros
-até `BENCHMARK_CONTEXT_MAX_BYTES` (32000). Ordem e metadados dos documentos mantidos
-são preservados. Evidências efetivamente fornecidas às ferramentas/agentes são
-salvas. `BENCHMARK_INPUT_MAX_BYTES` (128000) rejeita requisições serializadas maiores.
-Esses limites são em bytes UTF-8, não uma contagem exata do tokenizer de cada modelo.
-A reserva de tokens usa bytes das entradas serializadas mais o limite de saída;
-é uma estimativa conservadora, registrada como estimativa.
+Não há corte adicional de contexto em bytes, deduplicação global de documentos ou
+limite artificial do corpo da requisição. Top-k, tamanhos de chunks e parâmetros
+de extração de grafo originais permanecem. Janelas dos provedores e limites de saída
+configurados continuam aplicáveis. Os contextos do RAGAS principal são chunks
+documentais separados na ordem recuperada; evidências adicionais de agentes/grafo
+ficam salvas à parte. A reserva de tokens usa bytes serializados mais a saída
+permitida, como estimativa; ela não corta a entrada.
 
 Chroma usa manifestos e IDs determinísticos para retomar chunks faltantes. O
 manifesto registra a dimensão observada; divergência em dimensão, corpus ou IDs
@@ -56,10 +56,13 @@ provedor e comparado com o índice existente. A disponibilidade desse parâmetro
 precisa ser validada no piloto do modelo escolhido. Índices legados sem manifesto
 não são adotados automaticamente; uma nova ingestão pode consumir embeddings.
 
-O Graph conserva a extração dos mesmos vinte primeiros chunks por identidade.
-Isso não transforma esta arquitetura em Microsoft GraphRAG. O Self recebe as
-evidências na autocrítica, normaliza SIM/NAO/NÃO e permite um refinamento. Memória
-entre perguntas independentes permanece desativada/isolada.
+O Graph conserva a extração dos vinte primeiros chunks originais, agora em cache.
+O Self usa o prompt original de autocrítica, sem campo adicional de contexto, e
+permite um refinamento após normalizar SIM/NAO/NÃO. O Memory conserva a thread nova
+por pergunta do script original. O Knowledge usa sessão compartilhada com os últimos
+cinco pares pergunta/resposta; o checkpoint restaura esse histórico após reinício.
+Retentar uma métrica reutiliza a resposta sem adicionar outro turno de conversa.
+As diferenças metodológicas estão detalhadas na auditoria de compatibilidade.
 
 ## Knowledge e Neo4j
 
@@ -186,14 +189,20 @@ são recusados. `TELEGRAM_RESULTS_CHAT_ID` recebe o ID do canal, nunca o ID do b
 | `/pausar RAG EXP` | Solicita pausa cooperativa |
 | `/falhas RAG EXP` | Mostra falhas salvas |
 | `/pergunta RAG EXP Q001` | Mostra estado e métricas do caso, sem textos privados |
-| `/resultado RAG EXP` | Envia JSON público de notas |
+| `/resultado RAG EXP` | Envia CSV no formato original e JSON público de notas |
+
+`/start` e `/ajuda` mostram os comandos. `/executar all --questions 1` enfileira os
+seis RAGs em sequência, interrompendo o conjunto na primeira falha. As flags de
+execução são compartilhadas com o terminal; consulte a
+[lista completa](compatibilidade.md#flags-compartilhadas).
 
 EXP é o hash completo de 64 caracteres. Botões oferecem status, pausa e resultados.
 Os serviços usam a `.env` da raiz, com `BENCHMARK_MODE=full` para os seis RAGs.
 Não é necessário manter `profiles.json`. A CLI de controle ainda aceita `--profiles`
 para configurações avançadas explícitas. O modo `evaluate` pela `.env` exige
 `BENCHMARK_PROJECT` e `BENCHMARK_FROZEN_FILE`. Comandos Telegram não escolhem
-caminhos arbitrários ou credenciais. Exemplo sem teto: `/executar context-rag 1`.
+caminhos arbitrários ou credenciais. `--frozen` aceita arquivos em `frozen/`,
+`BENCHMARK_OUTPUT_DIR/frozen/` ou no caminho do perfil configurado. Exemplo sem teto: `/executar context-rag 1`.
 
 O `command_id` deriva do update do Telegram e é persistido junto com a criação do
 lote. Repetição do mesmo comando não cria outro lote. Depois de reiniciar o serviço,

@@ -1,17 +1,15 @@
 # KE-RAG: Chatbot de Lógica de Programação
 
 > Operação atual / Current operation: [Português](../../docs/confiabilidade.md) · [English](../../docs/reliability.en.md).
-> Checkpoint v2, limites e controle pelo Telegram estão documentados nesses guias.
-> These guides document v2 checkpoints, budgets and Telegram control.
+> Compatibilidade de CSV, prompts e memória / CSV, prompt and memory compatibility:
+> [Português](../../docs/compatibilidade.md) · [English](../../docs/compatibility.en.md).
+> Da raiz / From the repository root: `uv run --locked python main.py run knowledge-enhanced-rag`.
+> Configuração única / Single configuration: `.env` na raiz / at the root (`../../.env`).
+> Saídas / Outputs: `resultados/<rag>/<experiment_id>/`; checkpoint v2.
+> Os detalhes abaixo registram a versão histórica e não substituem os guias atuais.
+> Details below describe the historical version and do not override current guides.
 
-> Configuração atual: somente a `.env` da raiz (`../../.env` a partir deste diretório).
-> O corpus contém os mesmos sete PDFs dos demais RAGs em `data/apostilas/`; o grafo
-> padrão continua no Neo4j (`BENCHMARK_KG_MODE=required`). O JSON de snapshot na raiz
-> é opcional e inativo. Consulte a [explicação dos dados](../../docs/configuracao.md).
-> Current configuration: root `.env` only; the same seven PDFs under `data/apostilas/`
-> plus Neo4j. The root graph snapshot is optional and inactive. See the
-> [data explanation](../../docs/configuration.en.md). Historical instructions below
-> do not override the current v2 operation guides.
+## Referência histórica / Historical reference
 
 Chatbot baseado em **KE-RAG (Knowledge Enhanced RAG)** para ajudar alunos iniciantes de Computação na matéria de Lógica de Programação. Combina busca semântica em apostilas PDF (RAG clássico) com um **Knowledge Graph no Neo4j**, curado manualmente, para enriquecer as respostas com relações entre conceitos (pré-requisitos, categorização, progressão de aprendizado).
 
@@ -240,7 +238,6 @@ LANGCHAIN_API_KEY=
 LANGCHAIN_PROJECT=benchmark-knowledge-enhanced-rag
 ```
 
-> **Atenção ao `DOCS_DIR`**: o valor padrão no `.env.example` é `../docs/` (uma pasta **fora** deste projeto). Os PDFs deste repositório estão em `data/apostilas/`, dentro da própria pasta do projeto. Ajuste `DOCS_DIR=./data/apostilas/` no seu `.env` antes de rodar, ou a ingestão não encontrará nenhum PDF.
 
 | Variável | Default | Descrição |
 |---|---|---|

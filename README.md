@@ -37,7 +37,12 @@ padrão; `--selection pending` permite selecionar somente casos novos. Erros de
 configuração/crédito/orçamento suspendem o lote e falhas repetidas acionam a pausa.
 Ao executar vários pipelines, a CLI para no primeiro que retorna erro.
 
-`results.csv` contém casos completos, `errors.json` mostra falhas atuais e
+`results.csv` mantém as nove colunas originais dos scripts RSPLE, com `;` e UTF-8 BOM.
+`<rag>-run-<repetição>_1.csv` é uma cópia compatível com os gráficos anteriores;
+`results_detailed.csv` contém os campos adicionais. Somente casos completos entram
+no CSV principal. Consulte a [auditoria de compatibilidade](docs/compatibilidade.md).
+
+`errors.json` mostra falhas atuais e
 `events.jsonl` mantém o histórico. `summary.json` inclui cobertura e denominadores
 das médias. Gravação atômica e bloqueios protegem o estado local.
 
@@ -46,6 +51,28 @@ limites, pausas, avaliação de respostas congeladas e controle pelo Telegram.
 A [implantação](deployment/README.md) descreve o socket local, a `.env` única, IDs autorizados
 e a fila persistente. O [aceite](docs/aceite.md) separa verificações sem consumo e piloto real.
 Os checkpoints v1 preservados não são retomados automaticamente pelo código novo.
+
+
+## Comandos no terminal e Telegram
+
+```bash
+uv run --locked python main.py telegram-check
+uv run --locked python main.py run all --questions 1 --max-calls 200 --max-seconds 3600
+uv run --locked python main.py resume context-rag EXP --questions 3
+```
+
+```text
+/start
+/executar all --questions 1 --max-calls 200 --max-seconds 3600
+/retomar context-rag EXP --questions 3
+/status
+```
+
+`EXP` é o ID completo exibido por `/status`. `/start` mostra ajuda na conversa
+privada com o bot quando os serviços estão ativos. O canal recebe resultados.
+As flags compartilhadas e os limites de comparação estão no
+[protocolo de compatibilidade](docs/compatibilidade.md). Knowledge compartilha os
+últimos cinco pares pergunta/resposta entre as 90 perguntas, inclusive após retomada.
 
 ## Requisitos e instalação com uv
 
@@ -133,7 +160,7 @@ Cada pipeline cria seu próprio índice Chroma na primeira execução. Índices,
 
 ## Neo4j local opcional
 
-Os benchmarks são controlados exclusivamente pela CLI. Docker não é necessário para os cinco RAGs que não usam Neo4j. Para executar o `knowledge-enhanced-rag` com o Neo4j local incluído no Compose, ajuste o `.env`:
+Os benchmarks podem ser controlados pela CLI ou, com os serviços ativos, pela conversa privada com o bot Telegram. Docker não é necessário para os cinco RAGs que não usam Neo4j. Para executar o `knowledge-enhanced-rag` com o Neo4j local incluído no Compose, ajuste o `.env`:
 
 ```env
 NEO4J_URI=bolt://127.0.0.1:7687
@@ -178,20 +205,12 @@ Depois execute diretamente o benchmark:
 uv run python main.py run knowledge-enhanced-rag --questions 3
 ```
 
-O `doctor` verifica apenas se as variáveis existem; a conexão real é validada quando o pipeline inicia. O benchmark conecta ao grafo, mas não o popula automaticamente. Para construir o grafo curado antes do benchmark, inicie a API em um terminal:
-
-```bash
-cd rags/knowledge-enhanced-rag
-uv run python app.py
-```
-
-Em outro terminal, na raiz do projeto, execute:
-
-```bash
-curl -X POST http://127.0.0.1:8000/build-graph
-```
-
-Depois encerre a API e rode o comando do benchmark. Se o grafo não for configurado ou estiver vazio, o `knowledge-enhanced-rag` ainda pode usar somente a busca vetorial do Chroma.
+O `doctor` confere configuração e arquivos locais; não comprova conexão com Neo4j.
+O benchmark não popula o banco. Com `BENCHMARK_KG_MODE=required`, grafo ausente ou
+vazio interrompe a execução, sem fallback silencioso para busca vetorial.
+Consulte a [preparação e o controle de reconstrução do grafo](docs/confiabilidade.md#knowledge-e-neo4j)
+antes de usar o endpoint de construção da API histórica. O modo explícito
+`disabled` cria outro experimento e não corresponde ao protocolo original do Knowledge.
 
 ## Uso
 
@@ -373,5 +392,3 @@ uv run ruff check main.py benchmark_runner.py tests
 Os testes cobrem seleção de um, vários ou todos os RAGs, validação do limite, execução incremental sem duplicatas, prioridade de retomada das falhas e atualização do `errors.json` após uma tentativa bem-sucedida.
 
 ## Licença
-
-Nenhuma licença de software foi declarada até o momento. Até que um arquivo `LICENSE` seja adicionado, permanecem reservados todos os direitos sobre o código. Os documentos usados como corpus mantêm as licenças e os direitos de seus respectivos autores e não fazem parte da distribuição deste monorepo.

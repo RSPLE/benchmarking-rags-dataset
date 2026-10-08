@@ -8,11 +8,11 @@ Six architectures evaluate the canonical 90-question dataset. Remote control use
 Python, a local Unix socket and the Telegram Bot API exclusively. There is no
 integration with external administrative agents.
 
-The agreed sequence is implementation and offline verification, Telegram setup,
-then starting VPS tests through the bot. The operator removed the project dollar
-cap and already has a bot and private channel. Their token, channel ID and authorized
-human user IDs still need to be entered in the single root `.env`. No paid call has
-been made in this stage. See the [configuration guide](configuration.en.md).
+The single root `.env` contains the configured bot, verified private channel and
+human authorization ID. Live read-only Bot API checks confirmed authentication,
+channel publication permission and absence of a webhook. No model calls, message
+publication or VPS deployment occurred in this review. There is no dollar cap.
+See [configuration](configuration.en.md) and [upstream compatibility](compatibility.en.md).
 
 ## Preservation and experiment identity
 
@@ -40,12 +40,12 @@ must transfer them; a repository clone does not guarantee their presence.
 `main.py preflight` checks all six environments and extracts PDF text locally,
 without calling models.
 
-Retrieval deduplicates identical document text and selects whole documents up to
-`BENCHMARK_CONTEXT_MAX_BYTES` (32000), preserving selected order and metadata.
-Evidence actually passed to tools/agents is saved. `BENCHMARK_INPUT_MAX_BYTES`
-(128000) rejects larger serialized requests. These are UTF-8 byte limits, not exact
-counts from each model's tokenizer. Token reservations use serialized input bytes
-plus the output allowance, explicitly recorded as a conservative estimate.
+No additional byte limit or global document deduplication is applied to retrieval
+or serialized requests. Original top-k, chunk sizes and graph extraction parameters
+remain. Provider context windows and configured output limits still apply. Primary
+RAGAS contexts remain separate documentary chunks in retrieval order; additional
+agent/graph evidence is saved separately. Token reservations use serialized input
+bytes plus the output allowance, recorded as estimates; they do not truncate inputs.
 
 Chroma manifests and deterministic IDs allow missing chunks to resume. Manifests
 record observed vector dimensions; dimension, corpus or ID mismatches reject reuse.
@@ -53,9 +53,12 @@ When configured, `EMBEDDING_DIMENSIONS` is sent to the provider and checked agai
 stored vectors. Provider support must be verified in the pilot. Legacy indices
 without manifests are not automatically adopted; initial ingestion may cost money.
 
-Graph caches extraction of the same first twenty chunks. This architecture is not
-Microsoft GraphRAG. Self receives evidence during critique, normalizes SIM/NAO/NÃO
-and permits one refinement. Independent questions do not share conversation memory.
+Graph caches extraction of the original first twenty chunks. Self uses the original
+critique prompt, without an added context field, and permits one refinement after
+normalizing SIM/NAO/NÃO. Memory keeps the original fresh thread per question.
+Knowledge uses a shared session with the last five exchanges; the checkpoint
+restores this history after restart. Metric retries reuse the answer without adding
+another exchange. See the compatibility audit for methodological differences.
 
 ## Knowledge and Neo4j
 
@@ -179,14 +182,19 @@ commands are rejected. `TELEGRAM_RESULTS_CHAT_ID` holds the channel ID, not the 
 | `/pausar RAG EXP` | Requests cooperative pause |
 | `/falhas RAG EXP` | Shows saved failures |
 | `/pergunta RAG EXP Q001` | Shows case state and metrics, without private text |
-| `/resultado RAG EXP` | Sends public score JSON |
+| `/resultado RAG EXP` | Sends public scores as original-format CSV and JSON |
+
+`/start` and `/ajuda` list commands. `/executar all --questions 1` queues the six
+RAGs sequentially, stopping the batch at the first failure. Run flags are shared
+with the terminal; see [the full list](compatibility.en.md#shared-flags).
 
 EXP is the complete 64-character hash. Buttons offer status, pause and results.
 Services use the root `.env`, with `BENCHMARK_MODE=full` for all six RAGs. Maintaining
 `profiles.json` is unnecessary. The control CLI still supports `--profiles` for
 explicit advanced configurations. Using `evaluate` through `.env` requires
 `BENCHMARK_PROJECT` and `BENCHMARK_FROZEN_FILE`. Telegram commands cannot choose
-arbitrary paths or credentials. Example without a dollar cap: `/executar context-rag 1`.
+arbitrary paths or credentials. `--frozen` accepts files under `frozen/`,
+`BENCHMARK_OUTPUT_DIR/frozen/`, or the configured profile path. Example without a dollar cap: `/executar context-rag 1`.
 
 The command ID derives from the Telegram update and is persisted with job creation.
 Replaying a command cannot create another job. After a service restart, previously

@@ -40,6 +40,30 @@ class IntegrationTests(unittest.TestCase):
 
         ensure_ragas_langchain_compat()
 
+    def test_plot_reads_original_csv_without_turning_missing_scores_into_zero(self):
+        if Path(sys.executable).absolute().parents[2].name != "context-rag":
+            self.skipTest("Plotting environment")
+        import runpy
+
+        from benchmark_export import RESULT_COLUMNS, result_bytes
+
+        module = runpy.run_path(str(ROOT / "rags/context-rag/plot_graph.py"), run_name="test_plot")
+        directory = Path(self.temp.name)
+        path = directory / "context-rag-run-1_1.csv"
+        row = {key: 0.75 for key in RESULT_COLUMNS[1:]}
+        row["question"] = "Question"
+        row["answer_relevancy"] = -0.5
+        path.write_bytes(result_bytes([row]))
+        (directory / "results.csv").write_bytes(path.read_bytes())
+        self.assertEqual(module["find_result_files"](str(directory)), [str(path)])
+        module["main"](str(directory))
+        self.assertGreater((directory / "mean_metrics.png").stat().st_size, 1000)
+        self.assertEqual(module["read_mean_metrics"](str(path))["answer_relevancy"], -0.5)
+        row["faithfulness"] = None
+        path.write_bytes(result_bytes([row]))
+        with self.assertRaises(ValueError):
+            module["aggregate_means"]([str(path)])
+
     def test_pipeline_import_has_no_model_calls_or_index_creation(self):
         project = os.getenv("TEST_PROJECT") or Path(sys.executable).absolute().parents[2].name
         if project not in {p.name for p in (ROOT / "rags").iterdir()}:
@@ -140,7 +164,7 @@ class IntegrationTests(unittest.TestCase):
                 load_index(docs, Path(self.temp.name) / "index", "pdf_test")
             embeddings.assert_not_called()
 
-    def test_generation_evidence_and_memory_isolation(self):
+    def test_generation_evidence_preserves_long_duplicate_documents(self):
         import inspect
         import runpy
 
@@ -153,7 +177,8 @@ class IntegrationTests(unittest.TestCase):
         self.addCleanup(sys.path.remove, str(project_dir))
         with patch("dotenv.load_dotenv"):
             module = runpy.run_path(str(project_dir / "main.py"), run_name="test_generation")
-        docs = [Document(page_content="actual evidence", metadata={"source": "book"})]
+        evidence = "actual evidence " * 3000
+        docs = [Document(page_content=evidence, metadata={"source": "book"}) for _ in range(2)]
         llm = Mock()
         llm.invoke.side_effect = [
             SimpleNamespace(text="candidate"),
@@ -164,15 +189,31 @@ class IntegrationTests(unittest.TestCase):
         retriever.invoke.return_value = docs
         if project in {"context-rag", "hybrid-rag", "self-rag"}:
             result = module[project.replace("-", "_")]("question", retriever, llm)
-            self.assertEqual(result[1], ["actual evidence"])
+            self.assertEqual(result[1], [evidence, evidence])
             retriever.invoke.assert_called_once_with("question")
-            self.assertEqual(result[2], [{"source": "book"}])
+            self.assertEqual(result[2], [{"source": "book"}] * 2)
+            self.assertIn(evidence, llm.invoke.call_args_list[0].args[0])
             if project == "self-rag":
                 self.assertEqual(llm.invoke.call_count, 3)
-                self.assertIn("actual evidence", llm.invoke.call_args_list[1].args[0])
+                self.assertNotIn("actual evidence", llm.invoke.call_args_list[1].args[0])
         elif project in {"graph-rag", "memory-augmented-rag"}:
             messages = [
-                ToolMessage(content="actual evidence", tool_call_id="call-1", name="retrieve"),
+                AIMessage(
+                    content="",
+                    tool_calls=[
+                        {
+                            "name": "retrieve_vector_context"
+                            if project == "graph-rag"
+                            else "retrieve_context",
+                            "args": {"query": "question"},
+                            "id": "call-1",
+                            "type": "tool_call",
+                        }
+                    ],
+                ),
+                ToolMessage(
+                    content="actual evidence", tool_call_id="call-1", name="retrieve", artifact=docs
+                ),
                 AIMessage(content="candidate"),
             ]
             agent = Mock()
@@ -185,7 +226,7 @@ class IntegrationTests(unittest.TestCase):
                     result = function("question")
             else:
                 result = module["run_agent_and_collect_data"](agent, store, "question", "reference")
-            self.assertEqual(result["contexts"], ["actual evidence"])
+            self.assertEqual(result["contexts"], [evidence, evidence])
             self.assertIn("recursion_limit", agent.stream.call_args.kwargs["config"])
         else:
             chatbot = module["Chatbot"].__new__(module["Chatbot"])
@@ -200,7 +241,89 @@ class IntegrationTests(unittest.TestCase):
             result = chatbot.chat("question", session_id=None)
             retriever.retrieve.assert_called_once_with("question")
             self.assertEqual(chatbot.memorias, {})
-            self.assertIn("graph evidence", result["contexts"])
+            self.assertEqual(result["contexts"], [evidence, evidence])
+            self.assertIn("graph evidence", result["generation_contexts"])
+
+    def test_knowledge_shared_history_survives_restart_and_metric_retry(self):
+        if Path(sys.executable).absolute().parents[2].name != "knowledge-enhanced-rag":
+            self.skipTest("Knowledge session protocol")
+        import runpy
+
+        from langchain_core.documents import Document
+        from langchain_core.messages import AIMessage, HumanMessage
+
+        from benchmark_runner import run_resumable_benchmark
+        from benchmark_storage import atomic_json
+
+        project = ROOT / "rags/knowledge-enhanced-rag"
+        sys.path.insert(0, str(project))
+        self.addCleanup(sys.path.remove, str(project))
+        with patch("dotenv.load_dotenv"):
+            module = runpy.run_path(str(project / "main.py"), run_name="test_memory")
+        seen = []
+        chatbot_class = module["Chatbot"]
+
+        def factory():
+            chatbot = chatbot_class.__new__(chatbot_class)
+            chatbot.memorias = {"benchmark": [HumanMessage(content="unsaved")]}
+            chatbot.retriever = Mock()
+            chatbot.retriever.retrieve.return_value = {
+                "docs": [Document(page_content="evidence")],
+                "kg_facts": "facts",
+                "prerequisites": [],
+                "next_concepts": [],
+                "kg_mode": "required",
+            }
+            chatbot.llm = Mock()
+
+            def invoke(messages, **kwargs):
+                seen.append([message.content for message in messages])
+                return AIMessage(content=f"answer-{len(seen)}")
+
+            chatbot.llm.invoke.side_effect = invoke
+            return chatbot
+
+        directory = Path(self.temp.name)
+        questions = [
+            {"id": f"Q{i:03}", "question": f"question-{i}", "ground_truth": "reference"}
+            for i in range(1, 8)
+        ]
+        dataset = directory / "dataset.json"
+        atomic_json(dataset, questions)
+        output = directory / "results"
+        failed = False
+
+        def metric(artifact):
+            nonlocal failed
+            if artifact["question"] == "question-2" and not failed:
+                failed = True
+                raise ValueError("invalid judge output")
+            return {"faithfulness": 0.75}
+
+        options = {
+            "dataset_path": dataset,
+            "output_dir": output,
+            "metric_evaluators": {"faithfulness": metric},
+            "required_metrics": ("faithfulness",),
+        }
+        with patch.dict(module["prepare"].__globals__, {"Chatbot": factory}):
+            first = module["prepare"](checkpoint=output / "checkpoint.json")
+            run_resumable_benchmark("knowledge-enhanced-rag", first, question_limit=3, **options)
+            self.assertEqual(len(seen), 3)
+            second = module["prepare"](checkpoint=output / "checkpoint.json")
+            counts = run_resumable_benchmark("knowledge-enhanced-rag", second, **options)
+        self.assertEqual(counts["success"], 7)
+        self.assertEqual(len(seen), 7)
+        self.assertEqual(len(seen[0]), 1)
+        self.assertEqual(
+            seen[3][:-1], [v for i in range(1, 4) for v in (f"question-{i}", f"answer-{i}")]
+        )
+        self.assertEqual(
+            seen[6][:-1], [v for i in range(2, 7) for v in (f"question-{i}", f"answer-{i}")]
+        )
+        checkpoint = json.loads((output / "checkpoint.json").read_text())
+        self.assertEqual(checkpoint["items"]["Q007"]["generation_order"], 7)
+        self.assertEqual(len(checkpoint["items"]["Q007"]["artifact"]["conversation_history"]), 10)
 
     def test_sync_and_async_provider_accounting_and_judge_selection(self):
         import asyncio

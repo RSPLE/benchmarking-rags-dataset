@@ -25,9 +25,8 @@ from rag_settings import (
 )
 
 from benchmark_config import configuration, positive_int
-from benchmark_context import select_documents
 from benchmark_index import cached_extraction, load_index
-from benchmark_pipeline import execute_pipeline, tool_evidence
+from benchmark_pipeline import evaluation_documents, execute_pipeline, tool_evidence
 from benchmark_storage import fingerprint
 
 configure_environment("benchmark-graph-rag")
@@ -203,7 +202,7 @@ def ingest_chunk_into_graph(chunk: Document, extraction: Dict) -> None:
     description="Recupera chunks de texto relevantes por similaridade semântica.",
 )
 def retrieve_vector_context(query: str):
-    retrieved_docs = select_documents(vector_store.similarity_search(query, k=3))
+    retrieved_docs = vector_store.similarity_search(query, k=3)
     serialized = "\n\n".join(
         f"Source: {doc.metadata}\nContent: {doc.page_content}" for doc in retrieved_docs
     )
@@ -285,12 +284,19 @@ def query_graph_rag(
     )
     final_event = events[-1]
     answer = extract_response_text(final_event["messages"][-1])
-    contexts, evidence = tool_evidence(final_event["messages"])
+    generation_contexts, generation_evidence = tool_evidence(final_event["messages"])
+    documents = evaluation_documents(
+        final_event["messages"], question, vector_store, tool_name="retrieve_vector_context", k=3
+    )
+    contexts = [doc.page_content for doc in documents]
+    evidence = [doc.metadata for doc in documents]
     return {
         "question": question,
         "answer": answer,
         "contexts": contexts,
         "evidence_metadata": evidence,
+        "generation_contexts": generation_contexts,
+        "generation_evidence_metadata": generation_evidence,
     }
 
 

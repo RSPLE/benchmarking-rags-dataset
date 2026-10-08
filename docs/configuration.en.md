@@ -28,31 +28,43 @@ or inspect tests, use your personal account in a **private conversation with the
 bot**. Channel posts are not accepted as commands, allowing the requester to be
 identified and authorized.
 
-These three fields remain empty because their values were not supplied. Existing
-model and Neo4j credentials were preserved. Do not put secrets in documentation,
-commits or shell commands.
+The real local `.env` now contains all three fields. Bot authentication, channel
+identity and posting permission were checked through the Bot API. Existing model
+and Neo4j credentials were preserved. Do not publish tokens in documentation,
+commits, browser URLs or shell commands.
 
-## Staged activation
+## Activation and diagnostics
 
-Initial settings are:
+The real local configuration has `TELEGRAM_ENABLED=true`,
+`TELEGRAM_CONTROL_ENABLED=true` and `BENCHMARK_REMOTE_ENABLED=true`. The example
+file keeps them disabled. Configuration alone does not launch services or jobs.
+After deploying the services, execution is available only to listed human IDs.
 
-```dotenv
-TELEGRAM_ENABLED=false
-TELEGRAM_CONTROL_ENABLED=false
-BENCHMARK_REMOTE_ENABLED=false
+```bash
+uv run --locked python main.py telegram-check
 ```
 
-After entering the values and preparing VPS services:
+This command validates credentials, channel type, posting rights and webhook
+absence without publishing messages, consuming updates or calling models.
+Restart both services after editing `.env`. `/start` in the private bot conversation
+shows help; `/executar context-rag --questions 1` starts one attempt. `/status`
+shows experiment IDs; `/retomar context-rag EXP --questions 1` resumes a compatible
+experiment. To temporarily disable remote job admission, set
+`BENCHMARK_REMOTE_ENABLED=false` and restart control.
 
-1. Set `TELEGRAM_ENABLED=true` and `TELEGRAM_CONTROL_ENABLED=true`. Keep
-   `BENCHMARK_REMOTE_ENABLED=false` while checking publication and `/status` without RAG execution.
-2. Restart both services after editing `.env`; processes read environment settings
-   at startup.
-3. After verifying connectivity, set `BENCHMARK_REMOTE_ENABLED=true` and restart
-   control to allow starting/resuming jobs. This setting alone does not queue work.
-4. `/executar context-rag 1` starts up to one attempt and may incur model costs
-   during preparation. `/retomar context-rag EXP 1` requires the full experiment
-   hash. Use `/status` to inspect saved IDs.
+## Finding a channel ID for a new installation
+
+1. Add the bot as channel administrator with posting permission.
+2. Before starting the polling service, request `getUpdates` with
+   `allowed_updates=["message","channel_post","my_chat_member"]` through the Bot API,
+   loading the token from `.env`, never placing it in a shared browser URL.
+3. Post any new text in the channel. No bot reply is expected from this step.
+4. Read `result[].channel_post.chat.id`; it is the channel ID. A private `/start`
+   instead produces `result[].message.from.id`, identifying the authorized human.
+5. Save the IDs and run `telegram-check`. Do not run two update consumers at once.
+
+The channel for this workspace has already been identified and saved; these steps
+need not be repeated. See [Telegram's update definitions](https://core.telegram.org/bots/api#update).
 
 The delivered `.env` has no dollar cap. Usage remains recorded, and technical call,
 token, time and retry limits remain active. USD is an optional command argument

@@ -16,9 +16,8 @@ from rag_settings import (
 )
 
 from benchmark_config import positive_int
-from benchmark_context import select_documents
 from benchmark_index import load_index
-from benchmark_pipeline import execute_pipeline, tool_evidence
+from benchmark_pipeline import evaluation_documents, execute_pipeline, tool_evidence
 
 configure_environment("benchmark-memory-augmented-rag")
 
@@ -42,7 +41,7 @@ def build_agent(vector_store, llm):
         description="Retrieve information to help answer a query.",
     )
     def retrieve_context(query: str):
-        retrieved_docs = select_documents(vector_store.similarity_search(query, k=5))
+        retrieved_docs = vector_store.similarity_search(query, k=5)
         serialized = "\n\n".join(
             (f"Source: {doc.metadata}\nContent: {doc.page_content}") for doc in retrieved_docs
         )
@@ -87,7 +86,12 @@ def run_agent_and_collect_data(
     final_event = events[-1]
     answer = extract_response_text(final_event["messages"][-1])
 
-    contexts, evidence = tool_evidence(final_event["messages"])
+    generation_contexts, generation_evidence = tool_evidence(final_event["messages"])
+    documents = evaluation_documents(
+        final_event["messages"], query, vector_store, tool_name="retrieve_context", k=5
+    )
+    contexts = [doc.page_content for doc in documents]
+    evidence = [doc.metadata for doc in documents]
 
     return {
         "question": query,
@@ -95,6 +99,8 @@ def run_agent_and_collect_data(
         "answer": answer,
         "ground_truth": ground_truth,
         "evidence_metadata": evidence,
+        "generation_contexts": generation_contexts,
+        "generation_evidence_metadata": generation_evidence,
     }
 
 

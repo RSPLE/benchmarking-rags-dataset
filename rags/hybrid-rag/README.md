@@ -1,14 +1,15 @@
 # Hybrid RAG
 
 > Operação atual / Current operation: [Português](../../docs/confiabilidade.md) · [English](../../docs/reliability.en.md).
-> Checkpoint v2, limites e controle pelo Telegram estão documentados nesses guias.
-> These guides document v2 checkpoints, budgets and Telegram control.
+> Compatibilidade de CSV, prompts e memória / CSV, prompt and memory compatibility:
+> [Português](../../docs/compatibilidade.md) · [English](../../docs/compatibility.en.md).
+> Da raiz / From the repository root: `uv run --locked python main.py run hybrid-rag`.
+> Configuração única / Single configuration: `.env` na raiz / at the root (`../../.env`).
+> Saídas / Outputs: `resultados/<rag>/<experiment_id>/`; checkpoint v2.
+> Os detalhes abaixo registram a versão histórica e não substituem os guias atuais.
+> Details below describe the historical version and do not override current guides.
 
-> **Atualização do monorepo:** este pipeline agora lê as 90 perguntas de `../eval-dataset/qa_dataset_90.json`, executa uma pergunta por vez e retoma apenas falhas por meio de `results/checkpoint.json`. Use `uv run python ../main.py run hybrid-rag` a partir da raiz; as referências abaixo a 5 rodadas e 10 perguntas descrevem a versão histórica.
-> Dependências vêm de `pyproject.toml`/`uv.lock` deste diretório e toda configuração vem exclusivamente de `../.env`; ignore as instruções históricas de `requirements.txt` e `.env` local abaixo.
-> Dependências vêm de `pyproject.toml`/`uv.lock` deste diretório e toda configuração vem exclusivamente de `../.env`; ignore as instruções históricas de `requirements.txt` e `.env` local abaixo.
-
-> **Atualização do monorepo:** este pipeline agora lê as 90 perguntas de `../eval-dataset/qa_dataset_90.json`, executa uma pergunta por vez e retoma apenas falhas por meio de `results/checkpoint.json`. Use `uv run python ../main.py run hybrid-rag` a partir da raiz; as referências abaixo a 5 rodadas e 10 perguntas descrevem a versão histórica.
+## Referência histórica / Historical reference
 
 Sistema de perguntas e respostas sobre documentos PDF usando Retrieval-Augmented Generation **híbrido**, combinando busca lexical (BM25) e busca semântica (vetorial), com avaliação automática de qualidade via RAGAS.
 
@@ -180,7 +181,6 @@ LANGCHAIN_API_KEY=
 LANGCHAIN_PROJECT=benchmark-hybrid-rag
 ```
 
-> **Atenção ao `DOCS_DIR`**: o valor padrão no `.env.example` é `../docs/` (uma pasta **fora** deste projeto). Os PDFs deste repositório estão em `docs/`, dentro da própria pasta do projeto. Ajuste `DOCS_DIR=./docs/` no seu `.env` antes de rodar, ou a ingestão não encontrará nenhum PDF.
 
 | Variável | Default | Descrição |
 |---|---|---|

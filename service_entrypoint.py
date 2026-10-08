@@ -50,7 +50,7 @@ WORKER_PREFIXES = (
 def role_environment(role, source):
     if role not in {"control", "telegram", "batch", "worker"}:
         raise ValueError("Unknown service role")
-    names = SYSTEM_KEYS | (TELEGRAM_KEYS if role == "telegram" else {"DOCS_DIR"})
+    names = SYSTEM_KEYS | (TELEGRAM_KEYS if role == "telegram" else {"DOCS_DIR", "RETRIEVER_K"})
     if role == "control":
         names = names | {"TELEGRAM_ALLOWED_USER_IDS"}
     env = {

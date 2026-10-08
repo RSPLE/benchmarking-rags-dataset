@@ -16,49 +16,87 @@ import time
 import uuid
 from pathlib import Path
 
+from benchmark_options import CommandParser, add_run_options, option_environment
 from benchmark_storage import append_event, atomic_json, exclusive_lock, now, sanitize
-from main import PROJECTS, ROOT, uv_command
+from main import PROJECTS, ROOT, resolve_projects, uv_command
 from service_entrypoint import role_environment
 
 MAX_MESSAGE = 65536
 
 
 def parse_command(text):
+    if not isinstance(text, str) or len(text) > 2000:
+        raise ValueError("Invalid command")
     parts = shlex.split(text)
-    if not parts or len(text) > 1000:
+    if not parts:
         raise ValueError("Invalid command")
     action = parts[0].split("@", 1)[0].removeprefix("/")
+    action = {"run": "executar", "resume": "retomar", "start": "ajuda", "help": "ajuda"}.get(
+        action, action
+    )
+    args = parts[1:]
+    if action in {"executar", "retomar"}:
+        parser = CommandParser(prog="/" + action, add_help=False, allow_abbrev=False)
+        parser.add_argument("targets", nargs="+")
+        add_run_options(parser)
+        options = vars(parser.parse_args(args))
+        targets = options.pop("targets")
+        experiment = None
+        if action == "retomar":
+            if len(targets) < 2 or not re.fullmatch(r"[0-9a-f]{64}", targets[1]):
+                raise ValueError("Expected RAG and the full experiment ID")
+            project, experiment, *legacy = targets
+            projects = resolve_projects([project])
+        else:
+            split = next(
+                (i for i, part in enumerate(targets) if part not in PROJECTS and part != "all"),
+                len(targets),
+            )
+            projects = resolve_projects(targets[:split])
+            legacy = targets[split:]
+        if not projects or any(project not in PROJECTS for project in projects):
+            raise ValueError("Unknown RAG")
+        if action == "retomar" and len(projects) != 1:
+            raise ValueError("Resume requires one RAG")
+        if len(legacy) > 2:
+            raise ValueError("Expected N [USD] or named flags")
+        budget = None
+        if legacy:
+            if options.get("questions") is not None:
+                raise ValueError("Use either N or --questions")
+            options["questions"] = int(legacy[0])
+            if len(legacy) == 2:
+                budget = float(legacy[1])
+        if options.get("questions") is not None and not 1 <= options["questions"] <= 90:
+            raise ValueError("Expected 1..90 attempts")
+        if budget is not None and (not math.isfinite(budget) or budget <= 0):
+            raise ValueError("Expected a positive optional USD limit")
+        options = {
+            key: str(value) if isinstance(value, Path) else value
+            for key, value in options.items()
+            if value is not None
+        }
+        return {
+            "action": action,
+            "project": projects[0],
+            "projects": projects,
+            "experiment": experiment,
+            "questions": options.get("questions", 90),
+            "budget": budget,
+            "options": options,
+        }
     sizes = {
         "status": (0, 2),
-        "executar": (2, 3),
-        "retomar": (3, 4),
         "pausar": (2,),
         "falhas": (2,),
         "pergunta": (3,),
         "resultado": (2,),
+        "ajuda": (0,),
     }
-    args = parts[1:]
     if action not in sizes or len(args) not in sizes[action]:
-        raise ValueError(
-            "Use /status; /executar RAG N [USD]; /retomar RAG EXP N [USD]; /pausar RAG EXP; /falhas RAG EXP; /pergunta RAG EXP Q001; /resultado RAG EXP"
-        )
-    if args and args[0] not in PROJECTS:
-        raise ValueError("Unknown RAG")
-    if args and action != "executar" and not re.fullmatch(r"[0-9a-f]{64}", args[1]):
-        raise ValueError("Expected the full experiment ID")
-    if action in {"executar", "retomar"}:
-        position = 1 if action == "executar" else 2
-        count = int(args[position])
-        cost = float(args[position + 1]) if len(args) > position + 1 else None
-        if not 1 <= count <= 90 or (cost is not None and (not math.isfinite(cost) or cost <= 0)):
-            raise ValueError("Expected 1..90 attempts and, optionally, a positive USD budget")
-        return {
-            "action": action,
-            "project": args[0],
-            "experiment": args[1] if action == "retomar" else None,
-            "questions": count,
-            "budget": cost,
-        }
+        raise ValueError("Use /ajuda to list commands and flags")
+    if args and (args[0] not in PROJECTS or not re.fullmatch(r"[0-9a-f]{64}", args[1])):
+        raise ValueError("Expected RAG and the full experiment ID")
     if action == "pergunta" and (
         not re.fullmatch(r"Q\d{3}", args[2]) or not 1 <= int(args[2][1:]) <= 90
     ):
@@ -86,6 +124,9 @@ class Control:
         self.db.execute(
             "CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, request TEXT NOT NULL, state TEXT NOT NULL, created TEXT NOT NULL, finished TEXT, code INTEGER)"
         )
+        columns = {row[1] for row in self.db.execute("PRAGMA table_info(jobs)")}
+        if "batch" not in columns:
+            self.db.execute("ALTER TABLE jobs ADD COLUMN batch TEXT")
         self.db.execute(
             "UPDATE jobs SET state='interrupted', finished=? WHERE state IN ('queued','running')",
             (now(),),
@@ -147,22 +188,69 @@ class Control:
                 budget = self.max_budget
             if self.db.execute("SELECT 1 FROM jobs WHERE state IN ('queued','running')").fetchone():
                 raise ValueError("A job is already queued or running")
-            profile = self.profiles.get(command["project"])
-            if not isinstance(profile, dict) or profile.get("mode") not in {"full", "evaluate"}:
-                raise ValueError("The operator must configure this RAG profile first")
-            if profile["mode"] == "evaluate" and not Path(profile.get("frozen", "")).is_file():
-                raise ValueError("Frozen answers are missing")
-            if action == "retomar":
-                directory = self.directory(command["project"], command["experiment"])
-                manifest = json.loads((directory / "manifest.json").read_text())
-                if manifest.get("mode") != profile["mode"]:
-                    raise ValueError("Profile and saved experiment modes differ")
-            command = {**command, "budget": budget, "profile": profile}
-            self.db.execute(
-                "INSERT INTO jobs (id, request, state, created) VALUES (?, ?, 'queued', ?)",
-                (identifier, json.dumps(command), now()),
-            )
-            return {"job_id": identifier, "state": "queued", "budget_usd": command["budget"]}
+            projects = command.get("projects", [command["project"]])
+            jobs = []
+            for index, project in enumerate(projects):
+                configured = self.profiles.get(project)
+                if not isinstance(configured, dict):
+                    raise ValueError("The operator must configure this RAG profile first")
+                profile = {**configured, "environment": dict(configured.get("environment", {}))}
+                options = command.get("options", {})
+                mode = options.get("mode", profile.get("mode", "full"))
+                if mode not in {"full", "evaluate"}:
+                    raise ValueError("Invalid benchmark mode")
+                if options.get("frozen") and mode != "evaluate":
+                    raise ValueError("--frozen requires --mode evaluate")
+                profile["mode"] = mode
+                if mode == "evaluate":
+                    frozen = (
+                        options.get("frozen")
+                        or profile.get("frozen")
+                        or os.getenv("BENCHMARK_FROZEN_FILE")
+                    )
+                    if len(projects) != 1 or not frozen:
+                        raise ValueError("Evaluation requires one RAG and a frozen file")
+                    path = (ROOT / frozen).resolve()
+                    configured_path = (
+                        Path(configured["frozen"]).resolve() if configured.get("frozen") else None
+                    )
+                    approved = path == configured_path or any(
+                        path.is_relative_to(root)
+                        for root in ((ROOT / "frozen").resolve(), (self.root / "frozen").resolve())
+                    )
+                    if not approved or not path.is_file():
+                        raise ValueError(
+                            "Frozen file must exist under frozen/ or the configured profile path"
+                        )
+                    profile["frozen"] = str(path)
+                else:
+                    profile.pop("frozen", None)
+                if action == "retomar":
+                    directory = self.directory(project, command["experiment"])
+                    manifest = json.loads((directory / "manifest.json").read_text())
+                    if manifest.get("mode") != mode:
+                        raise ValueError("Profile and saved experiment modes differ")
+                job_id = identifier if len(projects) == 1 else f"{identifier}:{index + 1}"
+                job = {**command, "project": project, "budget": budget, "profile": profile}
+                self.db.execute(
+                    "INSERT INTO jobs (id, request, state, created, batch) VALUES (?, ?, 'queued', ?, ?)",
+                    (job_id, json.dumps(job), now(), identifier),
+                )
+                jobs.append({"job_id": job_id, "project": project, "state": "queued"})
+            return {
+                "job_id": jobs[0]["job_id"],
+                "jobs": jobs,
+                "state": "queued",
+                "budget_usd": budget,
+            }
+        if action == "ajuda":
+            parser = CommandParser(prog="/executar RAG [RAG ...]", add_help=False)
+            add_run_options(parser)
+            return {
+                "commands": "/executar RAG|all; /retomar RAG EXP; /status [RAG EXP]; /pausar RAG EXP; /falhas RAG EXP; /pergunta RAG EXP Q001; /resultado RAG EXP",
+                "flags": parser.format_help(),
+                "example": "/executar all --questions 1 --selection pending --repetition 1",
+            }
         args = command["args"]
         if action == "status" and not args:
             jobs = [
@@ -224,10 +312,11 @@ class Worker:
         self.control = control
         self.process = self.job = self.log = None
         self.started = self.stopping = None
+        self.max_seconds = None
 
     def tick(self):
         if self.process:
-            limit = int(os.getenv("BENCHMARK_MAX_SECONDS", "3600"))
+            limit = self.max_seconds or int(os.getenv("BENCHMARK_MAX_SECONDS", "3600"))
             question_expired = False
             assignment = self.control.database.parent / f"{self.job}.json"
             if assignment.is_file():
@@ -254,6 +343,8 @@ class Worker:
                 "UPDATE jobs SET state=?,finished=?,code=? WHERE id=?",
                 ("finished" if code == 0 else "stopped", now(), code, self.job),
             )
+            if code != 0:
+                self.cancel_batch(self.job)
             self.control.db.commit()
             self.control.job_event(self.job, "finished" if code == 0 else "stopped")
             self.log.close()
@@ -278,11 +369,22 @@ class Worker:
             self.control.db.execute(
                 "UPDATE jobs SET state='failed',finished=? WHERE id=?", (now(), identifier)
             )
+            self.cancel_batch(identifier)
             self.control.db.commit()
             self.control.job_event(identifier, "failed")
             atomic_json(
                 self.control.database.parent / f"{identifier}.error.json",
                 {"error": sanitize(str(exc))},
+            )
+
+    def cancel_batch(self, identifier):
+        batch = self.control.db.execute(
+            "SELECT batch FROM jobs WHERE id=?", (identifier,)
+        ).fetchone()
+        if batch and batch[0]:
+            self.control.db.execute(
+                "UPDATE jobs SET state='cancelled', finished=? WHERE batch=? AND state='queued'",
+                (now(), batch[0]),
             )
 
     def launch(self, identifier, command):
@@ -332,6 +434,10 @@ class Worker:
         ):
             raise ValueError("Profile contains unsupported settings")
         env.update(settings)
+        env.update(option_environment(command.get("options", {})))
+        env["BENCHMARK_MODE"] = profile["mode"]
+        env["BENCHMARK_FROZEN_FILE"] = profile.get("frozen", "")
+        self.max_seconds = int(env.get("BENCHMARK_MAX_SECONDS", "3600"))
         for name in (
             "DOCS_DIR",
             "CHROMA_PERSIST_DIR",

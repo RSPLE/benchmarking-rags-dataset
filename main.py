@@ -9,6 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from benchmark_options import add_run_options, option_environment, validate_run_options
 from service_entrypoint import role_environment
 
 ROOT = Path(__file__).resolve().parent
@@ -21,16 +22,6 @@ PROJECTS = {
     "memory-augmented-rag": "agente RAG com memória conversacional",
     "self-rag": "RAG com autocrítica e uma etapa de refinamento",
 }
-
-
-def positive_integer(value: str) -> int:
-    try:
-        parsed = int(value)
-    except ValueError as exc:
-        raise argparse.ArgumentTypeError("deve ser um inteiro positivo") from exc
-    if parsed <= 0:
-        raise argparse.ArgumentTypeError("deve ser um inteiro positivo")
-    return parsed
 
 
 def load_environment() -> None:
@@ -61,8 +52,6 @@ def run_project(project: str, provider: str | None, questions: int | None = None
         env["LLM_PROVIDER"] = provider
     if questions is not None:
         env["BENCHMARK_QUESTION_LIMIT"] = str(questions)
-    else:
-        env.pop("BENCHMARK_QUESTION_LIMIT", None)
 
     project_dir = RAGS_ROOT / project
     if env.get("BENCHMARK_MODE") == "evaluate":
@@ -195,6 +184,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command")
     subparsers.add_parser("list", help="lista pipelines e dataset")
     subparsers.add_parser("doctor", help="valida chaves, provedores e corpora")
+    subparsers.add_parser("telegram-check", help="verifica bot e canal sem enviar mensagens")
 
     run_parser = subparsers.add_parser(
         "run",
@@ -207,35 +197,15 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="RAG",
         help="um ou mais nomes de pipeline, ou 'all' para executar os seis",
     )
-    run_parser.add_argument("--provider", choices=("openrouter", "openai"))
-    run_parser.add_argument(
-        "--questions",
-        "--limit",
-        dest="questions",
-        type=positive_integer,
-        metavar="X",
-        help="tenta no maximo X perguntas ainda nao concluidas por RAG",
-    )
     all_parser = subparsers.add_parser(
         "run-all",
         help="executa ou retoma todos os pipelines, um apos o outro",
     )
-    all_parser.add_argument("--provider", choices=("openrouter", "openai"))
-    all_parser.add_argument(
-        "--questions",
-        "--limit",
-        dest="questions",
-        type=positive_integer,
-        metavar="X",
-        help="tenta no maximo X perguntas ainda nao concluidas por RAG",
-    )
-    for command_parser in (run_parser, all_parser):
-        command_parser.add_argument("--mode", choices=("full", "evaluate"), default="full")
-        command_parser.add_argument("--frozen", type=Path)
-        command_parser.add_argument(
-            "--selection", choices=("unresolved", "pending", "failed"), default="unresolved"
-        )
-        command_parser.add_argument("--max-calls", type=positive_integer)
+    resume_parser = subparsers.add_parser("resume", help="retoma um experimento compatível")
+    resume_parser.add_argument("project", choices=sorted(PROJECTS))
+    resume_parser.add_argument("experiment")
+    for command_parser in (run_parser, all_parser, resume_parser):
+        add_run_options(command_parser)
     export_parser = subparsers.add_parser("export-frozen")
     export_parser.add_argument("directory", type=Path)
     export_parser.add_argument("destination", type=Path)
@@ -265,8 +235,12 @@ def main() -> int:
         show_projects()
         return 0
     if args.command == "preflight":
+        load_environment()
+        env = dict(os.environ)
+        if env.get("DOCS_DIR"):
+            env["DOCS_DIR"] = str((ROOT / env["DOCS_DIR"]).resolve())
         return subprocess.run(
-            [sys.executable, str(ROOT / "scripts/preflight.py")], check=False
+            [sys.executable, str(ROOT / "scripts/preflight.py")], env=env, check=False
         ).returncode
     if args.command in {"export-frozen", "report", "reconcile"}:
         from benchmark_admin import export_frozen, report
@@ -284,6 +258,17 @@ def main() -> int:
         return 0
     if args.command == "doctor":
         return doctor()
+    if args.command == "telegram-check":
+        from telegram_setup import check_configuration
+
+        load_environment()
+        try:
+            result = check_configuration(os.environ)
+        except (ValueError, RuntimeError) as exc:
+            print(str(exc))
+            return 1
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
     if args.command in {"audit", "status", "migrate", "pause", "clear-pause"}:
         from benchmark_admin import audit, migrate, status
 
@@ -304,28 +289,27 @@ def main() -> int:
             result = {"request": args.command, "directory": str(args.directory)}
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
-    if args.command in {"run", "run-all"}:
-        if args.mode == "evaluate" and not args.frozen:
-            parser.error("--mode evaluate requires --frozen")
-        if args.frozen and args.mode != "evaluate":
-            parser.error("--frozen requires --mode evaluate")
+    if args.command in {"run", "run-all", "resume"}:
+        load_environment()
         requested = args.projects if args.command == "run" else ["all"]
-        if args.mode == "evaluate" and (len(requested) != 1 or requested == ["all"]):
-            parser.error("Frozen answers must target one RAG")
-        os.environ["BENCHMARK_MODE"] = args.mode
-        os.environ["BENCHMARK_SELECTION"] = args.selection
-        if args.frozen:
-            os.environ["BENCHMARK_FROZEN_FILE"] = str(args.frozen.resolve())
-        if args.max_calls:
-            os.environ["BENCHMARK_MAX_CALLS"] = str(args.max_calls)
-    if args.command == "run":
+        if args.command == "resume":
+            import re
+
+            if not re.fullmatch(r"[0-9a-f]{64}", args.experiment):
+                parser.error("Expected the full experiment ID")
+            requested = [args.project]
+            os.environ["BENCHMARK_EXPECTED_EXPERIMENT"] = args.experiment
+        else:
+            os.environ.pop("BENCHMARK_EXPECTED_EXPERIMENT", None)
         try:
-            projects = resolve_projects(args.projects)
+            projects = resolve_projects(requested)
+            validate_run_options(args, projects)
         except ValueError as exc:
             parser.error(str(exc))
+        os.environ.update(option_environment(args))
+        if args.frozen:
+            os.environ["BENCHMARK_FROZEN_FILE"] = str(args.frozen.resolve())
         return run_projects(projects, args.provider, args.questions)
-    if args.command == "run-all":
-        return run_all(args.provider, args.questions)
     return 2
 
 

@@ -3,8 +3,8 @@
 [Português](aceite.md) · [Operations](reliability.en.md)
 
 Automated acceptance means local verification without paid calls. Live validation
-means execution against actual external services. They are different. The operator
-has deferred Telegram activation and the pilot until implementation is complete.
+means execution against actual external services. They are different. Telegram authentication and permissions passed live read-only checks. Message
+delivery and the model pilot still require deployment validation.
 
 | Case | Automated evidence | Limitation / remaining live validation |
 | --- | --- | --- |
@@ -31,9 +31,14 @@ has deferred Telegram activation and the pilot until implementation is complete.
 | T21 | Original CSV/error tests and persistent history | Publication reads only public artifacts |
 | T22 | `test_scientific_repetition_has_an_independent_identity` | Statistical judge stability not measured yet |
 | T23 | Gateway/notifier without model clients and a service without model keys | No external administrative-agent integration |
-| T24 | `test_gateway_filters_chat_scope_and_persists_offset` and actual socket | Bot and private channel exist; live connection pending |
+| T24 | `test_gateway_filters_chat_scope_and_persists_offset` and actual socket | Bot, channel and permission verified through the Bot API; live delivery not tested |
 | T25 | `test_evaluation_mode_never_prepares_a_pipeline` and evidence export/import | A complete real frozen set still requires generated answers |
 | T26 | `test_frozen_answer_missing_evidence_never_uses_reference` | Missing historical contexts are never fabricated |
+| T27 | Pinned upstream prompt hashes and nine-column CSV for all six RAGs | Original-format CSV and Telegram bytes match |
+| T28 | `test_knowledge_shared_history_survives_restart_and_metric_retry` | Shared last-five-exchange history persists without regenerating answers |
+| T29 | Long duplicate document integration test in all six environments | No global deduplication or byte truncation |
+| T30 | Shared CLI/bot flags, atomic batch queue and failure cancellation | Six sequential jobs; no shell execution |
+| T31 | Original CSV plotting, frozen usage roundtrip and read-only channel check | Missing scores never become zeros; saved answer tokens remain intact |
 
 ## Protected data and audit
 
@@ -56,8 +61,8 @@ audit and backup immediately before deployment.
 
 ## Conditions for completing live validation
 
-- Configure the bot token, private channel ID and authorized human IDs in the single `.env`.
-- Deploy verified code, environments and services with remote execution initially disabled.
+- Transfer the configured local `.env`, retaining VPS-specific endpoints; verify with `telegram-check`.
+- Deploy code, environments and services. Current settings admit remote commands but never start a batch automatically.
 - Verify permissions, dummy delivery, unauthorized-user rejection and outbox restart.
 - Verify accounting and technical limits; the operator removed the monetary cap.
 - Authorize a small batch through the bot and measure preparation, generation, judging and failures.
@@ -67,10 +72,10 @@ audit and backup immediately before deployment.
 
 ## Local verification results for this revision
 
-- Root suite: 67 discovered tests, 58 passed, and nine integration tests skipped
+- Root suite: 76 discovered tests, 65 passed, and 11 integration tests skipped
   because they belong to child environments. The actual Unix socket test passed.
-- Integrations: nine tests in each of six environments, 54 passing executions
-  without paid requests.
+- Integrations: 11 tests discovered in each environment; 56 passed and 10 were skipped
+  because they target Knowledge or the plotting environment, without paid requests.
 - Preflight: six passing corpora, seven PDFs and 2604 pages per corpus.
 - Ruff, formatting and `git diff --check`: passed.
 - Protected files: 25 hashes checked, no differences.
@@ -82,3 +87,6 @@ audit and backup immediately before deployment.
 Local logs: `tmp/implementation-20261007/`. The sandbox had blocked socket creation
 and asynchronous shutdown; conclusive verification ran outside it, retaining fake
 models/HTTP. No VPS service was activated.
+
+Original protocol details and declared differences: [compatibility](compatibility.en.md).
+Current logs: `unit-paper.log` and `integrations-paper.log` under the local log directory.

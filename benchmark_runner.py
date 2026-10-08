@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from benchmark_config import METRICS
+from benchmark_export import RESULT_COLUMNS, result_rows, write_results
 from benchmark_storage import (
     append_event,
     atomic_file,
@@ -440,16 +441,23 @@ def run_resumable_benchmark(
         def save():
             checkpoint["updated_at"] = _now()
             _atomic_json(checkpoint_path, checkpoint)
-            _write_results_csv(output_dir / "results.csv", questions, checkpoint)
+            _write_results_csv(output_dir / "results_detailed.csv", questions, checkpoint)
+            write_results(output_dir / "results.csv", questions, checkpoint)
+            repetition = (manifest or {}).get("configuration", {}).get("BENCHMARK_REPETITION", "1")
+            if not str(repetition).isdigit() or int(repetition) < 1:
+                raise ValueError("Invalid experiment repetition")
+            if not project.replace("-", "").isalnum():
+                raise ValueError("Invalid project export name")
+            write_results(output_dir / f"{project}-run-{repetition}_1.csv", questions, checkpoint)
             _write_errors_json(output_dir / "errors.json", questions, checkpoint)
             _atomic_json(
                 output_dir / "public_results.json",
                 {
                     "updated_at": checkpoint["updated_at"],
+                    "columns": list(RESULT_COLUMNS),
                     "rows": [
-                        {"id": key, **{name: state["result"][name] for name in required}}
-                        for key, state in states.items()
-                        if state.get("status") == "success"
+                        {key: row.get(key) for key in ("id", *RESULT_COLUMNS)}
+                        for row in result_rows(questions, checkpoint)
                     ],
                 },
                 mode=0o640,
@@ -532,6 +540,10 @@ def run_resumable_benchmark(
                         artifact=artifact,
                         artifact_sha256=fingerprint(artifact),
                         generation_seconds=time.monotonic() - started,
+                        generation_order=1
+                        + max(
+                            (item.get("generation_order", 0) for item in states.values()), default=0
+                        ),
                     )
                     save()
                     event("answer_saved", question_id=question_id)

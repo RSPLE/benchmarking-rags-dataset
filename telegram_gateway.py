@@ -4,6 +4,7 @@ import json
 import uuid
 
 from benchmark_control import call_control
+from benchmark_export import result_bytes
 
 
 class Gateway:
@@ -99,6 +100,15 @@ class Gateway:
                             document,
                         ),
                     )
+                    if "document" in result and "rows" in result["document"]:
+                        self.db.execute(
+                            "INSERT OR IGNORE INTO outbox (id,method,payload,document) VALUES (?, 'sendDocument', ?, ?)",
+                            (
+                                identifier + "-csv",
+                                json.dumps({"chat_id": user, "_filename": "results.csv"}),
+                                result_bytes(result["document"]["rows"]),
+                            ),
+                        )
                 if callback:
                     self.db.execute(
                         "INSERT OR IGNORE INTO outbox (id,method,payload) VALUES (?, 'answerCallbackQuery', ?)",

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import glob
 import os
 from typing import List
@@ -16,7 +17,7 @@ METRIC_COLS = [
 
 
 def find_result_files(results_dir: str = "results") -> List[str]:
-    pattern = os.path.join(results_dir, "context-rag-run-*.csv")
+    pattern = os.path.join(results_dir, "*-rag-run-*.csv")
     files = sorted(glob.glob(pattern))
     return files
 
@@ -32,9 +33,13 @@ def read_mean_metrics(csv_path: str) -> pd.Series:
 
     found = {}
     for m in METRIC_COLS:
-        if m in cols_lower:
-            colname = cols_lower[m]
-            found[m] = pd.to_numeric(df[colname], errors="coerce").mean()
+        if m not in cols_lower:
+            raise ValueError(f"Missing metric {m} in {csv_path}")
+        values = pd.to_numeric(df[cols_lower[m]], errors="raise")
+        lower = -1 if m == "answer_relevancy" else 0
+        if values.empty or values.isna().any() or not values.between(lower - 1e-9, 1 + 1e-9).all():
+            raise ValueError(f"Invalid or missing values for {m} in {csv_path}")
+        found[m] = values.mean()
 
     return pd.Series(found)
 
@@ -52,7 +57,7 @@ def aggregate_means(files: List[str]) -> pd.DataFrame:
     if not rows:
         return pd.DataFrame()
 
-    df = pd.DataFrame(rows, index=names).fillna(0.0)
+    df = pd.DataFrame(rows, index=names)
     return df
 
 
@@ -69,11 +74,12 @@ def plot_overall_mean(df_means: pd.DataFrame, save_path: str) -> None:
         "Revocação do contexto",
     ]
 
-    values = [overall.get(m, 0.0) for m in METRIC_COLS]
+    values = [overall[m] for m in METRIC_COLS]
 
     bars = ax.bar(labels, values, color=["#4c72b0", "#55a868", "#c44e52", "#8172b2"])
-    ax.set_ylim(0, 1)
-    ax.set_ylabel("Média (0–1)")
+    lower = -1 if min(values) < 0 else 0
+    ax.set_ylim(lower, 1)
+    ax.set_ylabel(f"Média ({lower}–1)")
     ax.set_title("Média das métricas RAGAS (agregado em arquivos results/)")
 
     for rect, v in zip(bars, values, strict=True):
@@ -88,8 +94,7 @@ def plot_overall_mean(df_means: pd.DataFrame, save_path: str) -> None:
 def main(results_dir: str = "results", out_name: str = "mean_metrics.png") -> None:
     files = find_result_files(results_dir)
     if not files:
-        print(f"Nenhum arquivo encontrado em '{results_dir}'. Padrão: context-rag-run-*.csv")
-        return
+        raise ValueError(f"No result files in {results_dir}: expected *-rag-run-*.csv")
 
     df = aggregate_means(files)
     if df.empty:
@@ -102,4 +107,8 @@ def main(results_dir: str = "results", out_name: str = "mean_metrics.png") -> No
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--results-dir", default="results")
+    parser.add_argument("--output", default="mean_metrics.png")
+    args = parser.parse_args()
+    main(args.results_dir, args.output)

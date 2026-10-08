@@ -40,6 +40,7 @@ def sanitize(value):
         ):
             text = text.replace(secret, "[REDACTED]")
     text = re.sub(r"sk-[A-Za-z0-9_-]+", "[REDACTED]", text)
+    text = re.sub(r"\b\d{6,}:[A-Za-z0-9_-]{20,}", "[REDACTED]", text)
     text = re.sub(r"(?i)(bearer\s+)[^\s\"']+", r"\1[REDACTED]", text)
     return text
 

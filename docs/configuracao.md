@@ -29,31 +29,43 @@ ou consultar testes, abra a conversa **privada com o bot** usando sua conta pess
 Posts feitos no canal não são aceitos como comandos. Isso permite validar quem
 está solicitando uma execução.
 
-Esses três campos ficaram vazios na configuração entregue porque os valores não
-foram informados. Credenciais anteriores dos modelos e do Neo4j foram preservadas.
-Não coloque token ou senha em documentação, commit ou comando de terminal.
+Os três campos já estão preenchidos na `.env` local real. A autenticação do bot,
+o canal e a permissão de publicar foram conferidos pela Bot API. Credenciais de
+modelos e Neo4j foram preservadas. Não publicar tokens em documentação, commits,
+URLs de navegador ou comandos de terminal.
 
-## Ativação por etapas
+## Ativação e diagnóstico
 
-As opções iniciais são:
+A configuração local real está com `TELEGRAM_ENABLED=true`,
+`TELEGRAM_CONTROL_ENABLED=true` e `BENCHMARK_REMOTE_ENABLED=true`. O arquivo de
+exemplo mantém essas opções desligadas. Configurar não inicia serviços ou lotes.
+Após implantar os serviços, apenas os IDs humanos cadastrados podem iniciar testes.
 
-```dotenv
-TELEGRAM_ENABLED=false
-TELEGRAM_CONTROL_ENABLED=false
-BENCHMARK_REMOTE_ENABLED=false
+```bash
+uv run --locked python main.py telegram-check
 ```
 
-Após preencher os campos e preparar os serviços na VPS:
+O comando valida credencial, tipo de canal, permissão de publicação e ausência de
+webhook sem enviar mensagens, consumir eventos ou chamar modelos. Reinicie os dois
+serviços após editar a `.env`. `/start` no privado do bot mostra a ajuda;
+`/executar context-rag --questions 1` inicia uma tentativa. `/status` mostra os IDs;
+`/retomar context-rag EXP --questions 1` retoma um experimento compatível. Para
+bloquear temporariamente novos lotes remotos, defina `BENCHMARK_REMOTE_ENABLED=false`
+e reinicie o controle.
 
-1. Defina `TELEGRAM_ENABLED=true` e `TELEGRAM_CONTROL_ENABLED=true`. Mantenha
-   `BENCHMARK_REMOTE_ENABLED=false` para validar publicação e `/status` sem iniciar RAGs.
-2. Reinicie os serviços de controle e Telegram após editar a `.env`. Variáveis de
-   ambiente são lidas no início do processo.
-3. Após validar a conexão, habilite `BENCHMARK_REMOTE_ENABLED=true` e reinicie o
-   controle para permitir início e retomada. Essa opção sozinha não cria um lote.
-4. Um comando como `/executar context-rag 1` inicia até uma tentativa e pode consumir
-   modelos desde a preparação. `/retomar context-rag EXP 1` exige o hash completo
-   do experimento. Use `/status` para consultar os IDs salvos.
+## Como obter o ID de canal em uma instalação nova
+
+1. Adicione o bot como administrador do canal, com permissão de publicar.
+2. Antes de iniciar o serviço de polling, consulte `getUpdates` com
+   `allowed_updates=["message","channel_post","my_chat_member"]` pela Bot API,
+   carregando o token da `.env`, sem colocá-lo em URL compartilhada de navegador.
+3. Publique qualquer texto novo no canal. Não é esperada uma resposta do bot nessa etapa.
+4. Leia `result[].channel_post.chat.id`: esse é o ID do canal. Já um `/start` no
+   privado produz `result[].message.from.id`, que identifica o usuário humano.
+5. Grave os IDs e execute `telegram-check`. Não use dois consumidores de eventos ao mesmo tempo.
+
+O canal desta instalação já foi identificado e salvo; não é necessário repetir
+esses passos. Consulte as [definições de eventos do Telegram](https://core.telegram.org/bots/api#update).
 
 Não há limite de dólares na `.env` entregue. O consumo continua registrado; os
 limites técnicos de chamadas, tokens, tempo e tentativas continuam ativos. USD é

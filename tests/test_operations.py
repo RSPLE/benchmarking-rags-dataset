@@ -8,10 +8,8 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from benchmark_context import select_documents
 from benchmark_control import Control, Worker, call_control, environment_profiles, parse_command
 from benchmark_knowledge import read_snapshot
 from benchmark_reconcile import reconcile
@@ -259,11 +257,6 @@ class OperationsTests(unittest.TestCase):
         self.assertEqual(historical_usage(self.root, all_time=True), (0.3, 0))
         self.assertEqual(len((self.root / "budget.jsonl").read_text().splitlines()), 2)
 
-    def test_context_budget_deduplicates_before_generation(self):
-        docs = [SimpleNamespace(page_content=text) for text in ("aaaa", "aaaa", "bbbb", "cc")]
-        with patch.dict(os.environ, {"BENCHMARK_CONTEXT_MAX_BYTES": "6"}):
-            self.assertEqual([doc.page_content for doc in select_documents(docs)], ["aaaa", "cc"])
-
     def test_snapshot_is_validated_and_independent_from_live_database(self):
         source = Path(__file__).resolve().parents[1] / "data/knowledge-graph.json"
         graph = read_snapshot(source)
@@ -497,6 +490,11 @@ class OperationsTests(unittest.TestCase):
                 "answer": "Candidate",
                 "contexts": ["Exact evidence"],
                 "evidence_metadata": [{"source": "book"}],
+                "generation_contexts": ["Full tool evidence"],
+                "answer_response_time_seconds": 2.5,
+                "answer_input_tokens": 11,
+                "answer_output_tokens": 7,
+                "answer_total_tokens": 18,
             },
             dataset_path=dataset,
             output_dir=output,
@@ -509,6 +507,9 @@ class OperationsTests(unittest.TestCase):
         restored = frozen_answers(target, "context-rag", questions)
         self.assertEqual(restored["Q001"]["contexts"], ["Exact evidence"])
         self.assertEqual(restored["Q001"]["answer"], "Candidate")
+        self.assertEqual(restored["Q001"]["generation_contexts"], ["Full tool evidence"])
+        self.assertEqual(restored["Q001"]["answer_total_tokens"], 18)
+        self.assertEqual(restored["Q001"]["answer_response_time_seconds"], 2.5)
         with patch("benchmark_admin.DEFAULT_DATASET", dataset), self.assertRaises(FileExistsError):
             export_frozen(output, target)
 

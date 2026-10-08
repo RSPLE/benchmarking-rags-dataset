@@ -44,25 +44,32 @@ notificação; não exige essas duas variáveis de lote único.
 
 ## Conexão ao Telegram
 
-1. O bot e o canal privado já existem. Preencher `TELEGRAM_BOT_TOKEN` com o token
-   completo do BotFather e `TELEGRAM_RESULTS_CHAT_ID` com o ID do canal, incluindo
-   sinal negativo. O ID numérico do bot não substitui esses valores.
-2. Permitir publicação pelo bot como administrador do canal. Iniciar uma conversa
-   privada com o bot e preencher `TELEGRAM_ALLOWED_USER_IDS` com IDs humanos.
-3. Habilitar `TELEGRAM_ENABLED` e `TELEGRAM_CONTROL_ENABLED`. Manter
-   `BENCHMARK_REMOTE_ENABLED=false` durante publicação fictícia e `/status`.
-4. Testar reconexão e acesso negado a outro usuário. Apenas um processo deve
-   consumir getUpdates com o token; remover eventual webhook antes de usar polling.
-5. Conferir modelos, sete PDFs, grafo Neo4j, contabilização e limites técnicos.
-   Não há teto em dólares obrigatório nem reserva financeira exigida sem um teto.
-6. Somente depois habilitar `BENCHMARK_REMOTE_ENABLED=true`, reiniciar o controle
-   e enviar, na conversa privada com o bot, `/executar context-rag 1`. Esse comando
-   pode consumir modelos desde a preparação. Acompanhar progresso no canal.
-7. Observar `/status` e o diário financeiro antes de ampliar o lote. `/retomar`
-   exige configuração compatível e o ID completo do experimento.
+A `.env` local já contém canal verificado, token do bot e ID humano autorizado,
+com publicação, controle e admissão remota habilitados. Ao transferir a configuração,
+preserve os endereços e credenciais corretos do Neo4j da VPS.
 
-Não houve implantação, conexão real ao Telegram ou chamada paga nesta revisão.
-Alterar a `.env` local não atualiza a cópia da VPS automaticamente.
+```bash
+uv run --locked python main.py telegram-check
+sudo install -m 0644 deployment/control.service /etc/systemd/system/benchmark-control.service
+sudo install -m 0644 deployment/telegram.service /etc/systemd/system/benchmark-telegram.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now benchmark-control.service benchmark-telegram.service
+sudo systemctl status benchmark-control.service benchmark-telegram.service
+```
+
+Execute após preparar usuários, permissões, ambientes e diretórios como descrito
+acima. Iniciar serviços admite comandos, mas não agenda benchmark. Mantenha somente
+um processo de polling. No privado do bot, envie `/start` e depois `/status`. O
+canal recebe publicações; `/start` no canal não executa trabalho. Quando estiver
+pronto, use `/executar context-rag --questions 1` ou `/executar all --questions 1`.
+Esses comandos podem consumir modelos desde a preparação. Todas as flags
+compartilhadas com a CLI estão em [compatibilidade](../docs/compatibilidade.md).
+
+A consulta real de leitura ao Telegram passou nesta revisão. Entrega de mensagens,
+execução dos serviços, Neo4j e piloto real com modelos ainda dependem da validação
+após implantação. Nenhum serviço da VPS foi ativado ou modelo pago chamado. Editar
+a `.env` local não atualiza a VPS. Se um token foi exposto, substitua pelo BotFather
+e atualize `TELEGRAM_BOT_TOKEN` antes de iniciar os serviços.
 
 ## Recuperação
 

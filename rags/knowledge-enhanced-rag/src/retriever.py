@@ -1,6 +1,5 @@
 import os
 
-from benchmark_context import select_documents
 from src.ingestion import load_or_create_index
 from src.knowledge_graph import KnowledgeGraph, SnapshotKnowledgeGraph
 
@@ -27,7 +26,7 @@ class KERagRetriever:
 
     def retrieve(self, pergunta: str) -> dict:
 
-        docs = select_documents(self.indice.similarity_search(pergunta, k=5))
+        docs = self.indice.similarity_search(pergunta, k=5)
 
         conceito = None
         kg_facts = ""

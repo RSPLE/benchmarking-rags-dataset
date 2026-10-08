@@ -7,6 +7,7 @@ from collections import Counter
 from pathlib import Path
 
 from benchmark_config import METRICS, ROOT, corpus_inventory
+from benchmark_export import ARTIFACT_EXTRAS
 from benchmark_runner import DEFAULT_DATASET, _load_dataset, validate_metrics
 from benchmark_storage import atomic_json, exclusive_lock, file_hash, fingerprint
 
@@ -154,6 +155,7 @@ def export_frozen(directory, destination):
                     "retrieved_contexts": artifact["contexts"],
                     "generation_fingerprint": state["artifact_sha256"],
                     "evidence_metadata": artifact.get("evidence_metadata", []),
+                    **{key: artifact[key] for key in ARTIFACT_EXTRAS if key in artifact},
                 }
             )
         if not rows:

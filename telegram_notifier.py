@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sqlite3
 import time
 import urllib.error
@@ -10,6 +11,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
+from benchmark_export import result_bytes
 from benchmark_storage import exclusive_lock, fingerprint
 
 
@@ -21,6 +23,9 @@ class TelegramError(RuntimeError):
 
 class TelegramClient:
     def __init__(self, token):
+        token = token.strip()
+        if not re.fullmatch(r"\d+:[A-Za-z0-9_-]+", token):
+            raise ValueError("Invalid Telegram token format")
         self.token = token
 
     def call(self, method, payload, document=None):
@@ -157,25 +162,7 @@ class Notifier:
                     continue
                 if checkpoint.get("updated_at") != summary.get("updated_at"):
                     continue
-                import csv
-                import io
-
-                stream = io.StringIO(newline="")
-                writer = csv.DictWriter(
-                    stream,
-                    fieldnames=[
-                        "id",
-                        "faithfulness",
-                        "answer_relevancy",
-                        "context_precision",
-                        "context_recall",
-                    ],
-                    delimiter=";",
-                    extrasaction="ignore",
-                )
-                writer.writeheader()
-                writer.writerows(checkpoint["rows"])
-                document = stream.getvalue().encode("utf-8-sig")
+                document = result_bytes(checkpoint["rows"])
                 self.db.execute(
                     "INSERT OR IGNORE INTO outbox (id, method, payload, document) VALUES (?, ?, ?, ?)",
                     (

@@ -10,8 +10,6 @@ from benchmark_storage import file_hash, fingerprint
 ROOT = Path(__file__).resolve().parent
 METRICS = ("faithfulness", "answer_relevancy", "context_precision", "context_recall")
 DEFAULTS = {
-    "BENCHMARK_CONTEXT_MAX_BYTES": "32000",
-    "BENCHMARK_INPUT_MAX_BYTES": "128000",
     "LLM_PROVIDER": "openrouter",
     "RETRIEVER_K": "3",
     "OPENROUTER_BASE_URL": "https://openrouter.ai/api/v1",
@@ -110,7 +108,9 @@ def build_manifest(project, dataset, *, mode="full", frozen_path=None):
         "code": {str(p.relative_to(ROOT)): file_hash(p) for p in files},
         "corpus": corpus,
         "metrics": list(METRICS),
-        "evidence_policy": "ordered-deduplicated-byte-bounded-evidence-v3",
+        "evidence_policy": "upstream-document-contexts-v4",
+        "generation_evidence_policy": "complete-tool-and-prompt-evidence",
+        "result_schema": "upstream-nine-columns-v1",
         "index": {
             "path": str(
                 Path(os.getenv("CHROMA_PERSIST_DIR", str(project_dir / "chroma_v2"))).resolve()
@@ -121,6 +121,7 @@ def build_manifest(project, dataset, *, mode="full", frozen_path=None):
     }
     if project == "knowledge-enhanced-rag" and mode == "full":
         manifest["knowledge_sha256"] = knowledge_identity()
+        manifest["question_memory_policy"] = "upstream-shared-session-last-five-exchanges-resumable"
     manifest["experiment_id"] = fingerprint(manifest)
     return manifest
 

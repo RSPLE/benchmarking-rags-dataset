@@ -37,7 +37,12 @@ priority by default; use `--selection pending` for new cases. Configuration,
 credit and budget errors pause the batch, as do repeated equivalent failures.
 Multiple-pipeline execution stops on the first failing process.
 
-`results.csv` contains complete cases, `errors.json` describes current failures,
+`results.csv` preserves the nine original RSPLE columns, semicolon delimiter and UTF-8 BOM.
+`<rag>-run-<repetition>_1.csv` is an identical copy for existing plotting scripts;
+`results_detailed.csv` contains extra fields. Only complete cases enter the primary
+CSV. See the [compatibility audit](docs/compatibility.en.md).
+
+`errors.json` describes current failures,
 `events.jsonl` preserves history, and `summary.json` includes coverage and metric
 denominators. Atomic writes and process locks protect local state.
 
@@ -46,6 +51,28 @@ frozen-answer evaluation and Telegram control.
 The [deployment guide](deployment/README.en.md) covers the local socket, single `.env`,
 authorized IDs and durable queue. The [acceptance matrix](docs/acceptance.en.md)
 separates offline checks from the live pilot.
+
+
+## Terminal and Telegram commands
+
+```bash
+uv run --locked python main.py telegram-check
+uv run --locked python main.py run all --questions 1 --max-calls 200 --max-seconds 3600
+uv run --locked python main.py resume context-rag EXP --questions 3
+```
+
+```text
+/start
+/executar all --questions 1 --max-calls 200 --max-seconds 3600
+/retomar context-rag EXP --questions 3
+/status
+```
+
+`EXP` is the complete ID shown by `/status`. `/start` shows help in the private
+bot conversation when services are running. The channel receives results. Shared
+flags and comparison limits are in the [compatibility protocol](docs/compatibility.en.md).
+Knowledge shares the last five question/answer pairs across the 90 questions,
+including after a resumed process.
 
 ## Requirements and uv installation
 
@@ -129,7 +156,7 @@ Each pipeline creates its own Chroma index on first run. Indexes, results, secre
 
 ## Optional local Neo4j
 
-Benchmarks are controlled exclusively through the CLI. Docker is not required for the five RAGs that do not use Neo4j. To run `knowledge-enhanced-rag` with the local Neo4j service included in Compose, update `.env`:
+Benchmarks can be controlled through the CLI or, with services running, through the private Telegram bot conversation. Docker is not required for the five RAGs that do not use Neo4j. To run `knowledge-enhanced-rag` with the local Neo4j service included in Compose, update `.env`:
 
 ```env
 NEO4J_URI=bolt://127.0.0.1:7687
@@ -174,20 +201,12 @@ Then run the benchmark directly:
 uv run python main.py run knowledge-enhanced-rag --questions 3
 ```
 
-`doctor` only checks that the variables exist; the actual connection is validated when the pipeline starts. The benchmark connects to the graph but does not populate it automatically. To build the curated graph before the benchmark, start the API in one terminal:
-
-```bash
-cd rags/knowledge-enhanced-rag
-uv run python app.py
-```
-
-In another terminal, from the repository root, run:
-
-```bash
-curl -X POST http://127.0.0.1:8000/build-graph
-```
-
-Then stop the API and run the benchmark command. If the graph is not configured or is empty, `knowledge-enhanced-rag` can still use Chroma vector search alone.
+`doctor` checks local settings and files; it does not prove Neo4j connectivity.
+The benchmark does not populate the database. With `BENCHMARK_KG_MODE=required`,
+missing or empty Neo4j data stops execution; there is no silent vector-only fallback.
+See [graph preparation and rebuild controls](docs/reliability.en.md#knowledge-and-neo4j)
+before using the historical API's graph-building endpoint. Explicit `disabled`
+mode creates another experiment and is not the original Knowledge protocol.
 
 ## Usage
 
@@ -336,5 +355,3 @@ uv run ruff check main.py benchmark_runner.py tests
 The suite covers one/many/all RAG selection, limit validation, incremental runs without duplicate rows, failure-first resumption, and removal of recovered entries from `errors.json`.
 
 ## License
-
-No software license has been declared yet. Until a `LICENSE` file is added, all rights to the code remain reserved. Corpus documents retain their original authors' rights and are not part of this monorepo distribution.

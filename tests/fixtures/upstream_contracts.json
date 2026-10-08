@@ -1,0 +1,164 @@
+{
+  "context-rag": {
+    "repository": "https://github.com/RSPLE/context-rag",
+    "commit": "a8fdf8859f19946cc3d777176a45e0b744ea9e72",
+    "columns": [
+      "question",
+      "faithfulness",
+      "answer_relevancy",
+      "context_precision",
+      "context_recall",
+      "answer_response_time_seconds",
+      "answer_input_tokens",
+      "answer_output_tokens",
+      "answer_total_tokens"
+    ],
+    "prompts": [
+      {
+        "file": "main.py",
+        "function": "context_rag",
+        "name": "prompt",
+        "sha256": "e8949c7f6a7e9602dfd2b18a7913765e2fa10ca8890cc9e72a9211da0b76d8fb"
+      }
+    ]
+  },
+  "hybrid-rag": {
+    "repository": "https://github.com/RSPLE/hybrid-rag",
+    "commit": "b4855bd001a7844ebd4014bacc11f0359e5d2011",
+    "columns": [
+      "question",
+      "faithfulness",
+      "answer_relevancy",
+      "context_precision",
+      "context_recall",
+      "answer_response_time_seconds",
+      "answer_input_tokens",
+      "answer_output_tokens",
+      "answer_total_tokens"
+    ],
+    "prompts": [
+      {
+        "file": "main.py",
+        "function": "hybrid_rag",
+        "name": "prompt",
+        "sha256": "e0cd9cc32afee58fd349406c0786fa7d830d8b547e15cb5d3a52861c31c95411"
+      }
+    ]
+  },
+  "self-rag": {
+    "repository": "https://github.com/RSPLE/self-rag",
+    "commit": "3ad11ff823d169141c75ebfa018c3290ef395cd0",
+    "columns": [
+      "question",
+      "faithfulness",
+      "answer_relevancy",
+      "context_precision",
+      "context_recall",
+      "answer_response_time_seconds",
+      "answer_input_tokens",
+      "answer_output_tokens",
+      "answer_total_tokens"
+    ],
+    "prompts": [
+      {
+        "file": "main.py",
+        "function": "self_rag",
+        "name": "prompt",
+        "sha256": "a0dc2c9dda5c2f9985156311908938377f12d8438c758770a0e1d25b17f65eb1"
+      },
+      {
+        "file": "main.py",
+        "function": "self_rag",
+        "name": "critique_prompt",
+        "sha256": "39e9cff3919e7b4adb4343620790f455539a891e4cc6512b21ebb5d8cc89cdf9"
+      },
+      {
+        "file": "main.py",
+        "function": "self_rag",
+        "name": "refine_prompt",
+        "sha256": "6002edb495900accdc091ad54da79bf4d3134af455f4ea80a6e37a2c1cf8498c"
+      }
+    ]
+  },
+  "memory-augmented-rag": {
+    "repository": "https://github.com/RSPLE/memory-augmented-rag",
+    "commit": "8b43b663db76ecb9c90f1a214061b3670c81f953",
+    "columns": [
+      "question",
+      "faithfulness",
+      "answer_relevancy",
+      "context_precision",
+      "context_recall",
+      "answer_response_time_seconds",
+      "answer_input_tokens",
+      "answer_output_tokens",
+      "answer_total_tokens"
+    ],
+    "prompts": [
+      {
+        "file": "main.py",
+        "function": "build_agent",
+        "name": "prompt",
+        "sha256": "e0008ad1113ec57a0d87a74256478a00c866b39e7f25bf9ea52f06d69deb3a14"
+      }
+    ]
+  },
+  "graph-rag": {
+    "repository": "https://github.com/RSPLE/graph-rag",
+    "commit": "cc80d331c122dc091e6fcba7a361b0959bac5dcc",
+    "columns": [
+      "question",
+      "faithfulness",
+      "answer_relevancy",
+      "context_precision",
+      "context_recall",
+      "answer_response_time_seconds",
+      "answer_input_tokens",
+      "answer_output_tokens",
+      "answer_total_tokens"
+    ],
+    "prompts": [
+      {
+        "file": "main.py",
+        "function": null,
+        "name": "SYSTEM_PROMPT",
+        "sha256": "783d557fa8860294c0447540c2768f5c66482642a35d70baf5e17842dfac1146"
+      },
+      {
+        "file": "main.py",
+        "function": null,
+        "name": "EXTRACTION_SYSTEM",
+        "sha256": "419734a8ce141081c5e04c8f9a5cbedee4549b78f6a9b8682ad100245347ca9c"
+      },
+      {
+        "file": "main.py",
+        "function": null,
+        "name": "EXTRACTION_TEMPLATE",
+        "sha256": "4f1dc5ddd834aeea0aee652199881f817ed718c75c849371b523a0d750632244"
+      }
+    ]
+  },
+  "knowledge-enhanced-rag": {
+    "repository": "https://github.com/RSPLE/knowledge-enhanced-rag",
+    "commit": "62898387c0c72fbb6e1a7de75c049987ad8a58e8",
+    "columns": [
+      "question",
+      "faithfulness",
+      "answer_relevancy",
+      "context_precision",
+      "context_recall",
+      "answer_response_time_seconds",
+      "answer_input_tokens",
+      "answer_output_tokens",
+      "answer_total_tokens"
+    ],
+    "prompts": [
+      {
+        "file": "src/chatbot.py",
+        "function": null,
+        "name": "PROMPT_TEMPLATE",
+        "sha256": "cdadc18f8a7bf7ab71a2a0523dac1c84847c204e843ce7c37c5314a1476c1f9f"
+      }
+    ]
+  }
+}

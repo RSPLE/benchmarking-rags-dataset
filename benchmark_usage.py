@@ -396,8 +396,6 @@ def http_clients(timeout, *, role=None):
             raise RuntimeError("Paid clients require an active benchmark usage ledger")
         payload = json.loads(request.content)
         ledger = ACTIVE_LEDGER
-        if len(request.content) > positive_int("BENCHMARK_INPUT_MAX_BYTES", 128000):
-            raise BudgetExceeded("Serialized request exceeds the input byte ceiling")
         call = ledger.admit(payload.get("model"), request.url.path, payload, role)
         remaining = min(timeout, ledger.remaining_seconds())
         request.extensions["timeout"] = {

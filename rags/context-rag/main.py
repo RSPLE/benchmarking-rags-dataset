@@ -18,7 +18,6 @@ from pathlib import Path
 from langchain_core.callbacks import BaseCallbackHandler
 from langsmith import traceable
 
-from benchmark_context import select_documents
 from benchmark_index import load_index
 from benchmark_pipeline import execute_pipeline
 from rag_provider import build_llm
@@ -221,7 +220,7 @@ def build_vectorstore():
 
 
 def context_rag(query, retriever, llm, callbacks=None):
-    docs = select_documents(retriever.invoke(query))
+    docs = retriever.invoke(query)
 
     contexts = [doc.page_content for doc in docs]
     context_text = "\n\n".join(contexts)
