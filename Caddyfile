@@ -1,5 +1,6 @@
 {
 	admin off
+	default_sni {$DASHBOARD_PUBLIC_HOST}
 }
 
 (dashboard_routes) {
