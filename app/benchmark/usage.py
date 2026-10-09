@@ -65,7 +65,19 @@ def historical_usage(root, *, day=None, exclude_run=None, all_time=False):
 
 
 class BudgetExceeded(RuntimeError):
-    pass
+    def __init__(self, message, *, stage=None, limit=None):
+        super().__init__(message)
+        self.stage, self.limit = stage, limit
+
+
+def budget_cause(exc):
+    seen = set()
+    while exc is not None and id(exc) not in seen:
+        seen.add(id(exc))
+        if isinstance(exc, BudgetExceeded):
+            return exc
+        exc = exc.__cause__ or exc.__context__
+    return None
 
 
 class ProviderResponseError(RuntimeError):
@@ -86,19 +98,20 @@ class UsageLedger:
         self.lock = threading.Lock()
         self.calls = self.question_calls = 0
         self.tokens = self.question_tokens = self.preparation_calls = 0
+        self.preparation_tokens = 0
         self.cost = self.question_cost = 0.0
-        self.unknown = 0
+        self.unknown = self.question_unknown = 0
         self.question_id = self.metric = None
         self.stage = "preparation"
         self.started = self.question_started = time.monotonic()
-        self.max_calls = positive_int("BENCHMARK_MAX_CALLS", 200)
+        self.max_calls = positive_int("BENCHMARK_MAX_CALLS", 1000)
         self.max_question_calls = positive_int("BENCHMARK_MAX_QUESTION_CALLS", 60)
-        self.max_tokens = positive_int("BENCHMARK_MAX_TOKENS", 1000000)
+        self.max_tokens = positive_int("BENCHMARK_MAX_TOKENS", 5000000)
         self.max_seconds = positive_int("BENCHMARK_MAX_SECONDS", 3600)
         self.max_question_seconds = positive_int("BENCHMARK_QUESTION_TIMEOUT_SECONDS", 900)
         self.max_cost = float(os.getenv("BENCHMARK_MAX_COST_USD", "0"))
         self.max_question_tokens = positive_int("BENCHMARK_MAX_QUESTION_TOKENS", 100000)
-        self.max_preparation_calls = positive_int("BENCHMARK_MAX_PREPARATION_CALLS", 100)
+        self.max_preparation_calls = positive_int("BENCHMARK_MAX_PREPARATION_CALLS", 256)
         self.max_question_cost = float(os.getenv("BENCHMARK_MAX_QUESTION_COST_USD", "0"))
         self.max_daily_cost = float(os.getenv("BENCHMARK_MAX_DAILY_COST_USD", "0"))
         self.max_preparation_cost = float(os.getenv("BENCHMARK_MAX_PREPARATION_COST_USD", "0"))
@@ -124,6 +137,9 @@ class UsageLedger:
         if question_id != self.question_id:
             self.question_calls = self.question_tokens = 0
             self.question_cost = 0.0
+            self.question_unknown = 0
+            self.question_started = time.monotonic()
+        elif self.stage == "preparation" and stage != "preparation":
             self.question_started = time.monotonic()
         self.question_id, self.stage, self.metric = question_id, stage, metric
         self.progress()
@@ -144,13 +160,22 @@ class UsageLedger:
         )
 
     def remaining_seconds(self):
-        return max(
-            0.0,
-            min(
-                self.max_seconds - (time.monotonic() - self.started),
-                self.max_question_seconds - (time.monotonic() - self.question_started),
-            ),
-        )
+        remaining = self.max_seconds - (time.monotonic() - self.started)
+        if self.stage != "preparation":
+            remaining = min(
+                remaining, self.max_question_seconds - (time.monotonic() - self.question_started)
+            )
+        return max(0.0, remaining)
+
+    def check_limit(self, name, maximum, used, reserved=0, requested=0):
+        if used >= maximum or used + reserved + requested > maximum:
+            raise BudgetExceeded(
+                f"Limite {name} atingido na etapa {self.stage}: "
+                f"usado={used:g}, reservado={reserved:g}, próxima chamada={requested:g}, "
+                f"limite={maximum:g}. O progresso foi preservado.",
+                stage=self.stage,
+                limit=name,
+            )
 
     def append(self, event):
         append_event(self.path, event)
@@ -159,6 +184,7 @@ class UsageLedger:
 
     def admit(self, model, endpoint, payload=None, role=None):
         with self.lock:
+            question_scope = self.stage != "preparation"
             if (self.path.parent / "pause.request").exists() or (
                 self.pause_event is not None and self.pause_event.is_set()
             ):
@@ -185,13 +211,14 @@ class UsageLedger:
             if self.unknown and any(
                 (
                     self.max_cost,
-                    self.max_question_cost,
                     self.max_daily_cost,
                     self.max_preparation_cost,
                     self.max_period_cost,
                 )
             ):
                 raise BudgetExceeded("Unresolved cost blocks monetary admission")
+            if question_scope and self.max_question_cost and self.question_unknown:
+                raise BudgetExceeded("Unresolved question cost blocks monetary admission")
             reserve = self.reserve_cost
             reserved = sum(r[0] for r in self.reservations.values())
             token_estimate = 0
@@ -207,7 +234,7 @@ class UsageLedger:
                     any(
                         (
                             self.max_cost,
-                            self.max_question_cost,
+                            self.max_question_cost if question_scope else 0,
                             self.max_daily_cost,
                             self.max_preparation_cost,
                             self.max_period_cost,
@@ -219,12 +246,56 @@ class UsageLedger:
                         "Configure BENCHMARK_RESERVE_COST_USD before monetary-limited calls"
                     )
             reserved_tokens = sum(r[1] for r in self.reservations.values())
+            question_reserved = [
+                r
+                for r in self.reservations.values()
+                if r[2] == self.question_id and r[2] is not None
+            ]
+            self.check_limit(
+                "BENCHMARK_MAX_TOKENS",
+                self.max_tokens,
+                self.tokens,
+                reserved_tokens,
+                token_estimate,
+            )
+            self.check_limit("BENCHMARK_MAX_CALLS", self.max_calls, self.calls, requested=1)
+            self.check_limit(
+                "BENCHMARK_MAX_SECONDS", self.max_seconds, time.monotonic() - self.started
+            )
+            if question_scope:
+                self.check_limit(
+                    "BENCHMARK_MAX_QUESTION_TOKENS",
+                    self.max_question_tokens,
+                    self.question_tokens,
+                    sum(r[1] for r in question_reserved),
+                    token_estimate,
+                )
+                self.check_limit(
+                    "BENCHMARK_MAX_QUESTION_CALLS",
+                    self.max_question_calls,
+                    self.question_calls,
+                    requested=1,
+                )
+                self.check_limit(
+                    "BENCHMARK_QUESTION_TIMEOUT_SECONDS",
+                    self.max_question_seconds,
+                    time.monotonic() - self.question_started,
+                )
+            else:
+                self.check_limit(
+                    "BENCHMARK_MAX_PREPARATION_CALLS",
+                    self.max_preparation_calls,
+                    self.preparation_calls,
+                    requested=1,
+                )
             today = datetime.now(UTC).date().isoformat()
             if (
                 (self.max_cost and self.cost + reserved + reserve > self.max_cost)
                 or (
-                    self.max_question_cost
-                    and self.question_cost + reserved + reserve > self.max_question_cost
+                    question_scope
+                    and self.max_question_cost
+                    and self.question_cost + sum(r[0] for r in question_reserved) + reserve
+                    > self.max_question_cost
                 )
                 or (
                     self.max_daily_cost
@@ -236,22 +307,13 @@ class UsageLedger:
                     and self.max_preparation_cost
                     and self.preparation_cost + reserved + reserve > self.max_preparation_cost
                 )
-                or self.tokens + reserved_tokens + token_estimate > self.max_tokens
-                or self.question_tokens + reserved_tokens + token_estimate
-                > self.max_question_tokens
             ):
                 raise BudgetExceeded("Insufficient budget for estimated call reservation")
-            elapsed = time.monotonic() - self.started
             if (
-                self.calls >= self.max_calls
-                or self.question_tokens >= self.max_question_tokens
-                or (
-                    self.stage == "preparation"
-                    and self.preparation_calls >= self.max_preparation_calls
-                )
-                or (
-                    self.max_question_cost
-                    and (self.unknown or self.question_cost >= self.max_question_cost)
+                (
+                    question_scope
+                    and self.max_question_cost
+                    and (self.question_unknown or self.question_cost >= self.max_question_cost)
                 )
                 or (
                     self.max_daily_cost
@@ -262,10 +324,6 @@ class UsageLedger:
                         >= self.max_daily_cost
                     )
                 )
-                or self.question_calls >= self.max_question_calls
-                or self.tokens >= self.max_tokens
-                or elapsed >= self.max_seconds
-                or time.monotonic() - self.question_started >= self.max_question_seconds
                 or (self.max_cost and (self.unknown or self.cost >= self.max_cost))
             ):
                 raise BudgetExceeded("External call budget exhausted or cost unavailable")
@@ -277,7 +335,8 @@ class UsageLedger:
             self.calls += 1
             if self.stage == "preparation":
                 self.preparation_calls += 1
-            self.question_calls += 1
+            else:
+                self.question_calls += 1
             call = {
                 "call_id": uuid.uuid4().hex,
                 "run_id": self.run_id,
@@ -293,7 +352,11 @@ class UsageLedger:
                 "reserved_cost_usd": reserve,
                 "estimated_max_tokens": token_estimate,
             }
-            self.reservations[call["call_id"]] = (reserve, token_estimate)
+            self.reservations[call["call_id"]] = (
+                reserve,
+                token_estimate,
+                self.question_id if question_scope else None,
+            )
             self.append(call)
             self.progress()
             return call
@@ -313,12 +376,21 @@ class UsageLedger:
         with self.lock:
             self.reservations.pop(call["call_id"], None)
             self.tokens += tokens or 0
-            self.question_tokens += tokens or 0
+            question_call = (
+                call["stage"] != "preparation" and call["question_id"] == self.question_id
+            )
+            if question_call:
+                self.question_tokens += tokens or 0
+            if call["stage"] == "preparation":
+                self.preparation_tokens += tokens or 0
             if cost is None:
                 self.unknown += 1
+                if question_call:
+                    self.question_unknown += 1
             else:
                 self.cost += float(cost)
-                self.question_cost += float(cost)
+                if question_call:
+                    self.question_cost += float(cost)
                 day = call.get("started_at", call["at"])[:10]
                 self.day_costs[day] = self.day_costs.get(day, 0) + float(cost)
                 if call["stage"] == "preparation":
@@ -349,6 +421,10 @@ class UsageLedger:
         return {
             "remaining_seconds": self.remaining_seconds(),
             "preparation_cost_usd": self.preparation_cost,
+            "preparation_tokens": self.preparation_tokens,
+            "preparation_calls": self.preparation_calls,
+            "question_tokens": self.question_tokens,
+            "question_calls": self.question_calls,
             "reserved_cost_usd": sum(v[0] for v in self.reservations.values()),
             "remaining_cost_usd": max(
                 0, self.max_cost - self.cost - sum(v[0] for v in self.reservations.values())

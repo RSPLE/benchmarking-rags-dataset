@@ -27,6 +27,7 @@ from app.benchmark.storage import (
     fingerprint,
     sanitize,
 )
+from app.benchmark.usage import budget_cause
 from app.paths import ROOT as REPOSITORY_ROOT
 
 DEFAULT_DATASET = REPOSITORY_ROOT / "data/evaluation" / "qa_dataset_90.json"
@@ -445,6 +446,7 @@ def run_resumable_benchmark(
                         "attempted",
                         "paused",
                         "metrics",
+                        "error",
                     }
                 }
                 public.update(
@@ -618,6 +620,13 @@ def run_resumable_benchmark(
                 consecutive = 0
                 event("success", question_id=question_id)
             except (Exception, KeyboardInterrupt) as exc:
+                budget = budget_cause(exc)
+                cause = budget or exc
+                if ledger and ledger.stage == "preparation":
+                    stage = "preparation"
+                if budget and budget.stage:
+                    stage = budget.stage
+                message = sanitize(str(cause))
                 failures = state.setdefault("stage_failures", {})
                 failures[stage] = failures.get(stage, 0) + 1
                 state["retry_after"] = time.time() + cooldown
@@ -626,15 +635,15 @@ def run_resumable_benchmark(
                     "question_id": question_id,
                     "stage": stage,
                     "category": category,
+                    "error": message if budget else type(exc).__name__,
                 }
-                message = sanitize(str(exc))
                 state.update(
                     status="failed",
                     finished_at=_now(),
                     failed_stage=stage,
-                    error_type=type(exc).__name__,
+                    error_type=type(cause).__name__,
                     error_message=message,
-                    error=f"{type(exc).__name__}: {message}",
+                    error=f"{type(cause).__name__}: {message}",
                     traceback=sanitize(traceback.format_exc()),
                 )
                 for entry in state["metrics"].values():
@@ -646,6 +655,7 @@ def run_resumable_benchmark(
                     stage=stage,
                     category=category,
                     message=message,
+                    error=message if budget else type(exc).__name__,
                 )
                 run_failed += 1
                 consecutive = consecutive + 1 if category == previous_category else 1

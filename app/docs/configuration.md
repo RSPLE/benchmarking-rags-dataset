@@ -127,3 +127,22 @@ For manual startup from the root, use `uv run --locked python -m app.services.en
 control` or `uv run --locked python -m app.services.entrypoint telegram`, with configured
 directories accessible to the current user. These commands start services; they
 are not dry runs. `app/cli.py` also loads the same `.env` for RAG CLI execution.
+
+## Preparation and question limits
+
+Corpus preparation has its own call counter. Embeddings and extraction count toward
+batch limits and recorded consumption, but not an individual question's token,
+call, cost or time limits. The question timer starts after preparation. Generation
+and evaluation share per-question limits; global and monetary limits remain active.
+
+The template allows 1,000 calls and 5,000,000 tokens per batch, including up to 256
+preparation calls. The current seven-PDF corpus produces 7,687 chunks of 800
+characters, requiring 121 batches of up to 64 chunks for embeddings alone. Existing
+installations must update these three `.env` values; editing the template does not
+change running containers. Each RAG reuses its persistent index and only ingests
+missing chunks after interruption.
+
+Token reservations use a conservative request-size bound rather than provider
+billing counts. Stoppages identify the limit variable, used, reserved and requested
+values in the checkpoint, dashboard and Telegram, even when the SDK wraps the
+underlying cause in a connection error.

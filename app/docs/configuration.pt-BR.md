@@ -128,3 +128,23 @@ Para iniciar manualmente na raiz, use `uv run --locked python -m app.services.en
 control` ou `uv run --locked python -m app.services.entrypoint telegram`, com os
 diretórios configurados acessíveis ao usuário. Esses comandos iniciam serviços:
 não são testes secos. `app/cli.py` também carrega a `.env` única para a CLI de RAGs.
+
+## Limites da preparação e das questões
+
+A preparação dos documentos tem seu próprio contador de chamadas. Embeddings e
+extrações do acervo contam nos limites globais do lote e no consumo registrado,
+mas não nos limites de tokens, chamadas, custo ou tempo de uma questão. O tempo
+por questão começa depois da preparação. Geração e avaliação da mesma questão
+compartilham os limites por questão; limites globais e monetários continuam ativos.
+
+O modelo de configuração usa 1.000 chamadas e 5.000.000 tokens por lote, com até
+256 chamadas de preparação. O acervo atual de sete PDFs gera 7.687 trechos de
+800 caracteres, exigindo 121 lotes de até 64 trechos apenas para os embeddings.
+Instalações existentes precisam atualizar esses três valores na `.env`; mudar o
+arquivo de exemplo não altera containers existentes. Cada RAG mantém seu índice
+persistente e só prepara os trechos ainda ausentes após uma interrupção.
+
+A reserva de tokens usa um limite conservador baseado no tamanho da requisição,
+não a contagem cobrada pelo provedor. Uma interrupção identifica a variável de
+limite, usado, reservado e solicitado no checkpoint, painel e Telegram, inclusive
+quando o SDK encapsula a causa como erro de conexão.

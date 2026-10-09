@@ -486,6 +486,17 @@ class Worker:
         if self.stop_reason:
             return self.stop_reason
         try:
+            assignment = json.loads((self.control.database.parent / f"{self.job}.json").read_text())
+            directory = self.control.directory(assignment["project"], assignment["experiment_id"])
+            summary = json.loads((directory / "summary.json").read_text())
+            alert = summary.get("alert", {})
+            if summary.get("run_id") == assignment["run_id"] and alert.get("error"):
+                return sanitize(
+                    f"{alert.get('question_id', '')} · {alert.get('stage', '')}: {alert['error']}"
+                )[:1500]
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
+        try:
             with Path(self.log.name).open("rb") as log:
                 log.seek(0, os.SEEK_END)
                 log.seek(max(0, log.tell() - 8192))
