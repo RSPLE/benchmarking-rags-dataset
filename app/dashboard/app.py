@@ -16,6 +16,7 @@ from app.dashboard.charts import render
 from app.dashboard.config import Settings
 from app.dashboard.database import connect
 from app.dashboard.execution import execution_view, pending_view
+from app.dashboard.questions import question_results_view
 from app.dashboard.sessions import COOKIE_NAME, csrf_token, session_identity
 
 st.set_page_config(
@@ -29,6 +30,7 @@ SECTIONS = [
     "Visão geral",
     "Executar e retomar",
     "Pendências e falhas",
+    "Resultados por questão",
     "Gráficos originais",
     "Tokens e tempo",
     "Questões",
@@ -140,6 +142,13 @@ def dashboard():
         st.warning(
             f"{len(problems)} fonte(s) aguardando uma leitura consistente. Os últimos dados válidos foram preservados."
         )
+    if section == "Resultados por questão":
+        question_results_view(settings.database, records)
+        return
+    if section == "Tokens e tempo":
+        question_results_view(settings.database, records, consumption_only=True)
+        st.divider()
+        st.subheader("Resumo dos experimentos")
     if not records:
         st.info(
             "Nenhum resultado importado ainda. Assim que um benchmark salvar resultados, eles aparecerão aqui."
