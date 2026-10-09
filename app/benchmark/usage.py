@@ -70,6 +70,10 @@ class BudgetExceeded(RuntimeError):
         self.stage, self.limit = stage, limit
 
 
+class ReservationPending(BudgetExceeded):
+    """This call fits after in-flight token reservations have been released."""
+
+
 def budget_cause(exc):
     seen = set()
     while exc is not None and id(exc) not in seen:
@@ -169,7 +173,12 @@ class UsageLedger:
 
     def check_limit(self, name, maximum, used, reserved=0, requested=0):
         if used >= maximum or used + reserved + requested > maximum:
-            raise BudgetExceeded(
+            error = (
+                ReservationPending
+                if reserved and used < maximum and used + requested <= maximum
+                else BudgetExceeded
+            )
+            raise error(
                 f"Limite {name} atingido na etapa {self.stage}: "
                 f"usado={used:g}, reservado={reserved:g}, próxima chamada={requested:g}, "
                 f"limite={maximum:g}. O progresso foi preservado.",
@@ -479,6 +488,16 @@ def http_clients(timeout, *, role=None):
         }
         return ledger, call
 
+    def capacity_delay(exc):
+        remaining = ACTIVE_LEDGER.remaining_seconds()
+        if remaining <= 0:
+            raise BudgetExceeded(
+                f"Tempo esgotado aguardando liberação de {exc.limit}.",
+                stage=ACTIVE_LEDGER.stage,
+                limit=exc.limit,
+            ) from exc
+        return min(0.1, remaining)
+
     def finish(ledger, call, response, started):
         try:
             body = response.json()
@@ -502,7 +521,12 @@ def http_clients(timeout, *, role=None):
 
         def handle_request(self, request):
             for attempt in range(attempts):
-                ledger, call = begin(request)
+                while True:
+                    try:
+                        ledger, call = begin(request)
+                        break
+                    except ReservationPending as exc:
+                        sleep(capacity_delay(exc))
                 started = time.monotonic()
                 try:
                     response = self.transport.handle_request(request)
@@ -530,7 +554,12 @@ def http_clients(timeout, *, role=None):
 
         async def handle_async_request(self, request):
             for attempt in range(attempts):
-                ledger, call = begin(request)
+                while True:
+                    try:
+                        ledger, call = begin(request)
+                        break
+                    except ReservationPending as exc:
+                        await asyncio.sleep(capacity_delay(exc))
                 started = time.monotonic()
                 try:
                     async with asyncio.timeout(ledger.remaining_seconds()):

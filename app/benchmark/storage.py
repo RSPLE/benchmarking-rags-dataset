@@ -37,6 +37,7 @@ def sanitize(value):
         if (
             any(part in name for part in ("KEY", "TOKEN", "PASSWORD", "SECRET"))
             and len(secret) >= 6
+            and not (name.endswith("_TOKENS") and secret.isdecimal())
         ):
             text = text.replace(secret, "[REDACTED]")
     text = re.sub(r"sk-[A-Za-z0-9_-]+", "[REDACTED]", text)

@@ -146,3 +146,5 @@ Token reservations use a conservative request-size bound rather than provider
 billing counts. Stoppages identify the limit variable, used, reserved and requested
 values in the checkpoint, dashboard and Telegram, even when the SDK wraps the
 underlying cause in a connection error.
+
+During evaluation, concurrent calls wait for in-flight token reservations to be released when each individual call fits the limit. Real exhaustion still stops execution; waiting also respects batch and question deadlines.

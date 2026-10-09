@@ -148,3 +148,5 @@ A reserva de tokens usa um limite conservador baseado no tamanho da requisição
 não a contagem cobrada pelo provedor. Uma interrupção identifica a variável de
 limite, usado, reservado e solicitado no checkpoint, painel e Telegram, inclusive
 quando o SDK encapsula a causa como erro de conexão.
+
+Durante a avaliação, chamadas simultâneas aguardam a liberação de reservas de tokens quando a chamada individual cabe no limite. Esgotamento real continua interrompendo a execução; a espera também respeita os prazos do lote e da questão.

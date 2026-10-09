@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 
 from app.benchmark.control import Control, Worker
 from app.benchmark.runner import run_resumable_benchmark
-from app.benchmark.storage import atomic_json
+from app.benchmark.storage import atomic_json, sanitize
 from app.benchmark.usage import BudgetExceeded, UsageLedger
 from app.telegram.notifier import format_event
 
@@ -60,6 +60,13 @@ class UsageScopeTests(unittest.TestCase):
                 ledger.finish(call, elapsed=0, body={"usage": {"total_tokens": 20000, "cost": 0}})
                 with self.assertRaisesRegex(BudgetExceeded, pattern):
                     ledger.admit("embedding", "/embeddings", {"input": "x" * 46000})
+
+    def test_numeric_token_limits_are_visible_but_credentials_are_redacted(self):
+        with patch.dict(
+            os.environ,
+            {"BENCHMARK_MAX_QUESTION_TOKENS": "100000", "OPENROUTER_API_KEY": "private-test-key"},
+        ):
+            self.assertEqual(sanitize("limite=100000 private-test-key"), "limite=100000 [REDACTED]")
 
     def test_question_timer_starts_after_preparation_and_money_stays_global(self):
         with (

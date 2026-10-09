@@ -625,7 +625,9 @@ def run_resumable_benchmark(
                 if ledger and ledger.stage == "preparation":
                     stage = "preparation"
                 if budget and budget.stage:
-                    stage = budget.stage
+                    stage = (
+                        ledger.metric if ledger and budget.stage == "judge" else None
+                    ) or budget.stage
                 message = sanitize(str(cause))
                 failures = state.setdefault("stage_failures", {})
                 failures[stage] = failures.get(stage, 0) + 1

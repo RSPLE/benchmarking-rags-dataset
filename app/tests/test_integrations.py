@@ -465,6 +465,60 @@ class IntegrationTests(unittest.TestCase):
                 self.assertEqual(len(calls), expected)
                 self.assertEqual(ledger.calls, expected)
 
+    def test_concurrent_judge_calls_wait_for_token_reservations(self):
+        import asyncio
+
+        import httpx
+
+        import app.benchmark.usage
+        from app.benchmark.usage import UsageLedger
+        from app.providers.models import build_llm
+
+        with patch.dict(os.environ, {"BENCHMARK_MAX_QUESTION_TOKENS": "100000"}):
+            ledger = UsageLedger(Path(self.temp.name) / "concurrent.jsonl")
+        ledger.set_stage("Q084", "judge", "answer_relevancy")
+        app.benchmark.usage.ACTIVE_LEDGER = ledger
+        self.addCleanup(setattr, app.benchmark.usage, "ACTIVE_LEDGER", None)
+        active = peak = 0
+
+        async def respond(_transport, request):
+            nonlocal active, peak
+            active += 1
+            peak = max(peak, active)
+            await asyncio.sleep(0.05)
+            active -= 1
+            return httpx.Response(
+                200,
+                request=request,
+                json={
+                    "id": "test",
+                    "model": "test",
+                    "object": "chat.completion",
+                    "created": 1,
+                    "choices": [
+                        {
+                            "index": 0,
+                            "finish_reason": "stop",
+                            "message": {"role": "assistant", "content": "answer"},
+                        }
+                    ],
+                    "usage": {"total_tokens": 2000, "cost": 0.01},
+                },
+            )
+
+        async def run():
+            model = build_llm(judge=True)
+            responses = await asyncio.wait_for(
+                asyncio.gather(*(model.ainvoke("x" * 35000) for _ in range(3))), 5
+            )
+            self.assertEqual([row.content for row in responses], ["answer"] * 3)
+
+        with patch.object(httpx.AsyncHTTPTransport, "handle_async_request", respond):
+            asyncio.run(run())
+        self.assertEqual(peak, 2)
+        self.assertEqual((ledger.calls, ledger.question_tokens), (3, 6000))
+        self.assertFalse(ledger.reservations)
+
     def test_real_ragas_four_metrics_with_fake_judge(self):
         from langchain_core.embeddings import Embeddings
         from langchain_core.outputs import Generation, LLMResult
