@@ -112,6 +112,15 @@ def dashboard():
     if section == "Pendências e falhas":
         pending_view(settings, token, records)
         return
+    if section == "Visão geral":
+        with st.container(border=True):
+            st.subheader("Execute uma pipeline")
+            st.write(
+                "Comece com uma questão, acompanhe o andamento e retome o que faltar. Os resultados aparecem neste painel."
+            )
+            if st.button("Configurar e iniciar pipeline", type="primary"):
+                st.session_state["navigate_to"] = "Executar e retomar"
+                st.rerun()
     with connect(settings.database) as db:
         last = db.execute("SELECT value FROM metadata WHERE key='last_sync'").fetchone()
         problems = [dict(row) for row in db.execute("SELECT * FROM sync_errors")]

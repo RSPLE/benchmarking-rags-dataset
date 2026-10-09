@@ -12,12 +12,13 @@ import socketserver
 import sqlite3
 import subprocess
 import sys
+import tempfile
 import time
 import uuid
 from pathlib import Path
 
 from app.benchmark.options import CommandParser, add_run_options, option_environment
-from app.benchmark.storage import append_event, atomic_json, exclusive_lock, now, sanitize
+from app.benchmark.storage import exclusive_lock, now, sanitize
 from app.cli import PROJECTS, ROOT, resolve_projects, uv_command
 from app.services.entrypoint import role_environment
 
@@ -35,6 +36,10 @@ def parse_command(text):
         action, action
     )
     args = parts[1:]
+    if action == "eventos":
+        if len(args) != 1 or not re.fullmatch(r"[0-9]{1,18}", args[0]):
+            raise ValueError("Expected an event cursor")
+        return {"action": action, "after": int(args[0])}
     if action in {"executar", "retomar"}:
         parser = CommandParser(prog="/" + action, add_help=False, allow_abbrev=False)
         parser.add_argument("targets", nargs="+")
@@ -127,10 +132,20 @@ class Control:
         columns = {row[1] for row in self.db.execute("PRAGMA table_info(jobs)")}
         if "batch" not in columns:
             self.db.execute("ALTER TABLE jobs ADD COLUMN batch TEXT")
+        if "error" not in columns:
+            self.db.execute("ALTER TABLE jobs ADD COLUMN error TEXT")
         self.db.execute(
-            "UPDATE jobs SET state='interrupted', finished=? WHERE state IN ('queued','running')",
-            (now(),),
+            "CREATE TABLE IF NOT EXISTS job_events (sequence INTEGER PRIMARY KEY AUTOINCREMENT, payload TEXT NOT NULL)"
         )
+        interrupted = self.db.execute(
+            "SELECT id FROM jobs WHERE state IN ('queued','running')"
+        ).fetchall()
+        self.db.execute(
+            "UPDATE jobs SET state='interrupted', finished=?, error=? WHERE state IN ('queued','running')",
+            (now(), "O serviço de execução reiniciou. Envie um novo pedido para continuar."),
+        )
+        for (identifier,) in interrupted:
+            self.job_event(identifier, "interrupted")
         self.db.commit()
 
     def directory(self, project, experiment):
@@ -140,16 +155,26 @@ class Control:
         return path
 
     def job_event(self, identifier, state):
-        append_event(
-            self.root / "control_events.jsonl",
-            {
-                "event_id": uuid.uuid4().hex,
-                "job_id": identifier,
-                "kind": "job_state",
-                "state": state,
-                "at": now(),
-            },
-            mode=0o640,
+        row = self.db.execute(
+            "SELECT request,error,code FROM jobs WHERE id=?", (identifier,)
+        ).fetchone()
+        command = json.loads(row[0])
+        self.db.execute(
+            "INSERT INTO job_events (payload) VALUES (?)",
+            (
+                json.dumps(
+                    {
+                        "event_id": uuid.uuid4().hex,
+                        "job_id": identifier,
+                        "project": command["project"],
+                        "kind": "job_state",
+                        "state": state,
+                        "error": row[1],
+                        "code": row[2],
+                        "at": now(),
+                    }
+                ),
+            ),
         )
 
     def handle(self, request):
@@ -160,6 +185,8 @@ class Control:
         if not re.fullmatch(r"[A-Za-z0-9:_-]{1,100}", identifier):
             raise ValueError("Invalid command ID")
         command = parse_command(request.get("text", ""))
+        if command["action"] in {"status", "eventos", "ajuda", "falhas", "pergunta", "resultado"}:
+            return self.execute(identifier, command)
         encoded = json.dumps(command, sort_keys=True)
         prior = self.db.execute(
             "SELECT user, request, response FROM commands WHERE id=?", (identifier,)
@@ -237,11 +264,21 @@ class Control:
                     (job_id, json.dumps(job), now(), identifier),
                 )
                 jobs.append({"job_id": job_id, "project": project, "state": "queued"})
+                self.job_event(job_id, "queued")
             return {
                 "job_id": jobs[0]["job_id"],
                 "jobs": jobs,
                 "state": "queued",
                 "budget_usd": budget,
+            }
+        if action == "eventos":
+            rows = self.db.execute(
+                "SELECT sequence,payload FROM job_events WHERE sequence>? ORDER BY sequence LIMIT 20",
+                (command["after"],),
+            ).fetchall()
+            return {
+                "events": [json.loads(row[1]) for row in rows],
+                "cursor": rows[-1][0] if rows else command["after"],
             }
         if action == "ajuda":
             parser = CommandParser(prog="/executar RAG [RAG ...]", add_help=False)
@@ -254,16 +291,38 @@ class Control:
         args = command["args"]
         if action == "status" and not args:
             jobs = [
-                {"job_id": row[0], "state": row[1], "created": row[2], "finished": row[3]}
+                {
+                    "job_id": row[0],
+                    "state": row[1],
+                    "created": row[2],
+                    "finished": row[3],
+                    "code": row[4],
+                    "error": row[5],
+                    "project": json.loads(row[6])["project"],
+                }
                 for row in self.db.execute(
-                    "SELECT id,state,created,finished FROM jobs ORDER BY rowid DESC LIMIT 10"
+                    "SELECT id,state,created,finished,code,error,request FROM jobs ORDER BY rowid DESC LIMIT 10"
                 )
             ]
             summaries = []
             for path in sorted(self.root.glob("*/*/summary.json")):
                 if path.resolve().is_relative_to(self.root):
-                    summaries.append(json.loads(path.read_text()))
-            return {"jobs": jobs, "experiments": summaries[-10:]}
+                    try:
+                        summary = json.loads(path.read_text())
+                        progress_path = path.parent / "progress.json"
+                        if summary.get("operation") == "running" and progress_path.is_file():
+                            progress = json.loads(progress_path.read_text())
+                            if progress.get("run_id") == summary.get("run_id"):
+                                summary.update(progress)
+                        summaries.append(summary)
+                    except (OSError, ValueError, TypeError, AttributeError):
+                        continue
+            return {
+                "jobs": jobs,
+                "experiments": summaries[-10:],
+                "enabled": self.enabled,
+                "projects": list(self.profiles),
+            }
         directory = self.directory(*args[:2])
         if action == "pausar":
             (directory / "pause.request").touch(mode=0o600)
@@ -313,6 +372,7 @@ class Worker:
         self.process = self.job = self.log = None
         self.started = self.stopping = None
         self.max_seconds = None
+        self.stop_reason = None
 
     def tick(self):
         if self.process:
@@ -335,18 +395,29 @@ class Worker:
             if self.process.poll() is None and (
                 time.monotonic() - self.started >= limit or question_expired
             ):
+                self.stop_reason = (
+                    "O tempo máximo por questão foi atingido."
+                    if question_expired
+                    else "O tempo máximo do lote foi atingido."
+                )
                 self.stop()
             code = self.process.poll()
             if code is None:
                 return
             self.control.db.execute(
-                "UPDATE jobs SET state=?,finished=?,code=? WHERE id=?",
-                ("finished" if code == 0 else "stopped", now(), code, self.job),
+                "UPDATE jobs SET state=?,finished=?,code=?,error=? WHERE id=?",
+                (
+                    "finished" if code == 0 else "stopped",
+                    now(),
+                    code,
+                    self.process_error(code) if code else None,
+                    self.job,
+                ),
             )
             if code != 0:
                 self.cancel_batch(self.job)
-            self.control.db.commit()
             self.control.job_event(self.job, "finished" if code == 0 else "stopped")
+            self.control.db.commit()
             self.log.close()
             self.process = self.job = self.log = None
             return
@@ -358,8 +429,8 @@ class Worker:
         identifier, encoded = row
         command = json.loads(encoded)
         self.control.db.execute("UPDATE jobs SET state='running' WHERE id=?", (identifier,))
-        self.control.db.commit()
         self.control.job_event(identifier, "running")
+        self.control.db.commit()
         try:
             self.launch(identifier, command)
         except Exception as exc:
@@ -367,27 +438,74 @@ class Worker:
                 self.log.close()
                 self.log = None
             self.control.db.execute(
-                "UPDATE jobs SET state='failed',finished=? WHERE id=?", (now(), identifier)
+                "UPDATE jobs SET state='failed',finished=?,error=? WHERE id=?",
+                (now(), sanitize(str(exc))[:1500], identifier),
             )
             self.cancel_batch(identifier)
-            self.control.db.commit()
             self.control.job_event(identifier, "failed")
-            atomic_json(
-                self.control.database.parent / f"{identifier}.error.json",
-                {"error": sanitize(str(exc))},
-            )
+            self.control.db.commit()
+            self.process = self.job = None
+
+    def process_error(self, code):
+        if self.stop_reason:
+            return self.stop_reason
+        try:
+            with Path(self.log.name).open("rb") as log:
+                log.seek(0, os.SEEK_END)
+                log.seek(max(0, log.tell() - 8192))
+                tail = log.read().decode("utf-8", errors="replace")
+        except (OSError, TypeError):
+            tail = ""
+        for marker, message in (
+            (
+                "Permission denied",
+                "Sem permissão para gravar arquivos. Confira o proprietário dos volumes do executor (UID/GID 1000).",
+            ),
+            (
+                "Read-only file system",
+                "O executor tentou gravar em um diretório somente leitura. Confira os volumes persistentes.",
+            ),
+            (
+                "No space left on device",
+                "O disco do executor está cheio. Libere espaço antes de tentar novamente.",
+            ),
+            (
+                "ModuleNotFoundError",
+                "Uma dependência Python está ausente. Reconstrua a imagem do serviço control.",
+            ),
+        ):
+            if marker in tail:
+                return message
+        return f"O processo encerrou com código {code}. Consulte o log do lote no serviço control."
 
     def cancel_batch(self, identifier):
         batch = self.control.db.execute(
             "SELECT batch FROM jobs WHERE id=?", (identifier,)
         ).fetchone()
         if batch and batch[0]:
+            cancelled = self.control.db.execute(
+                "SELECT id FROM jobs WHERE batch=? AND state='queued'", (batch[0],)
+            ).fetchall()
             self.control.db.execute(
-                "UPDATE jobs SET state='cancelled', finished=? WHERE batch=? AND state='queued'",
-                (now(), batch[0]),
+                "UPDATE jobs SET state='cancelled', finished=?,error=? WHERE batch=? AND state='queued'",
+                (now(), "Cancelado porque um RAG anterior deste lote falhou.", batch[0]),
             )
+            for (job_id,) in cancelled:
+                self.control.job_event(job_id, "cancelled")
 
     def launch(self, identifier, command):
+        try:
+            self.control.root.mkdir(parents=True, exist_ok=True)
+            with tempfile.TemporaryFile(dir=self.control.root) as probe:
+                probe.write(b"check")
+                probe.flush()
+                os.fsync(probe.fileno())
+        except OSError as exc:
+            raise ValueError(
+                "Não foi possível gravar no diretório de resultados. "
+                "Confira espaço livre e permissões do volume (UID/GID 1000 no Docker). "
+                f"Detalhe: {exc.strerror or type(exc).__name__}"
+            ) from exc
         profile = command["profile"]
         reserve = float(os.getenv("BENCHMARK_RESERVE_COST_USD", "0"))
         caps = [
@@ -468,6 +586,7 @@ class Worker:
             start_new_session=True,
         )
         self.job, self.started, self.stopping = identifier, time.monotonic(), None
+        self.stop_reason = None
 
     def stop(self):
         if self.process and self.process.poll() is None:

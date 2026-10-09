@@ -72,6 +72,25 @@ class LayoutTests(unittest.TestCase):
                 atomic_json(experiment_directory(previous) / "manifest.json", previous)
                 self.assertEqual(resume_manifest(current, previous["experiment_id"]), previous)
 
+    def test_operational_fix_preserves_exact_previous_app_revision(self):
+        for project in self.registry["projects"]:
+            with self.subTest(project=project):
+                current = build_manifest(project, self.dataset, mode="evaluate")
+                previous = copy.deepcopy(current)
+                previous["code"] = {
+                    **self.registry["compatible_shared"][0],
+                    **self.registry["projects"][project]["current"],
+                }
+                previous = identify(previous)
+                atomic_json(experiment_directory(previous) / "manifest.json", previous)
+                self.assertEqual(resume_manifest(current, previous["experiment_id"]), previous)
+                changed = copy.deepcopy(previous)
+                changed["code"]["app/benchmark/evaluation.py"] = "unreviewed-change"
+                changed = identify(changed)
+                atomic_json(experiment_directory(changed) / "manifest.json", changed)
+                with self.assertRaises(ValueError):
+                    resume_manifest(current, changed["experiment_id"])
+
     def test_changed_inputs_and_code_cannot_resume_old_experiment(self):
         cases = (
             ("configuration", "OPENROUTER_MODEL", "different-model"),

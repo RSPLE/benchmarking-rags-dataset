@@ -81,6 +81,84 @@ class OperationsTests(unittest.TestCase):
         restarted.handle(request)
         self.assertEqual(restarted.db.execute("SELECT count(*) FROM jobs").fetchone()[0], 1)
 
+    def test_unwritable_results_do_not_crash_and_failure_reaches_notifier(self):
+        control = self.control(max_budget=0)
+        control.handle(
+            {
+                "user_id": 123,
+                "command_id": "web:denied",
+                "text": "/executar context-rag --questions 1",
+            }
+        )
+        with (
+            patch(
+                "app.benchmark.control.tempfile.TemporaryFile",
+                side_effect=PermissionError(13, "Permission denied"),
+            ),
+            patch("app.benchmark.control.subprocess.Popen") as launch,
+        ):
+            Worker(control).tick()
+        launch.assert_not_called()
+        status = control.handle({"user_id": 123, "command_id": "status", "text": "/status"})
+        self.assertEqual(status["jobs"][0]["state"], "failed")
+        self.assertIn("permissões", status["jobs"][0]["error"])
+        notifier = Notifier(control.root, self.root / "notifications.db", Mock(), "channel")
+        self.addCleanup(notifier.db.close)
+        with patch(
+            "app.telegram.notifier.call_control", side_effect=lambda path, req: control.handle(req)
+        ):
+            notifier.scan_control("control.sock", 123)
+            notifier.scan_control("control.sock", 123)
+        notifier.deliver()
+        messages = [call.args[1]["text"] for call in notifier.client.call.call_args_list]
+        self.assertEqual(len(messages), 3)
+        self.assertIn("Falha ao iniciar", messages[-1])
+        self.assertIn("permissões", messages[-1])
+        self.assertFalse((control.root / "control_events.jsonl").exists())
+
+    def test_restart_events_are_durable_and_reads_do_not_accumulate_commands(self):
+        control = self.control()
+        control.handle(
+            {"user_id": 123, "command_id": "web:restart", "text": "/executar context-rag 1"}
+        )
+        restarted = self.control()
+        result = restarted.handle({"user_id": 123, "command_id": "events", "text": "/eventos 0"})
+        self.assertEqual([event["state"] for event in result["events"]], ["queued", "interrupted"])
+        self.assertIn("reiniciou", result["events"][-1]["error"])
+        empty = restarted.handle(
+            {"user_id": 123, "command_id": "events", "text": f"/eventos {result['cursor']}"}
+        )
+        self.assertEqual(empty["events"], [])
+        for i in range(5):
+            restarted.handle({"user_id": 123, "command_id": f"poll:{i}", "text": "/status"})
+        self.assertEqual(restarted.db.execute("SELECT count(*) FROM commands").fetchone()[0], 1)
+
+    def test_partial_summary_does_not_hide_job_failure(self):
+        control = self.control()
+        path = control.root / "context-rag" / "experiment" / "summary.json"
+        path.parent.mkdir(parents=True)
+        path.write_text('{"operation":')
+        result = control.handle({"user_id": 123, "command_id": "status", "text": "/status"})
+        self.assertEqual(result["experiments"], [])
+
+    def test_failed_child_reports_exit_code_and_actionable_error(self):
+        control = self.control(max_budget=0)
+        control.handle(
+            {"user_id": 123, "command_id": "web:process", "text": "/executar context-rag 1"}
+        )
+        worker = Worker(control)
+        with patch("app.benchmark.control.subprocess.Popen") as launch:
+            launch.return_value.poll.return_value = None
+            worker.tick()
+            worker.log.write("PermissionError: [Errno 13] Permission denied\n")
+            worker.log.flush()
+            launch.return_value.poll.return_value = 1
+            worker.tick()
+        result = control.handle({"user_id": 123, "command_id": "status", "text": "/status"})
+        self.assertEqual(result["jobs"][0]["code"], 1)
+        self.assertIn("permissão", result["jobs"][0]["error"])
+        self.assertIsNone(worker.process)
+
     def test_remote_budget_and_disabled_state_block_queue(self):
         control = self.control()
         request = {"user_id": 123, "command_id": "1", "text": "/executar context-rag 1 2.01"}
@@ -418,7 +496,9 @@ class OperationsTests(unittest.TestCase):
                 result = call_control(
                     path, {"user_id": 123, "command_id": "one", "text": "/status"}
                 )
-                self.assertEqual(result, {"jobs": [], "experiments": []})
+                self.assertEqual(result["jobs"], [])
+                self.assertEqual(result["experiments"], [])
+                self.assertFalse(result["enabled"])
                 with self.assertRaises(ValueError):
                     call_control(path, {"user_id": 456, "command_id": "two", "text": "/status"})
                 with self.assertRaises(ValueError):

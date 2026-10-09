@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import json
 import re
 import uuid
+from datetime import UTC, datetime
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import streamlit as st
@@ -91,53 +94,200 @@ def pending_view(settings, token, records):
         st.rerun()
 
 
+JOB_STATES = {
+    "queued": "Na fila",
+    "running": "Em execução",
+    "finished": "Encerrada",
+    "failed": "Falha ao iniciar",
+    "stopped": "Interrompida",
+    "interrupted": "Serviço reiniciado",
+    "cancelled": "Cancelada",
+}
+PROJECT_DESCRIPTIONS = {
+    "context-rag": "Recupera trechos dos PDFs para responder e avaliar cada questão.",
+    "graph-rag": "Usa um grafo de documentos para encontrar relações antes de responder.",
+    "hybrid-rag": "Combina estratégias de recuperação para responder às questões.",
+    "knowledge-enhanced-rag": "Combina os PDFs com o grafo de conhecimento configurado no Neo4j.",
+    "memory-augmented-rag": "Usa memória durante o processamento de cada questão.",
+    "self-rag": "Revisa a própria resposta com base nos documentos recuperados.",
+    "all": "Executa os seis RAGs em sequência. Se um processo falhar, os seguintes são cancelados.",
+}
+
+
+def local_time(value):
+    if not value:
+        return "—"
+    try:
+        return (
+            datetime.fromisoformat(value)
+            .astimezone(ZoneInfo("America/Belem"))
+            .strftime("%d/%m às %H:%M:%S")
+        )
+    except (ValueError, TypeError):
+        return str(value)
+
+
+def notification_status(settings):
+    try:
+        health = json.loads(settings.control_socket.with_name("telegram-status.json").read_text())
+        age = (datetime.now(UTC) - datetime.fromisoformat(health["updated_at"])).total_seconds()
+        if age > 120:
+            st.warning("Telegram sem atualização recente. Confira o serviço de notificações.")
+        elif health.get("delivery_error"):
+            st.error(
+                f"Telegram não conseguiu entregar: {health['delivery_error']}. O envio será tentado novamente."
+            )
+        elif health.get("control_error"):
+            st.warning(health["control_error"])
+        elif health.get("last_delivery"):
+            st.success(f"Telegram · última entrega em {local_time(health['last_delivery'])}")
+        else:
+            st.info("Telegram conectado ao executor. Aguardando a primeira entrega desta sessão.")
+        if health.get("pending"):
+            st.caption(f"{health['pending']} notificação(ões) aguardando envio.")
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        st.warning(
+            "Telegram sem confirmação de funcionamento. Confira a configuração e o serviço de notificações."
+        )
+
+
+def job_feedback(job):
+    state = job.get("state")
+    label = f"{job.get('project', 'Pipeline')} · {JOB_STATES.get(state, state)}"
+    if state in {"failed", "stopped", "interrupted", "cancelled"}:
+        st.error(label)
+        st.write(
+            job.get("error")
+            or (
+                "O executor foi interrompido antes de concluir. Confira os logs do serviço control e envie um novo pedido após corrigir a causa."
+            )
+        )
+    elif state == "finished":
+        st.success(label)
+        st.caption(
+            "O processo terminou. Confira sucessos, falhas e pendências nos resultados antes de iniciar outro lote."
+        )
+    else:
+        st.info(label)
+        st.caption(
+            "A preparação dos documentos pode levar alguns minutos. O acompanhamento atualiza automaticamente."
+        )
+    st.caption(f"Lote: {job['job_id']} · Enviado em {local_time(job.get('created'))}")
+
+
 def execution_view(settings, token, records):
+    st.write(
+        "Escolha uma pipeline, defina quantas questões processar e inicie a execução. O andamento aparece aqui automaticamente."
+    )
     status = control_status(settings, token)
     jobs = status.get("jobs", []) if status else []
     busy = any(job["state"] in {"queued", "running"} for job in jobs)
+    enabled = status is not None and status.get("enabled", True)
+    left, right = st.columns(2)
+    with left:
+        if status is not None:
+            if not enabled:
+                st.error(
+                    "Execução desativada. Configure BENCHMARK_REMOTE_ENABLED=true no serviço control."
+                )
+            elif busy:
+                st.info("Executor ocupado · acompanhe o lote abaixo.")
+            else:
+                st.success("Executor disponível para iniciar uma pipeline.")
+    with right:
+        notification_status(settings)
+    if jobs:
+        latest = next((job for job in jobs if job["state"] == "running"), jobs[0])
+        if busy or st.session_state.get("last_submission"):
+            st.subheader("Acompanhar execução")
+            feedback = st.container(border=True)
+        else:
+            feedback = st.expander(
+                f"Última execução · {latest.get('project', 'Pipeline')} · "
+                f"{JOB_STATES.get(latest['state'], latest['state'])} · "
+                f"{local_time(latest.get('created'))}"
+            )
+        with feedback:
+            job_feedback(latest)
+        active = [
+            row
+            for row in (status or {}).get("experiments", [])
+            if row.get("operation") == "running"
+        ]
+        if busy:
+            for row in active:
+                st.write(
+                    f"**{row.get('project')}** · Questão: {row.get('current_question') or 'preparando'} · Etapa: {row.get('current_stage') or 'preparação'}"
+                )
+                st.caption(
+                    f"Sucessos: {row.get('success', 0)} · Falhas: {row.get('failed', 0)} · Pendentes: {row.get('pending', 0)}"
+                )
     st.caption(
-        "A interface e o Telegram compartilham a mesma fila. Fechar o navegador não interrompe um lote em execução."
+        f"Atualização automática a cada {settings.poll_seconds}s. Fechar o navegador não interrompe a execução."
     )
-    if busy:
-        st.info(
-            "Há um lote na fila ou em execução. Novos envios ficam disponíveis quando ele encerrar."
-        )
+    if st.button("Atualizar andamento"):
+        st.rerun()
     target = st.session_state.get("resume_target")
     all_eligible = compatible_records(records)
     target_record = next((row for row in all_eligible if row["external_id"] == target), None)
+    st.subheader("1. Escolha a pipeline")
     projects = list(PROJECTS) + ["all"]
     project = st.selectbox(
-        "RAG",
+        "Pipeline RAG",
         projects,
         index=projects.index(target_record["project"]) if target_record else 0,
         format_func=lambda value: "Todos os seis RAGs · sequência" if value == "all" else value,
     )
+    st.caption(PROJECT_DESCRIPTIONS[project])
     eligible = compatible_records(records, project)
-    actions = ["Retomar experimento", "Iniciar execução"] if eligible else ["Iniciar execução"]
-    action = st.radio("Operação", actions, horizontal=True)
     selected = None
-    if action == "Retomar experimento":
-        selected = st.selectbox(
-            "Experimento",
-            eligible,
-            index=next((i for i, row in enumerate(eligible) if row["external_id"] == target), 0),
-            format_func=lambda row: (
-                f"{row['external_id'][:12]} · {row['summary'].get('pending', 0)} pendentes · {row['summary'].get('failed', 0)} falhas"
-            ),
+    if eligible:
+        action = st.radio(
+            "O que deseja fazer?",
+            ["Iniciar execução", "Retomar experimento"],
+            index=int(target_record in eligible),
+            horizontal=True,
         )
-        st.caption(
-            "Respostas e métricas já salvas são reaproveitadas. Mudanças incompatíveis de configuração são recusadas pelo executor."
-        )
+        if action == "Retomar experimento":
+            selected = st.selectbox(
+                "Experimento a retomar",
+                eligible,
+                index=next(
+                    (i for i, row in enumerate(eligible) if row["external_id"] == target), 0
+                ),
+                format_func=lambda row: (
+                    f"{row['external_id'][:12]} · {row['summary'].get('pending', 0)} pendentes · {row['summary'].get('failed', 0)} falhas"
+                ),
+            )
+            st.caption(
+                "Respostas e métricas já salvas são reaproveitadas. Mantenha os parâmetros do experimento original."
+            )
     with st.form("execution_form"):
-        left, right = st.columns(2)
-        selection = left.selectbox(
-            "Quais questões", list(SELECTIONS), index=2, format_func=SELECTIONS.get
+        st.subheader("2. Defina o tamanho da execução")
+        st.caption(
+            "Comece com 1 questão para verificar o fluxo. Depois, aumente até 90 questões por RAG."
         )
-        questions = right.number_input(
-            "Máximo de tentativas neste lote", min_value=1, max_value=90, value=90, step=1
+        left, right = st.columns(2)
+        questions = left.number_input(
+            "Quantidade de questões por RAG",
+            min_value=1,
+            max_value=90,
+            value=1,
+            step=1,
+            help="Máximo de questões tentadas neste lote, incluindo as que falharem.",
+        )
+        selection = right.selectbox(
+            "Quais questões processar",
+            list(SELECTIONS),
+            index=2,
+            format_func=SELECTIONS.get,
+            help="Questões concluídas não são repetidas. Pendentes ainda não terminaram; falhas precisam de nova tentativa.",
         )
         options = {"questions": questions, "selection": selection}
-        with st.expander("Parâmetros de execução"):
+        with st.expander("Configurações avançadas · modelos, avaliação e limites"):
+            st.caption(
+                "Os valores padrão usam a configuração do servidor. Para uma primeira execução, mantenha-os."
+            )
             provider = st.selectbox("Provedor", ["Configuração atual", "openrouter", "openai"])
             default_mode = selected["manifest"].get("mode", "full") if selected else "full"
             mode = st.selectbox(
@@ -145,13 +295,14 @@ def execution_view(settings, token, records):
                 ["full", "evaluate"],
                 index=int(default_mode == "evaluate"),
                 format_func=lambda value: (
-                    "Preparação, respostas e avaliação"
+                    "Preparar documentos, responder e avaliar"
                     if value == "full"
-                    else "Avaliar respostas congeladas"
+                    else "Avaliar respostas já salvas"
                 ),
             )
             frozen = st.text_input(
-                "Arquivo de respostas congeladas", placeholder="frozen/respostas.json"
+                "Arquivo de respostas já salvas · apenas no modo avaliação",
+                placeholder="frozen/respostas.json",
             )
             repetition = st.number_input(
                 "Repetição · 0 mantém a configuração atual", min_value=0, value=0, step=1
@@ -180,13 +331,16 @@ def execution_view(settings, token, records):
                 max_seconds=max_seconds or None,
                 question_timeout=question_timeout or None,
             )
-        st.caption(
-            "O limite conta tentativas, não sucessos. A execução pode consumir a API configurada, incluindo preparação, embeddings e avaliação."
+        st.subheader("3. Inicie e acompanhe")
+        st.write(
+            "O executor prepara os documentos, gera as respostas e avalia as métricas. Cada etapa usa a API configurada e pode consumir créditos."
         )
+        if project == "all":
+            st.info("A quantidade escolhida será aplicada a cada um dos seis RAGs.")
         submit = st.form_submit_button(
-            "Enviar lote para execução",
+            "Retomar pipeline" if selected else "Iniciar pipeline",
             type="primary",
-            disabled=busy or status is None,
+            disabled=busy or not enabled,
             width="stretch",
         )
     if submit:
@@ -201,43 +355,48 @@ def execution_view(settings, token, records):
             if current is None or current["command"] != command:
                 current = {"command": command, "id": "web:" + uuid.uuid4().hex}
                 st.session_state["web_submission"] = current
-            result = request_control(settings, token, command, current["id"])
+            with st.spinner("Enviando pedido ao executor…"):
+                result = request_control(settings, token, command, current["id"])
             st.session_state["last_submission"] = {"command": command, "result": result}
+            st.session_state.pop("web_submission", None)
+            st.session_state.pop("submission_error", None)
             st.rerun()
         except (OSError, ValueError, PermissionError) as exc:
-            st.error("O lote não foi confirmado: " + str(exc))
-    if st.session_state.get("last_submission"):
-        st.success(
-            "Lote registrado na fila. Você pode acompanhar a execução aqui ou pelo Telegram."
-        )
-        st.code(st.session_state["last_submission"]["command"], language="bash")
+            st.session_state["submission_error"] = str(exc)
+    if st.session_state.get("submission_error"):
+        st.error("A execução não foi confirmada: " + st.session_state["submission_error"])
         st.caption(
-            "Esse pedido mantém o mesmo identificador em caso de reenvio. Para enviar um novo lote igual após sua conclusão, prepare um novo pedido."
+            "Se houve perda de conexão, tente novamente com os mesmos parâmetros. O pedido pendente mantém seu identificador para evitar duplicação."
         )
-        if st.button("Preparar outro pedido", disabled=busy):
-            st.session_state.pop("web_submission", None)
-            st.session_state.pop("last_submission", None)
-            st.rerun()
-    st.subheader("Fila e últimas execuções")
+    if st.session_state.get("last_submission"):
+        with st.expander("Detalhes do último pedido enviado"):
+            st.caption(
+                "O estado atual aparece em Acompanhar execução. Um novo clique após o término cria outro lote, mesmo com os mesmos parâmetros."
+            )
+            st.code(st.session_state["last_submission"]["command"], language="bash")
     if jobs:
-        st.dataframe(
-            pd.DataFrame(jobs).rename(
-                columns={
-                    "job_id": "Lote",
-                    "state": "Estado",
-                    "created": "Criado em",
-                    "finished": "Encerrado em",
-                }
-            ),
-            hide_index=True,
-            width="stretch",
-        )
-    else:
-        st.info("Nenhum lote registrado na fila.")
+        with st.expander("Histórico de execuções"):
+            st.dataframe(
+                pd.DataFrame(
+                    [
+                        {
+                            "Pipeline": job.get("project", "—"),
+                            "Estado": JOB_STATES.get(job["state"], job["state"]),
+                            "Enviado": local_time(job.get("created")),
+                            "Encerrado": local_time(job.get("finished")),
+                            "Motivo": job.get("error") or "—",
+                            "Lote": job["job_id"],
+                        }
+                        for job in jobs
+                    ]
+                ),
+                hide_index=True,
+                width="stretch",
+            )
     active = [
         row for row in (status or {}).get("experiments", []) if row.get("operation") == "running"
     ]
-    if active:
+    if busy and active:
         with st.form("pause_execution"):
             chosen = st.selectbox(
                 "Experimento em execução",
@@ -246,7 +405,7 @@ def execution_view(settings, token, records):
                     f"{row.get('project')} · {row.get('experiment_id', '')[:12]}"
                 ),
             )
-            pause = st.form_submit_button("Pausar preservando o checkpoint")
+            pause = st.form_submit_button("Pausar preservando o progresso")
         if pause:
             try:
                 request_control(
@@ -254,6 +413,6 @@ def execution_view(settings, token, records):
                     token,
                     build_command("pausar", chosen["project"], chosen["experiment_id"]),
                 )
-                st.success("Pausa solicitada. Acompanhe o encerramento na fila.")
+                st.success("Pausa solicitada. Acompanhe o encerramento acima.")
             except (OSError, ValueError, PermissionError) as exc:
                 st.error(str(exc))

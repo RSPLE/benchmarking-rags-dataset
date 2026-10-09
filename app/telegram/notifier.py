@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import re
 import sqlite3
@@ -11,8 +12,11 @@ import urllib.request
 import uuid
 from pathlib import Path
 
+from app.benchmark.control import call_control
 from app.benchmark.export import result_bytes
-from app.benchmark.storage import exclusive_lock, file_hash, fingerprint
+from app.benchmark.storage import atomic_json, exclusive_lock, file_hash, fingerprint, now
+
+logger = logging.getLogger(__name__)
 
 
 class TelegramError(RuntimeError):
@@ -107,6 +111,30 @@ def format_summary(summary):
     return "\n".join(lines)
 
 
+def format_event(event):
+    if event.get("kind") != "job_state":
+        return json.dumps(event, ensure_ascii=False, indent=2)[:3500]
+    states = {
+        "queued": "Na fila",
+        "running": "Iniciando execução",
+        "finished": "Execução encerrada",
+        "failed": "Falha ao iniciar",
+        "stopped": "Execução interrompida",
+        "interrupted": "Serviço reiniciado",
+        "cancelled": "Execução cancelada",
+    }
+    lines = [
+        f"Pipeline · {states.get(event['state'], event['state'])}",
+        f"RAG: {event.get('project', 'não informado')}",
+        f"Lote: {event['job_id']}",
+    ]
+    if event.get("error"):
+        lines.append(f"Motivo: {event['error']}")
+    if event.get("code") is not None:
+        lines.append(f"Código de saída: {event['code']}")
+    return "\n".join(lines)[:3500]
+
+
 class Notifier:
     def __init__(self, root, database, client, chat_id, *, send_files=False):
         self.root = Path(root).resolve()
@@ -117,7 +145,55 @@ class Notifier:
         self.db.execute(
             "CREATE TABLE IF NOT EXISTS outbox (id TEXT PRIMARY KEY, method TEXT NOT NULL, payload TEXT NOT NULL, document BLOB, sent INTEGER DEFAULT 0, next_attempt REAL DEFAULT 0)"
         )
+        self.db.execute(
+            "CREATE TABLE IF NOT EXISTS control_cursor (source TEXT PRIMARY KEY, sequence INTEGER NOT NULL)"
+        )
+        self.last_delivery = None
+        self.delivery_error = None
         self.db.commit()
+
+    def enqueue_event(self, event):
+        identifier = fingerprint({"chat": self.chat_id, "event": event["event_id"]})
+        payload = {"chat_id": self.chat_id, "text": format_event(event)}
+        self.db.execute(
+            "INSERT OR IGNORE INTO outbox (id,method,payload) VALUES (?, 'sendMessage', ?)",
+            (identifier, json.dumps(payload)),
+        )
+
+    def scan_control(self, socket_path, user_id):
+        source = f"{socket_path}:{self.chat_id}"
+        row = self.db.execute(
+            "SELECT sequence FROM control_cursor WHERE source=?", (source,)
+        ).fetchone()
+        result = call_control(
+            socket_path,
+            {
+                "user_id": user_id,
+                "command_id": "notifier:" + uuid.uuid4().hex,
+                "text": f"/eventos {row[0] if row else 0}",
+            },
+        )
+        with self.db:
+            for event in result["events"]:
+                self.enqueue_event(event)
+            self.db.execute(
+                "INSERT INTO control_cursor VALUES (?,?) ON CONFLICT(source) DO UPDATE SET sequence=excluded.sequence",
+                (source, result["cursor"]),
+            )
+
+    def health(self, path, control_error=None):
+        pending = self.db.execute("SELECT count(*) FROM outbox WHERE sent=0").fetchone()[0]
+        atomic_json(
+            path,
+            {
+                "updated_at": now(),
+                "pending": pending,
+                "last_delivery": self.last_delivery,
+                "delivery_error": self.delivery_error,
+                "control_error": control_error,
+            },
+            mode=0o640,
+        )
 
     def scan(self):
         for metadata_path in sorted(self.root.glob("*/*/deliveries/*/metadata.json")):
@@ -154,18 +230,15 @@ class Notifier:
         for event_path in paths:
             if not event_path.is_file() or not event_path.resolve().is_relative_to(self.root):
                 continue
-            for line in event_path.read_text().splitlines():
+            try:
+                lines = event_path.read_text().splitlines()
+            except OSError:
+                logger.warning("Cannot read notification events: %s", event_path.name)
+                continue
+            for line in lines:
                 try:
                     event = json.loads(line)
-                    identifier = fingerprint({"chat": self.chat_id, "event": event["event_id"]})
-                    payload = {
-                        "chat_id": self.chat_id,
-                        "text": json.dumps(event, ensure_ascii=False, indent=2)[:3500],
-                    }
-                    self.db.execute(
-                        "INSERT OR IGNORE INTO outbox (id,method,payload) VALUES (?, 'sendMessage', ?)",
-                        (identifier, json.dumps(payload)),
-                    )
+                    self.enqueue_event(event)
                 except (ValueError, KeyError, TypeError):
                     continue
         for path in sorted(self.root.glob("*/*/summary.json")):
@@ -178,9 +251,9 @@ class Notifier:
                     progress = json.loads(progress_path.read_text())
                     if progress.get("run_id") == summary.get("run_id"):
                         summary.update(progress)
-            except (OSError, ValueError):
+                payload = {"chat_id": self.chat_id, "text": format_summary(summary)}
+            except (OSError, ValueError, KeyError, TypeError, AttributeError):
                 continue
-            payload = {"chat_id": self.chat_id, "text": format_summary(summary)}
             identifier = fingerprint({"chat": self.chat_id, "summary": summary})
             self.db.execute(
                 "INSERT OR IGNORE INTO outbox (id, method, payload) VALUES (?, ?, ?)",
@@ -225,6 +298,8 @@ class Notifier:
             try:
                 self.client.call(method, json.loads(payload), document)
             except TelegramError as exc:
+                self.delivery_error = str(exc)
+                logger.warning("%s; retrying later", exc)
                 self.db.execute(
                     "UPDATE outbox SET next_attempt=? WHERE id=?",
                     (time.time() + max(1, exc.retry_after), identifier),
@@ -233,9 +308,12 @@ class Notifier:
                 return
             self.db.execute("UPDATE outbox SET sent=1 WHERE id=?", (identifier,))
             self.db.commit()
+            self.delivery_error = None
+            self.last_delivery = now()
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser()
     parser.add_argument("root", type=Path)
     parser.add_argument("--database", type=Path, required=True)
@@ -266,20 +344,39 @@ def main():
             send_files=os.getenv("TELEGRAM_SEND_FINAL_FILES", "false").lower() == "true",
         )
         gateway = None
+        socket_path = os.getenv("BENCHMARK_CONTROL_SOCKET")
+        allowed = [
+            int(value.strip())
+            for value in os.getenv("TELEGRAM_ALLOWED_USER_IDS", "").split(",")
+            if value.strip()
+        ]
         if os.getenv("TELEGRAM_CONTROL_ENABLED") == "true":
             from app.telegram.gateway import Gateway
 
-            allowed = [int(value) for value in os.environ["TELEGRAM_ALLOWED_USER_IDS"].split(",")]
             gateway = Gateway(notifier, os.environ["BENCHMARK_CONTROL_SOCKET"], allowed)
         try:
             while True:
+                control_error = None
+                if socket_path and allowed:
+                    try:
+                        notifier.scan_control(socket_path, allowed[0])
+                    except (OSError, ValueError) as exc:
+                        control_error = "Não foi possível consultar os eventos do executor."
+                        logger.warning("Control events unavailable (%s)", type(exc).__name__)
                 if gateway:
                     try:
                         gateway.poll()
-                    except (OSError, TelegramError):
-                        pass
+                    except (OSError, TelegramError) as exc:
+                        logger.warning("Telegram commands unavailable (%s)", type(exc).__name__)
                 notifier.scan()
                 notifier.deliver()
+                if socket_path:
+                    try:
+                        notifier.health(
+                            Path(socket_path).with_name("telegram-status.json"), control_error
+                        )
+                    except OSError:
+                        logger.warning("Cannot publish Telegram delivery status")
                 if args.once:
                     break
                 time.sleep(interval)

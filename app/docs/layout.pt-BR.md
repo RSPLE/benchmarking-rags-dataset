@@ -78,3 +78,10 @@ os arquivos não comprova, por si só, compatibilidade científica.
 
 Saídas v1 continuam disponíveis para consulta/importação, sem conversão automática
 em experimentos v2. Consulte o [guia de recuperação](reliability.pt-BR.md).
+
+A correção operacional de 09/10/2026 mantém uma lista explícita dos hashes da revisão
+anterior em `compatible_shared`. A transição permite retomar esses checkpoints com
+o controle de fila e notificações corrigidos. Dataset, corpus, modelos, código de
+respostas e avaliação continuam sujeitos à validação integral; alterações fora das
+revisões registradas são recusadas. A retomada grava `app-layout-and-operations-v2`
+no registro de transição, sem reescrever o manifesto original.

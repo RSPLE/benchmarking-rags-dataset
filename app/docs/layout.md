@@ -78,3 +78,9 @@ prevent a resume; preserving files alone does not establish scientific compatibi
 
 Old v1 outputs remain available for inspection/import. They are not automatically
 converted into v2 experiments; follow the [recovery guide](reliability.md).
+
+The 2026-10-09 operational fix records the exact previous application hashes in
+`compatible_shared`. This allows those checkpoints to resume with the corrected
+queue and notifications. Dataset, corpus, models, response and evaluation code
+still require full compatibility; unregistered revisions are rejected. Resumption
+records `app-layout-and-operations-v2` without rewriting the original manifest.

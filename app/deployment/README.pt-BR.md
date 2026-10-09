@@ -214,3 +214,26 @@ logo após subir é transitório; o healthcheck local não comprova o HTTPS púb
 Se 80/443 já respondem, investigue o log TLS antes de mudar regras de firewall.
 Depois de atualizar o Caddyfile, `docker compose up -d` aplica a nova imagem.
 Para atualizar apenas esse serviço, use `docker compose up -d --no-deps proxy`.
+
+## Pipeline interrompida imediatamente após o envio
+
+Confirme que o usuário do container consegue gravar no diretório de resultados:
+
+```bash
+docker compose exec control id
+stat -c '%a %u:%g %n' resultados
+docker compose logs --tail 80 control telegram
+```
+
+A imagem usa UID/GID `1000:1000`. Se a pasta foi criada automaticamente pelo Docker
+como `root:root`, um diretório `755` não permite a escrita do executor. Para a pasta
+padrão, ajuste sua propriedade, preservando o conteúdo:
+
+```bash
+sudo chown 1000:1000 resultados
+```
+
+Se já houver arquivos e subdiretórios, inspecione suas permissões antes de corrigir
+os caminhos necessários. O controlador registra a falha na fila sem reiniciar; o
+painel exibe o motivo e o Telegram recebe o evento, mesmo sem checkpoint criado.
+Ao reiniciar o serviço, lotes ativos ficam interrompidos e exigem um novo pedido.

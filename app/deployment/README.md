@@ -213,3 +213,27 @@ after startup is transient; the local healthcheck does not validate public HTTPS
 If 80/443 already respond, inspect TLS logs before changing firewall rules.
 After a Caddyfile update, `docker compose up -d` applies the new image.
 To update only this service, use `docker compose up -d --no-deps proxy`.
+
+## Pipeline interrupted immediately after submission
+
+Check the container identity and result-directory ownership:
+
+```bash
+docker compose exec control id
+stat -c '%a %u:%g %n' resultados
+docker compose logs --tail 80 control telegram
+```
+
+The image runs as UID/GID `1000:1000`. A `755` bind directory automatically created
+by Docker as `root:root` is not writable by the executor. For the default directory,
+correct ownership while preserving its contents:
+
+```bash
+sudo chown 1000:1000 resultados
+```
+
+If it already contains files or subdirectories, inspect their ownership before
+adjusting the necessary paths. The controller records startup failures without
+restarting; the dashboard shows the reason and Telegram receives the event even
+when no checkpoint exists. Controller restarts interrupt active jobs and require
+an explicit new submission.

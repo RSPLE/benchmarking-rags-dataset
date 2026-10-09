@@ -186,3 +186,18 @@ uv run --locked python -m unittest discover -s app/tests -v
 For IP access, Caddy uses `default_sni {$DASHBOARD_PUBLIC_HOST}` for clients without
 SNI. The public URL is `https://<DASHBOARD_PUBLIC_HOST>`; `:8501` remains local to
 the server. See [TLS diagnostics](../deployment/README.md#public-ip-access-and-tls-diagnostics).
+
+## Guided execution and diagnostics
+
+From **Visão geral**, choose **Configurar e iniciar pipeline**. Select a RAG, start
+with one question and click **Iniciar pipeline**. Advanced parameters are optional.
+The page refreshes automatically and shows the current state, failure reason and
+local timestamps. Submission acknowledgement does not mean processing completed.
+After completion, another click creates a new job; retries after a lost connection
+reuse the pending request identifier to avoid duplicate work.
+
+Queue events are stored in the control SQLite database, on `control-state`. Telegram
+reads them through the internal socket and commits its cursor with the outbox.
+Failures to write `resultados/` can therefore still be reported. Delivery health
+and pending notifications appear on the dashboard, and failed deliveries retry.
+Update `control`, `telegram` and `dashboard` together for this workflow.

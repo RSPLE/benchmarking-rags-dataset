@@ -188,3 +188,18 @@ os cabeçalhos de upgrade apenas da consulta HTTP de sessão; o WebSocket autent
 No acesso por IP, o Caddy usa `default_sni {$DASHBOARD_PUBLIC_HOST}` para clientes
 sem SNI. O endereço público é `https://<DASHBOARD_PUBLIC_HOST>`; `:8501` continua
 restrito ao próprio servidor. Consulte o [diagnóstico de TLS](../deployment/README.pt-BR.md#acesso-público-por-ip-e-diagnóstico-de-tls).
+
+## Execução guiada e diagnóstico
+
+Em **Visão geral**, use **Configurar e iniciar pipeline**. Em **Executar e retomar**,
+escolha o RAG, comece com uma questão e clique em **Iniciar pipeline**. Os parâmetros
+avançados são opcionais. O painel atualiza automaticamente e mostra o estado atual,
+o motivo de uma falha e o horário local do lote; confirmação de envio não significa
+conclusão do processamento. Após concluir, outro clique cria um novo lote. Reenvios
+após perda de conexão mantêm o mesmo identificador para não duplicar trabalho.
+
+Os eventos da fila ficam no SQLite do controle, no volume `control-state`. O Telegram
+consulta esses eventos pelo socket interno e persiste seu cursor junto com a outbox.
+Assim, uma falha de escrita em `resultados/` também pode ser notificada. O estado da
+entrega é exibido no painel; mensagens pendentes são tentadas novamente. Atualize
+`control`, `telegram` e `dashboard` juntos para usar esse fluxo.

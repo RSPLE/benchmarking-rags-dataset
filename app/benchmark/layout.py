@@ -29,7 +29,11 @@ def resume_manifest(current, expected):
     approved = registry["projects"].get(project)
     if not approved:
         raise ValueError("No verified layout transition for this RAG")
-    if saved.get("code") != {**registry["legacy_shared"], **approved["legacy"]}:
+    compatible = [
+        {**registry["legacy_shared"], **approved["legacy"]},
+        *[{**shared, **approved["current"]} for shared in registry.get("compatible_shared", [])],
+    ]
+    if saved.get("code") not in compatible:
         raise ValueError("Saved experiment uses a different code revision")
     if current.get("code") != {**registry["current_shared"], **approved["current"]}:
         raise ValueError("Current code differs from the verified layout transition")
@@ -50,7 +54,7 @@ def resume_manifest(current, expected):
 def transition_record(current, previous):
     return {
         "schema": 1,
-        "transition": "app-layout-v1",
+        "transition": "app-layout-and-operations-v2",
         "registry_sha256": file_hash(REGISTRY),
         "original_experiment_id": previous["experiment_id"],
         "executed_manifest": current,
