@@ -176,6 +176,7 @@ def main():
     )
     parser.add_argument("projects", nargs="+", choices=["context-rag", "graph-rag", "hybrid-rag"])
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--legacy-root", type=Path, default=ROOT / "app/rags")
     args = parser.parse_args()
     for project in args.projects:
         environment = ROOT / "app/rags" / project / ".venv"
@@ -186,6 +187,8 @@ def main():
                     "-m",
                     "app.tools.continue_legacy",
                     project,
+                    "--legacy-root",
+                    str(args.legacy_root.resolve()),
                     *(["--apply"] if args.apply else []),
                 ],
                 cwd=ROOT,
@@ -196,7 +199,7 @@ def main():
         print(
             json.dumps(
                 continue_checkpoint(
-                    ROOT / "app/rags" / project / "results/checkpoint.json",
+                    args.legacy_root / project / "results/checkpoint.json",
                     manifest,
                     apply=args.apply,
                 ),

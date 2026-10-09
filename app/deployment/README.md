@@ -174,8 +174,8 @@ Convert Context, Graph and Hybrid v1 checkpoints into resumable experiments with
 repeating completed questions. With no active job, preview and apply:
 
 ```bash
-docker compose exec -T control python -m app.tools.continue_legacy context-rag graph-rag hybrid-rag
-docker compose exec -T control python -m app.tools.continue_legacy context-rag graph-rag hybrid-rag --apply
+docker compose run --rm --no-deps --pull never -v "$PWD/app/rags:/legacy:ro" control python -m app.tools.continue_legacy --legacy-root /legacy context-rag graph-rag hybrid-rag
+docker compose run --rm --no-deps --pull never -v "$PWD/app/rags:/legacy:ro" control python -m app.tools.continue_legacy --legacy-root /legacy context-rag graph-rag hybrid-rag --apply
 ```
 
 Conversion validates the dataset, IDs, question text and metrics, keeps the originals,

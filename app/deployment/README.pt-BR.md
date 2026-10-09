@@ -176,8 +176,8 @@ retomáveis sem repetir questões concluídas. Sem trabalho ativo, confira a pr�
 e aplique a conversão:
 
 ```bash
-docker compose exec -T control python -m app.tools.continue_legacy context-rag graph-rag hybrid-rag
-docker compose exec -T control python -m app.tools.continue_legacy context-rag graph-rag hybrid-rag --apply
+docker compose run --rm --no-deps --pull never -v "$PWD/app/rags:/legacy:ro" control python -m app.tools.continue_legacy --legacy-root /legacy context-rag graph-rag hybrid-rag
+docker compose run --rm --no-deps --pull never -v "$PWD/app/rags:/legacy:ro" control python -m app.tools.continue_legacy --legacy-root /legacy context-rag graph-rag hybrid-rag --apply
 ```
 
 A conversão confere o dataset, os IDs, os enunciados e as métricas, preserva os
