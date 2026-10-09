@@ -113,7 +113,50 @@ def format_summary(summary):
 
 def format_event(event):
     if event.get("kind") != "job_state":
-        return json.dumps(event, ensure_ascii=False, indent=2)[:3500]
+        labels = {
+            "started": "Execução iniciada",
+            "stage_started": "Etapa iniciada",
+            "answer_saved": "Resposta salva",
+            "metric_saved": "Métrica salva",
+            "success": "Questão concluída",
+            "failed": "Questão falhou",
+            "finished": "Rodada encerrada",
+            "interrupted": "Execução interrompida",
+            "request_rejected": "Pedido recusado",
+            "pause_requested": "Pausa solicitada",
+            "notification_test": "Teste de notificações confirmado",
+            "service_started": "Serviço Telegram iniciado",
+            "control_unavailable": "Executor indisponível",
+            "control_recovered": "Conexão com o executor recuperada",
+        }
+        label = labels.get(event.get("kind"))
+        if label is None:
+            return json.dumps(event, ensure_ascii=False, indent=2)[:3500]
+        lines = [f"Observatório RAG · {label}"]
+        for key, title in (
+            ("project", "RAG"),
+            ("question_id", "Questão"),
+            ("stage", "Etapa"),
+            ("category", "Tipo de falha"),
+            ("error", "Motivo"),
+            ("job_id", "Pedido"),
+            ("experiment_id", "Experimento"),
+        ):
+            if event.get(key):
+                lines.append(f"{title}: {event[key]}")
+        if event.get("metrics"):
+            lines.extend(f"{name}: {value}" for name, value in event["metrics"].items())
+        if event.get("kind") == "finished":
+            lines.append(
+                f"Sucessos: {event.get('success', 0)} | Falhas: {event.get('failed', 0)} | Pendentes: {event.get('pending', 0)}"
+            )
+            if event.get("paused"):
+                lines.append("Pausada: o progresso foi preservado para retomada.")
+        if event.get("kind") in {"notification_test", "service_started"}:
+            lines.append(
+                "Avisos de fila, etapas, questões, falhas, pausas e resultados estão ativos neste canal. Nenhuma chamada a modelos é feita por este aviso."
+            )
+        return "\n".join(lines)[:3500]
     states = {
         "queued": "Na fila",
         "running": "Iniciando execução",
@@ -148,7 +191,13 @@ class Notifier:
         self.db.execute(
             "CREATE TABLE IF NOT EXISTS control_cursor (source TEXT PRIMARY KEY, sequence INTEGER NOT NULL)"
         )
-        self.last_delivery = None
+        columns = {row[1] for row in self.db.execute("PRAGMA table_info(outbox)")}
+        for name, kind in (("delivered_at", "TEXT"), ("message_id", "INTEGER")):
+            if name not in columns:
+                self.db.execute(f"ALTER TABLE outbox ADD COLUMN {name} {kind}")
+        self.last_delivery = self.db.execute(
+            "SELECT max(delivered_at) FROM outbox WHERE sent=1"
+        ).fetchone()[0]
         self.delivery_error = None
         self.db.commit()
 
@@ -292,11 +341,11 @@ class Notifier:
 
     def deliver(self):
         for identifier, method, payload, document in self.db.execute(
-            "SELECT id, method, payload, document FROM outbox WHERE sent=0 AND next_attempt<=? ORDER BY rowid LIMIT 10",
+            "SELECT id, method, payload, document FROM outbox WHERE sent=0 AND next_attempt<=? ORDER BY rowid LIMIT 30",
             (time.time(),),
         ).fetchall():
             try:
-                self.client.call(method, json.loads(payload), document)
+                receipt = self.client.call(method, json.loads(payload), document)
             except TelegramError as exc:
                 self.delivery_error = str(exc)
                 logger.warning("%s; retrying later", exc)
@@ -306,10 +355,18 @@ class Notifier:
                 )
                 self.db.commit()
                 return
-            self.db.execute("UPDATE outbox SET sent=1 WHERE id=?", (identifier,))
+            delivered = now()
+            self.db.execute(
+                "UPDATE outbox SET sent=1,delivered_at=?,message_id=? WHERE id=?",
+                (
+                    delivered,
+                    receipt.get("message_id") if isinstance(receipt, dict) else None,
+                    identifier,
+                ),
+            )
             self.db.commit()
             self.delivery_error = None
-            self.last_delivery = now()
+            self.last_delivery = delivered
 
 
 def main():
@@ -354,15 +411,38 @@ def main():
             from app.telegram.gateway import Gateway
 
             gateway = Gateway(notifier, os.environ["BENCHMARK_CONTROL_SOCKET"], allowed)
+        notifier.enqueue_event(
+            {"event_id": uuid.uuid4().hex, "kind": "service_started", "at": now()}
+        )
+        notifier.db.commit()
+        control_available = True
         try:
             while True:
                 control_error = None
                 if socket_path and allowed:
                     try:
                         notifier.scan_control(socket_path, allowed[0])
+                        if not control_available:
+                            notifier.enqueue_event(
+                                {
+                                    "event_id": uuid.uuid4().hex,
+                                    "kind": "control_recovered",
+                                    "at": now(),
+                                }
+                            )
+                        control_available = True
                     except (OSError, ValueError) as exc:
                         control_error = "Não foi possível consultar os eventos do executor."
                         logger.warning("Control events unavailable (%s)", type(exc).__name__)
+                        if control_available:
+                            notifier.enqueue_event(
+                                {
+                                    "event_id": uuid.uuid4().hex,
+                                    "kind": "control_unavailable",
+                                    "at": now(),
+                                }
+                            )
+                        control_available = False
                 if gateway:
                     try:
                         gateway.poll()

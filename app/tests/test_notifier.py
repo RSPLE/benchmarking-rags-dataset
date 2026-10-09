@@ -9,6 +9,35 @@ from app.telegram.notifier import Notifier, TelegramError
 
 
 class NotifierTests(unittest.TestCase):
+    def test_event_receipt_is_persisted_and_not_resent_after_restart(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            client = Mock()
+            client.call.return_value = {"message_id": 42}
+            notifier = Notifier(root, root / "outbox.db", client, "-100123")
+            event = {
+                "event_id": "stage-one",
+                "kind": "stage_started",
+                "project": "graph-rag",
+                "question_id": "Q002",
+                "stage": "faithfulness",
+            }
+            notifier.enqueue_event(event)
+            notifier.db.commit()
+            notifier.deliver()
+            row = notifier.db.execute("SELECT sent,message_id,delivered_at FROM outbox").fetchone()
+            self.assertEqual(row[:2], (1, 42))
+            self.assertIsNotNone(row[2])
+            notifier.db.close()
+            restarted = Notifier(root, root / "outbox.db", client, "-100123")
+            restarted.enqueue_event(event)
+            restarted.db.commit()
+            restarted.deliver()
+            self.assertEqual(client.call.call_count, 1)
+            self.assertIn("Etapa iniciada", client.call.call_args.args[1]["text"])
+            self.assertEqual(restarted.last_delivery, row[2])
+            restarted.db.close()
+
     def test_delivery_failure_restart_and_deduplication(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

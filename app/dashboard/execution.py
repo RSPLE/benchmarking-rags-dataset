@@ -196,6 +196,14 @@ def execution_view(settings, token, records):
                 st.success("Executor disponível para iniciar uma pipeline.")
     with right:
         notification_status(settings)
+        if st.button("Testar notificação no Telegram", disabled=status is None):
+            try:
+                request_control(settings, token, "/notificar")
+                st.success(
+                    "Aviso enfileirado no canal configurado. A confirmação da entrega aparece acima."
+                )
+            except (OSError, ValueError, PermissionError) as exc:
+                st.error("Não foi possível solicitar o aviso: " + str(exc))
     if jobs:
         latest = next((job for job in jobs if job["state"] == "running"), jobs[0])
         if busy or st.session_state.get("last_submission"):
@@ -242,10 +250,12 @@ def execution_view(settings, token, records):
     eligible = compatible_records(records, project)
     selected = None
     if eligible:
+        continuation = any(row["manifest"].get("continuation") for row in eligible)
         action = st.radio(
             "O que deseja fazer?",
             ["Iniciar execução", "Retomar experimento"],
-            index=int(target_record in eligible),
+            index=int(target_record in eligible or continuation),
+            key="operation-" + project,
             horizontal=True,
         )
         if action == "Retomar experimento":
@@ -262,17 +272,34 @@ def execution_view(settings, token, records):
             st.caption(
                 "Respostas e métricas já salvas são reaproveitadas. Mantenha os parâmetros do experimento original."
             )
+            st.info(
+                f"{selected['summary'].get('success', 0)} questões concluídas serão preservadas. "
+                f"Restam {selected['summary'].get('failed', 0)} falhas e "
+                f"{selected['summary'].get('pending', 0)} pendentes para continuar."
+            )
+            if selected["manifest"].get("continuation"):
+                st.caption(
+                    "Checkpoint anterior convertido para retomada. As questões concluídas não serão executadas novamente; as restantes usam a configuração atual."
+                )
     with st.form("execution_form"):
         st.subheader("2. Defina o tamanho da execução")
+        remaining = (
+            (selected["summary"].get("failed", 0) + selected["summary"].get("pending", 0))
+            if selected
+            else 1
+        )
         st.caption(
-            "Comece com 1 questão para verificar o fluxo. Depois, aumente até 90 questões por RAG."
+            "O lote tenta somente as questões incompletas do experimento selecionado."
+            if selected
+            else "Comece com 1 questão para verificar o fluxo. Depois, aumente até 90 questões por RAG."
         )
         left, right = st.columns(2)
         questions = left.number_input(
             "Quantidade de questões por RAG",
             min_value=1,
             max_value=90,
-            value=1,
+            value=max(1, min(90, remaining)),
+            key="question-count-" + (selected["external_id"] if selected else project),
             step=1,
             help="Máximo de questões tentadas neste lote, incluindo as que falharem.",
         )

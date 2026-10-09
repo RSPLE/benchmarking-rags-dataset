@@ -153,6 +153,8 @@ def dashboard():
             format_func=lambda key: (
                 "Histórico · configuração não registrada"
                 if key == "legacy-unknown"
+                else "Continuação · resultados anteriores preservados"
+                if key.startswith("continuation-")
                 else f"Mesmo dataset, corpus e modelos · {key[:12]}"
             ),
         )
@@ -182,6 +184,10 @@ def dashboard():
     if selected_group == "legacy-unknown":
         st.warning(
             "Os arquivos históricos não registram todos os modelos e parâmetros. A compatibilidade científica entre eles não pode ser confirmada."
+        )
+    if selected_group.startswith("continuation-"):
+        st.info(
+            "Os resultados anteriores foram preservados. Seus modelos e contextos não estavam registrados; as questões retomadas usam a configuração atual."
         )
     selected = [by_id[key] for key in chosen]
     samples, calls, runs = frames(settings.database, chosen)

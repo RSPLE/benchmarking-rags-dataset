@@ -81,6 +81,7 @@ def create_run_archive(directory, run_id, dataset_path):
             "question_memory_policy",
             "result_schema",
             "corpus",
+            "continuation",
         )
     }
     public = {name: files[name] for name in ("results.csv", "public_results.json", "summary.json")}

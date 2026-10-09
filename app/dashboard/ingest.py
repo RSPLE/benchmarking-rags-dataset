@@ -158,7 +158,7 @@ def comparison_identity(manifest):
     if not manifest:
         return "legacy-unknown"
     configuration = manifest.get("configuration", {})
-    return fingerprint(
+    current = fingerprint(
         {
             "dataset": manifest.get("dataset_sha256"),
             "corpus": sorted(entry["sha256"] for entry in manifest.get("corpus", [])),
@@ -173,6 +173,11 @@ def comparison_identity(manifest):
             },
         }
     )
+    if manifest.get("continuation"):
+        return "continuation-" + fingerprint(
+            {"current": current, "source": manifest["continuation"]["source_sha256"]}
+        )
+    return current
 
 
 def merge_calls(events):
@@ -218,6 +223,9 @@ def store_source(db, path, boundary, project, origin):
     prefix = configuration.get("LLM_PROVIDER", "").upper()
     model = configuration.get(f"{prefix}_MODEL") or "Não registrado"
     judge = configuration.get(f"{prefix}_JUDGE_MODEL") or model
+    if manifest.get("continuation"):
+        model = "Continuação: " + model + " · anteriores não registrados"
+        judge = "Continuação: " + judge + " · anteriores não registrados"
     samples = sample_rows(rows, checkpoint)
     if not summary:
         counts = Counter(item["status"] for item in samples)

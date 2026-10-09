@@ -13,10 +13,26 @@ def experiments(database):
             dict(row)
             for row in db.execute("SELECT * FROM experiments ORDER BY project, imported_at DESC")
         ]
+        source_hashes = {
+            row["experiment_id"]: row["sha256"]
+            for row in db.execute(
+                "SELECT experiment_id,sha256 FROM artifacts WHERE name='checkpoint.json'"
+            )
+        }
     for row in rows:
         row["summary"] = json.loads(row["summary"])
         row["manifest"] = json.loads(row["manifest"])
-    return rows
+    continued = {
+        (row["project"], row["manifest"]["continuation"]["source_sha256"])
+        for row in rows
+        if row["manifest"].get("continuation")
+    }
+    return [
+        row
+        for row in rows
+        if row["origin"] != "legacy"
+        or (row["project"], source_hashes.get(row["id"])) not in continued
+    ]
 
 
 def frames(database, identifiers):

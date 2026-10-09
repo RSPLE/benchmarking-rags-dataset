@@ -169,6 +169,26 @@ class OperationsTests(unittest.TestCase):
             control.handle({**request, "text": "/executar context-rag 1 1"})
         self.assertEqual(control.db.execute("SELECT count(*) FROM jobs").fetchone()[0], 0)
 
+    def test_notification_test_and_rejected_requests_are_durable_without_jobs(self):
+        control = self.control()
+        request = {"user_id": 123, "command_id": "notify:test", "text": "/notificar"}
+        first = control.handle(request)
+        self.assertEqual(control.handle(request), first)
+        self.assertEqual(first["state"], "notification_queued")
+        control.enabled = False
+        with self.assertRaises(ValueError):
+            control.handle(
+                {"user_id": 123, "command_id": "rejected", "text": "/executar graph-rag 1"}
+            )
+        events = control.handle({"user_id": 123, "command_id": "read", "text": "/eventos 0"})[
+            "events"
+        ]
+        self.assertEqual(
+            [event["kind"] for event in events], ["notification_test", "request_rejected"]
+        )
+        self.assertIn("disabled", events[-1]["error"])
+        self.assertEqual(control.db.execute("SELECT count(*) FROM jobs").fetchone()[0], 0)
+
     def test_read_pause_export_and_inspection_never_launch(self):
         control = self.control()
         experiment = "a" * 64

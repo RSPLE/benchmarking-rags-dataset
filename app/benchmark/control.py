@@ -18,7 +18,7 @@ import uuid
 from pathlib import Path
 
 from app.benchmark.options import CommandParser, add_run_options, option_environment
-from app.benchmark.storage import exclusive_lock, now, sanitize
+from app.benchmark.storage import exclusive_lock, fingerprint, now, sanitize
 from app.cli import PROJECTS, ROOT, resolve_projects, uv_command
 from app.services.entrypoint import role_environment
 
@@ -97,6 +97,7 @@ def parse_command(text):
         "pergunta": (3,),
         "resultado": (2,),
         "ajuda": (0,),
+        "notificar": (0,),
     }
     if action not in sizes or len(args) not in sizes[action]:
         raise ValueError("Use /ajuda to list commands and flags")
@@ -184,7 +185,16 @@ class Control:
         identifier = request.get("command_id", "")
         if not re.fullmatch(r"[A-Za-z0-9:_-]{1,100}", identifier):
             raise ValueError("Invalid command ID")
-        command = parse_command(request.get("text", ""))
+        try:
+            command = parse_command(request.get("text", ""))
+        except ValueError as exc:
+            text = request.get("text", "")
+            if isinstance(text, str) and re.match(
+                r"^/(executar|retomar|pausar|run|resume)\b", text
+            ):
+                self.request_event(identifier, "request_rejected", error=sanitize(str(exc))[:1500])
+                self.db.commit()
+            raise
         if command["action"] in {"status", "eventos", "ajuda", "falhas", "pergunta", "resultado"}:
             return self.execute(identifier, command)
         encoded = json.dumps(command, sort_keys=True)
@@ -195,16 +205,39 @@ class Control:
             if prior[:2] != (user, encoded):
                 raise ValueError("Command ID conflicts with a previous request")
             return json.loads(prior[2])
-        with self.db:
-            response = self.execute(identifier, command)
-            self.db.execute(
-                "INSERT INTO commands VALUES (?, ?, ?, ?)",
-                (identifier, user, encoded, json.dumps(response)),
+        try:
+            with self.db:
+                response = self.execute(identifier, command)
+                self.db.execute(
+                    "INSERT INTO commands VALUES (?, ?, ?, ?)",
+                    (identifier, user, encoded, json.dumps(response)),
+                )
+        except (ValueError, OSError) as exc:
+            self.request_event(
+                identifier,
+                "request_rejected",
+                error=sanitize(str(exc))[:1500],
+                project=command.get("project"),
             )
+            self.db.commit()
+            raise
         return response
+
+    def request_event(self, identifier, kind, **values):
+        event = {
+            "event_id": fingerprint({"request": identifier, "kind": kind, **values}),
+            "kind": kind,
+            "job_id": identifier,
+            "at": now(),
+            **values,
+        }
+        self.db.execute("INSERT INTO job_events (payload) VALUES (?)", (json.dumps(event),))
 
     def execute(self, identifier, command):
         action = command["action"]
+        if action == "notificar":
+            self.request_event(identifier, "notification_test")
+            return {"state": "notification_queued", "request_id": identifier}
         if action in {"executar", "retomar"}:
             if not self.enabled:
                 raise ValueError("Remote execution is disabled by the operator")
@@ -326,6 +359,9 @@ class Control:
         directory = self.directory(*args[:2])
         if action == "pausar":
             (directory / "pause.request").touch(mode=0o600)
+            self.request_event(
+                identifier, "pause_requested", project=args[0], experiment_id=args[1]
+            )
             return {"state": "pause_requested", "experiment_id": args[1]}
         if action == "status":
             return json.loads((directory / "summary.json").read_text())

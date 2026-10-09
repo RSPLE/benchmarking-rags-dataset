@@ -169,6 +169,36 @@ Consulte [as opções e o protocolo](../docs/compatibility.pt-BR.md).
 
 ## 7. Preservar e atualizar
 
+### Continuar checkpoints anteriores
+
+Checkpoints v1 de Context, Graph e Hybrid podem ser convertidos em experimentos
+retomáveis sem repetir questões concluídas. Sem trabalho ativo, confira a prévia
+e aplique a conversão:
+
+```bash
+docker compose exec -T control python -m app.tools.continue_legacy context-rag graph-rag hybrid-rag
+docker compose exec -T control python -m app.tools.continue_legacy context-rag graph-rag hybrid-rag --apply
+```
+
+A conversão confere o dataset, os IDs, os enunciados e as métricas, preserva os
+originais e não chama modelos. Repetir o comando não reinicia o progresso.
+No painel, **Retomar experimento** fica selecionado e o lote começa com o número
+de questões incompletas. Modelos e contextos ausentes nos registros anteriores
+permanecem identificados como desconhecidos; questões restantes usam a configuração
+atual. O monitor substitui a exibição histórica duplicada pela continuação.
+
+### Confirmar notificações
+
+Em **Executar e retomar**, use **Testar notificação no Telegram**. Esse botão
+percorre o executor e a fila persistente de entrega; a confirmação aparece no canal
+configurado e o painel mostra a última entrega. Não inicia um benchmark.
+Fila, início, etapas, questões, métricas, falhas, pausa, término e reinício do
+serviço geram avisos. Recusas antes da execução também são notificadas.
+Falhas de entrega permanecem na fila para nova tentativa; o recibo de cada envio
+registra o ID da mensagem retornado pelo Telegram.
+
+### Backups e atualizações
+
 `resultados/` fica no host. SQLite, fila, outbox do Telegram, índices e certificados
 ficam em volumes persistentes. O monitor usa backup consistente do SQLite após
 mudanças; o Telegram envia os artefatos públicos de cada rodada conforme a configuração.

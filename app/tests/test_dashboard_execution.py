@@ -71,6 +71,30 @@ execution_view(settings, 'test-session', [])
                 ).disabled
             )
 
+    def test_continuation_defaults_to_resume_69_without_repeating_successes(self):
+        from streamlit.testing.v1 import AppTest
+
+        app = AppTest.from_string("""
+from pathlib import Path
+from types import SimpleNamespace
+from app.dashboard.execution import execution_view
+settings = SimpleNamespace(control_socket=Path('/missing/control.sock'), poll_seconds=15)
+record = {'origin':'v2', 'project':'graph-rag', 'external_id':'a'*64,
+          'summary':{'success':21,'failed':69,'pending':0},
+          'manifest':{'mode':'full','continuation':{'source_sha256':'b'*64}}}
+execution_view(settings, 'test-session', [record])
+""").run()
+        next(widget for widget in app.selectbox if widget.label == "Pipeline RAG").select(
+            "graph-rag"
+        ).run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.radio[0].value, "Retomar experimento")
+        self.assertEqual(app.number_input[0].value, 69)
+        self.assertTrue(any("21 questões concluídas" in element.value for element in app.info))
+        next(button for button in app.button if button.label == "Retomar pipeline").click().run()
+        self.assertFalse(app.exception)
+        self.assertEqual(len(self.submissions), 1)
+
     def test_lost_acknowledgement_reuses_request_id(self):
         def dropped(settings, token, text, command_id=None):
             if text == "/status":

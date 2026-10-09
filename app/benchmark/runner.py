@@ -309,7 +309,13 @@ def summary_for(questions, checkpoint):
         counts[status if status in ("success", "failed") else "pending"] += 1
         if state.get("artifact") and status != "success":
             counts["partial"] += 1
-        for metric, entry in state.get("metrics", {}).items():
+        entries = state.get("metrics", {})
+        if status == "success" and state.get("provenance", {}).get("kind") == "legacy_v1":
+            entries = {
+                name: {"status": "success", "value": state["result"][name]}
+                for name in checkpoint.get("required_metrics", [])
+            }
+        for metric, entry in entries.items():
             if entry.get("status") == "success":
                 scores.setdefault(metric, []).append(
                     validate_metrics({metric: entry["value"]}, [metric])[metric]
@@ -409,7 +415,16 @@ def run_resumable_benchmark(
                 **values,
             }
             append_event(events_path, record)
-            if kind in {"started", "failed", "finished", "interrupted"}:
+            if kind in {
+                "started",
+                "stage_started",
+                "answer_saved",
+                "metric_saved",
+                "success",
+                "failed",
+                "finished",
+                "interrupted",
+            }:
                 public = {
                     key: value
                     for key, value in record.items()
@@ -429,6 +444,7 @@ def run_resumable_benchmark(
                         "partial",
                         "attempted",
                         "paused",
+                        "metrics",
                     }
                 }
                 public.update(
@@ -455,6 +471,7 @@ def run_resumable_benchmark(
                 {
                     "updated_at": checkpoint["updated_at"],
                     "columns": list(RESULT_COLUMNS),
+                    "continuation": (manifest or {}).get("continuation"),
                     "rows": [
                         {key: row.get(key) for key in ("id", *RESULT_COLUMNS)}
                         for row in result_rows(questions, checkpoint)
@@ -587,6 +604,7 @@ def run_resumable_benchmark(
                 state.update(
                     status="success",
                     finished_at=_now(),
+                    provenance={"kind": "current_run", "run_id": run_id},
                     result={
                         "answer": artifact["answer"],
                         "contexts_count": len(artifact["contexts"]),

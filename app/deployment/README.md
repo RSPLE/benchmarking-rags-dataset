@@ -168,6 +168,33 @@ lock; do not submit another batch while it is running. See the
 
 ## 7. Preserve data and update
 
+### Continue earlier checkpoints
+
+Convert Context, Graph and Hybrid v1 checkpoints into resumable experiments without
+repeating completed questions. With no active job, preview and apply:
+
+```bash
+docker compose exec -T control python -m app.tools.continue_legacy context-rag graph-rag hybrid-rag
+docker compose exec -T control python -m app.tools.continue_legacy context-rag graph-rag hybrid-rag --apply
+```
+
+Conversion validates the dataset, IDs, question text and metrics, keeps the originals,
+and makes no model calls. Repeating the command does not reset progress. The dashboard
+defaults to resuming the incomplete questions. Missing historical models and contexts
+remain explicitly unknown; the remaining questions use current settings. The monitor
+replaces the duplicate historical display with the continuation.
+
+### Confirm notifications
+
+Use **Testar notificação no Telegram** in **Executar e retomar**. This exercises the
+controller and persistent delivery queue without starting a benchmark. Confirmation
+arrives in the configured channel and the dashboard shows the latest delivery.
+Queue, start, stages, questions, metrics, failures, pause, completion and service
+restart generate notifications, including requests rejected before execution.
+Failed deliveries are retried; each receipt stores Telegram's returned message ID.
+
+### Backups and updates
+
 `resultados/` stays on the host. SQLite, queue, Telegram outbox, indices and
 certificates use persistent volumes. The monitor makes consistent SQLite backups
 after changes; Telegram sends public artifacts after each round according to

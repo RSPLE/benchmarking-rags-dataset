@@ -24,6 +24,11 @@ def resume_manifest(current, expected):
         != expected
     ):
         raise ValueError("Saved manifest identity is invalid")
+    execution = copy.deepcopy(saved)
+    execution.pop("experiment_id")
+    execution.pop("continuation", None)
+    if execution == {key: value for key, value in current.items() if key != "experiment_id"}:
+        return saved
     registry = json.loads(REGISTRY.read_text())
     project = current["project"]
     approved = registry["projects"].get(project)
@@ -39,6 +44,7 @@ def resume_manifest(current, expected):
         raise ValueError("Current code differs from the verified layout transition")
     comparable = copy.deepcopy(saved)
     comparable.pop("experiment_id")
+    comparable.pop("continuation", None)
     comparable["code"] = current["code"]
     old_index = str(ROOT / "rags" / project / "chroma_v2")
     new_index = str(ROOT / "app" / "rags" / project / "chroma_v2")
