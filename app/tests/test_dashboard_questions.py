@@ -137,6 +137,8 @@ question_results_view(st.session_state.database, experiments(st.session_state.da
                 self.assertEqual(summary["id"], "TOTAL / MÉDIA")
                 self.assertEqual(summary["answer_total_tokens"], 150)
                 self.assertEqual(summary["answer_response_time_seconds"], 15)
+                self.assertAlmostEqual(summary["cost_usd"], 0.06)
+                self.assertEqual(summary["cost_coverage"], "4/6 chamadas")
                 self.assertEqual(summary["faithfulness"], 0.25)
                 self.assertEqual(summary["context_recall"], 0)
             app.selectbox[0].select("self-rag").run()
@@ -146,6 +148,8 @@ question_results_view(st.session_state.database, experiments(st.session_state.da
             if not consumption_only:
                 for key in ("faithfulness", "answer_total_tokens", "answer_response_time_seconds"):
                     self.assertTrue(pd.isna(table.iloc[-1][key]))
+                self.assertTrue(pd.isna(table.iloc[-1]["cost_usd"]))
+                self.assertEqual(table.iloc[-1]["cost_coverage"], "Sem registro")
 
 
 if __name__ == "__main__":

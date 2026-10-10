@@ -74,6 +74,8 @@ def question_results(database, experiment_id=None, *, dataset=None):
             "question": question["question"],
             "answer": result.get("answer") or artifact.get("answer"),
             "cost_usd": usage.get("cost"),
+            "known_cost_calls": usage.get("known"),
+            "total_calls": usage.get("calls"),
             "cost_coverage": (
                 f"{usage['known']}/{usage['calls']} chamadas" if usage else "Sem registro"
             ),
@@ -154,6 +156,18 @@ def question_results_view(database, records, *, consumption_only=False):
         summary.update(id="TOTAL / MÉDIA", status="Valores registrados")
         for key in ("answer_total_tokens", "answer_response_time_seconds"):
             summary[key] = pd.to_numeric(frame[key], errors="coerce").sum(min_count=1)
+        summary["cost_usd"] = pd.to_numeric(frame["cost_usd"], errors="coerce").sum(
+            min_count=1
+        )
+        total_calls = pd.to_numeric(frame["total_calls"], errors="coerce").sum(min_count=1)
+        known_cost_calls = pd.to_numeric(frame["known_cost_calls"], errors="coerce").sum(
+            min_count=1
+        )
+        summary["cost_coverage"] = (
+            f"{int(known_cost_calls or 0)}/{int(total_calls)} chamadas"
+            if pd.notna(total_calls)
+            else "Sem registro"
+        )
         for key in METRICS:
             summary[key] = pd.to_numeric(frame[key], errors="coerce").mean()
         table = pd.DataFrame([*table.to_dict(orient="records"), summary], columns=columns)

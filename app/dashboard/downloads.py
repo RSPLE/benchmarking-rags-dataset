@@ -149,17 +149,3 @@ def downloads_view(database, records):
             on_click="ignore",
             width="stretch",
         )
-
-
-def backups_view(database):
-    st.write(
-        "Cópias verificadas do banco de dados do painel. Para baixar resultados de um RAG, abra Baixar dados."
-    )
-    with connect(database) as db:
-        backups = pd.read_sql_query(
-            "SELECT id,created_at,sha256 FROM backups ORDER BY created_at DESC LIMIT 20", db
-        )
-    st.dataframe(backups, hide_index=True, width="stretch")
-    st.caption(
-        "Os backups completos permanecem no volume privado da VPS e preservam contas, configurações e resultados importados."
-    )
