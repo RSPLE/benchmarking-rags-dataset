@@ -102,6 +102,10 @@ prompts, memória, recuperação, PDFs nem métricas dos RAGs.
 
 ## Persistência, backup e diagnóstico
 
+A página **Juiz e reavaliação** permite ler a saída e as justificativas do juiz,
+auditar notas zero e reexecutar uma única métrica em questões escolhidas, preservando
+os resultados originais. Consulte [Justificativas e reavaliação](../docs/judge-review.pt-BR.md).
+
 `dashboard-state` conserva SQLite, contas, sessões e resultados importados;
 `dashboard-backups` guarda cópias consistentes. `caddy-data` e `caddy-config` conservam
 a configuração e os certificados. Outros volumes preservam fila, notificações,

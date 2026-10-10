@@ -16,6 +16,7 @@ from app.dashboard.charts import render
 from app.dashboard.config import Settings
 from app.dashboard.database import connect
 from app.dashboard.execution import execution_view, pending_view
+from app.dashboard.judge import judge_view
 from app.dashboard.questions import question_results_view
 from app.dashboard.sessions import COOKIE_NAME, csrf_token, session_identity
 
@@ -31,6 +32,7 @@ SECTIONS = [
     "Executar e retomar",
     "Pendências e falhas",
     "Resultados por questão",
+    "Juiz e reavaliação",
     "Gráficos originais",
     "Tokens e tempo",
     "Questões",
@@ -113,6 +115,9 @@ def dashboard():
         return
     if section == "Pendências e falhas":
         pending_view(settings, token, records)
+        return
+    if section == "Juiz e reavaliação":
+        judge_view(settings, token, records)
         return
     if section == "Visão geral":
         with st.container(border=True):
@@ -366,7 +371,7 @@ def dashboard():
         )
         with connect(settings.database) as db:
             artifacts = db.execute(
-                "SELECT name,content,sha256 FROM artifacts WHERE experiment_id=? AND name IN ('results.csv','results_detailed.csv','summary.json','manifest.json','checkpoint.json','usage.jsonl') ORDER BY name",
+                "SELECT name,content,sha256 FROM artifacts WHERE experiment_id=? AND name IN ('results.csv','results_detailed.csv','summary.json','manifest.json','checkpoint.json','usage.jsonl','judge_responses.jsonl','judge_reviews.jsonl') ORDER BY name",
                 (experiment,),
             ).fetchall()
             backups = pd.read_sql_query(

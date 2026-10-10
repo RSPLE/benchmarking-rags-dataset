@@ -204,6 +204,14 @@ def build_parser() -> argparse.ArgumentParser:
     resume_parser = subparsers.add_parser("resume", help="retoma um experimento compatível")
     resume_parser.add_argument("project", choices=sorted(PROJECTS))
     resume_parser.add_argument("experiment")
+    from app.benchmark.review import add_review_options
+
+    review_parser = subparsers.add_parser(
+        "rejudge", help="reavalia uma métrica usando respostas salvas"
+    )
+    review_parser.add_argument("project", choices=sorted(PROJECTS))
+    review_parser.add_argument("experiment")
+    add_review_options(review_parser)
     for command_parser in (run_parser, all_parser, resume_parser):
         add_run_options(command_parser)
     export_parser = subparsers.add_parser("export-frozen")
@@ -234,6 +242,47 @@ def main() -> int:
     if args.command in {None, "list"}:
         show_projects()
         return 0
+    if args.command == "rejudge":
+        import re
+
+        from app.benchmark.review import review_inputs
+
+        if not re.fullmatch(r"[0-9a-f]{64}", args.experiment):
+            parser.error("Expected the full experiment ID")
+        load_environment()
+        root = (ROOT / os.getenv("BENCHMARK_OUTPUT_DIR", "resultados")).resolve()
+        directory = (root / args.project / args.experiment).resolve()
+        if not directory.is_relative_to(root):
+            parser.error("Invalid experiment directory")
+        review_inputs(directory, args.question_ids, args.metric, args.evidence)
+        env = role_environment("worker", os.environ)
+        env.pop("VIRTUAL_ENV", None)
+        env["BENCHMARK_CREDIT_SCOPE"] = "judge"
+        env["BENCHMARK_BUDGET_DIR"] = str((ROOT / env.get("BENCHMARK_BUDGET_DIR", root)).resolve())
+        return subprocess.run(
+            [
+                *uv_command(),
+                "run",
+                "--project",
+                str(RAGS_ROOT / args.project),
+                "--locked",
+                "python",
+                "-m",
+                "app.benchmark.review",
+                str(directory),
+                "--metric",
+                args.metric,
+                "--question-ids",
+                ",".join(args.question_ids),
+                "--evidence",
+                args.evidence,
+                "--reason",
+                args.reason,
+            ],
+            cwd=ROOT,
+            env=env,
+            check=False,
+        ).returncode
     if args.command == "preflight":
         load_environment()
         env = dict(os.environ)

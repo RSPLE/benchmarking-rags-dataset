@@ -61,6 +61,8 @@ def create_run_archive(directory, run_id, dataset_path):
         "usage.jsonl",
         "events.jsonl",
         "public_events.jsonl",
+        "judge_responses.jsonl",
+        "judge_reviews.jsonl",
     )
     files = {
         name: (directory / name).read_bytes() for name in names if (directory / name).is_file()

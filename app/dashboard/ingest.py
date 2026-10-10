@@ -24,6 +24,8 @@ FILES = (
     "events.jsonl",
     "public_events.jsonl",
     "errors.json",
+    "judge_responses.jsonl",
+    "judge_reviews.jsonl",
 )
 
 

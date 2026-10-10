@@ -589,12 +589,23 @@ def run_resumable_benchmark(
                     save()
                     event("stage_started", question_id=question_id, stage=stage)
                     started = time.monotonic()
-                    raw = evaluator(artifact)
+                    from app.benchmark.judge_audit import judge_context
+
+                    with judge_context(output_dir, question_id, run_id):
+                        try:
+                            raw = evaluator(artifact)
+                        except BaseException as exc:
+                            if getattr(exc, "judge_trace_id", None):
+                                for n in names:
+                                    state["metrics"][n]["judge_trace_id"] = exc.judge_trace_id
+                            raise
                     values = validate_metrics(raw, names)
                     for n, value in values.items():
                         state["metrics"][n].update(
                             status="success", value=value, seconds=time.monotonic() - started
                         )
+                        if getattr(raw, "judge_trace_id", None):
+                            state["metrics"][n]["judge_trace_id"] = raw.judge_trace_id
                     save()
                     event("metric_saved", question_id=question_id, metrics=values)
                 if checkpoint["operation"] == "paused":

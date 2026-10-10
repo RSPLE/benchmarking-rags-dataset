@@ -36,6 +36,29 @@ def parse_command(text):
         action, action
     )
     args = parts[1:]
+    if action in {"reavaliar", "rejudge"}:
+        from app.benchmark.review import add_review_options
+
+        parser = CommandParser(prog="/reavaliar", add_help=False, allow_abbrev=False)
+        parser.add_argument("project", choices=PROJECTS)
+        parser.add_argument("experiment")
+        add_review_options(parser)
+        values = vars(parser.parse_args(args))
+        if not re.fullmatch(r"[0-9a-f]{64}", values["experiment"]):
+            raise ValueError("Expected the full experiment ID")
+        if len(values["reason"]) > 1000:
+            raise ValueError("Review reason is too long")
+        project, experiment = values.pop("project"), values.pop("experiment")
+        return {
+            "action": "reavaliar",
+            "project": project,
+            "projects": [project],
+            "experiment": experiment,
+            "questions": len(values["question_ids"]),
+            "budget": None,
+            "options": {},
+            "review": values,
+        }
     if action == "eventos":
         if len(args) != 1 or not re.fullmatch(r"[0-9]{1,18}", args[0]):
             raise ValueError("Expected an event cursor")
@@ -190,7 +213,7 @@ class Control:
         except ValueError as exc:
             text = request.get("text", "")
             if isinstance(text, str) and re.match(
-                r"^/(executar|retomar|pausar|run|resume)\b", text
+                r"^/(executar|retomar|pausar|run|resume|reavaliar|rejudge)\b", text
             ):
                 self.request_event(identifier, "request_rejected", error=sanitize(str(exc))[:1500])
                 self.db.commit()
@@ -238,7 +261,7 @@ class Control:
         if action == "notificar":
             self.request_event(identifier, "notification_test")
             return {"state": "notification_queued", "request_id": identifier}
-        if action in {"executar", "retomar"}:
+        if action in {"executar", "retomar", "reavaliar"}:
             if not self.enabled:
                 raise ValueError("Remote execution is disabled by the operator")
             budget = command["budget"]
@@ -290,6 +313,14 @@ class Control:
                     manifest = json.loads((directory / "manifest.json").read_text())
                     if manifest.get("mode") != mode:
                         raise ValueError("Profile and saved experiment modes differ")
+                if action == "reavaliar":
+                    from app.benchmark.review import review_inputs
+
+                    directory = self.directory(project, command["experiment"])
+                    review = command["review"]
+                    review_inputs(
+                        directory, review["question_ids"], review["metric"], review["evidence"]
+                    )
                 job_id = identifier if len(projects) == 1 else f"{identifier}:{index + 1}"
                 job = {**command, "project": project, "budget": budget, "profile": profile}
                 self.db.execute(
@@ -317,7 +348,7 @@ class Control:
             parser = CommandParser(prog="/executar RAG [RAG ...]", add_help=False)
             add_run_options(parser)
             return {
-                "commands": "/executar RAG|all; /retomar RAG EXP; /status [RAG EXP]; /pausar RAG EXP; /falhas RAG EXP; /pergunta RAG EXP Q001; /resultado RAG EXP",
+                "commands": "/executar RAG|all; /retomar RAG EXP; /reavaliar RAG EXP --metric context_recall --question-ids Q005 --evidence original; /status [RAG EXP]; /pausar RAG EXP; /falhas RAG EXP; /pergunta RAG EXP Q001; /resultado RAG EXP",
                 "flags": parser.format_help(),
                 "example": "/executar all --questions 1 --selection pending --repetition 1",
             }
@@ -488,6 +519,25 @@ class Worker:
         try:
             assignment = json.loads((self.control.database.parent / f"{self.job}.json").read_text())
             directory = self.control.directory(assignment["project"], assignment["experiment_id"])
+            if assignment.get("review"):
+                from app.benchmark.judge_audit import read_events
+
+                events = [
+                    event
+                    for event in read_events((directory / "judge_reviews.jsonl").read_bytes())
+                    if event.get("request_id") == assignment["review"]
+                ]
+                failures = [event for event in events if event.get("status") == "failed"]
+                if failures:
+                    last = failures[-1]
+                    return (
+                        f"Reavaliação: {len(failures)} falha(s); última em "
+                        f"{last['question_id']} · {last['metric']}. "
+                        "Consulte o erro e a resposta do juiz em Juiz e reavaliação."
+                    )
+                return (
+                    "Reavaliação interrompida; consulte as tentativas salvas em Juiz e reavaliação."
+                )
             summary = json.loads((directory / "summary.json").read_text())
             alert = summary.get("alert", {})
             if summary.get("run_id") == assignment["run_id"] and alert.get("error"):
@@ -622,11 +672,32 @@ class Worker:
             else "main.py"
         )
         project = ROOT / "app" / "rags" / command["project"]
+        arguments = [entrypoint]
+        working_directory = project
+        if command["action"] == "reavaliar":
+            review = command["review"]
+            env["BENCHMARK_CREDIT_SCOPE"] = "judge"
+            arguments = [
+                "-m",
+                "app.benchmark.review",
+                str(directory),
+                "--metric",
+                review["metric"],
+                "--question-ids",
+                ",".join(review["question_ids"]),
+                "--evidence",
+                review["evidence"],
+                "--reason",
+                review["reason"],
+                "--request-id",
+                identifier,
+            ]
+            working_directory = ROOT
         self.log = (self.control.database.parent / f"{identifier}.log").open("w")
         os.chmod(self.log.name, 0o600)
         self.process = subprocess.Popen(
-            [*uv_command(), "run", "--project", str(project), "--locked", "python", entrypoint],
-            cwd=project,
+            [*uv_command(), "run", "--project", str(project), "--locked", "python", *arguments],
+            cwd=working_directory,
             env=env,
             stdout=self.log,
             stderr=subprocess.STDOUT,

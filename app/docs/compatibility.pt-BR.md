@@ -45,6 +45,8 @@ cobertura completa: conferir `summary.json` e seus denominadores antes de compar
 | `public_results.json` | IDs e campos públicos do CSV, sem respostas ou evidências |
 | `summary.json` | Cobertura, médias, falhas, etapa e consumo conhecido/desconhecido |
 | `usage.jsonl` e `budget.jsonl` | Consumo de preparação, geração, embeddings e juiz, separado dos tokens da resposta |
+| `judge_responses.jsonl` | Saídas, justificativas estruturadas, entradas e tentativas do juiz; privado |
+| `judge_reviews.jsonl` | Reavaliações explícitas por métrica, com notas originais e novas; privado |
 
 `answer_*` mede a etapa de resposta, preservando a finalidade original das colunas;
 não é o custo total do experimento. Reuso de índices/recuperação evita trabalho e
@@ -81,6 +83,12 @@ Assim, a fidelidade principal mede sustentação nos documentos; ela não mede
 automaticamente toda a evidência do grafo ou do histórico. Misturar essas evidências
 no CSV principal mudaria o protocolo original. Uma avaliação alternativa exige
 outro experimento explicitamente identificado.
+
+A tela [Juiz e reavaliação](judge-review.pt-BR.md) permite auditar essas diferenças
+e repetir uma métrica com as entradas salvas. As revisões têm identidade e política
+próprias, sem substituir as notas, médias ou CSV do experimento principal. Registrar
+a saída do juiz não altera os prompts nem o cálculo das métricas. Os hashes anteriores
+do código foram preservados no registro de compatibilidade para futuras retomadas.
 
 ## Sessão do Knowledge e diferenças declaradas
 

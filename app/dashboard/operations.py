@@ -55,3 +55,30 @@ def request_control(settings, token, text, command_id=None):
             "text": text,
         },
     )
+
+
+def build_review_command(
+    project,
+    experiment,
+    metric,
+    identifiers,
+    evidence="original",
+    reason="Revisão solicitada pelo operador",
+):
+    command = shlex.join(
+        [
+            "/reavaliar",
+            project,
+            experiment,
+            "--metric",
+            metric,
+            "--question-ids",
+            ",".join(identifiers),
+            "--evidence",
+            evidence,
+            "--reason",
+            reason,
+        ]
+    )
+    parse_command(command)
+    return command

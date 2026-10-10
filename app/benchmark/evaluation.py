@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import uuid
 from copy import deepcopy
 
 from app.benchmark.config import METRICS
+from app.benchmark.judge_audit import JudgeResult, JudgeTrace
 from app.benchmark.runner import validate_metrics
 
 
@@ -11,6 +13,19 @@ class MetricEvaluator:
         self.llm = self.embeddings = None
 
     def evaluate(self, name, artifact):
+        if name not in METRICS:
+            raise ValueError("Unknown metric")
+        trace = JudgeTrace(name, artifact)
+        try:
+            values = self._evaluate(name, artifact, trace)
+        except BaseException as exc:
+            exc.judge_trace_id = trace.trace_id
+            trace.emit("failed", error_type=type(exc).__name__, error=str(exc))
+            raise
+        trace.emit("finished", values=values)
+        return JudgeResult(values, trace.trace_id)
+
+    def _evaluate(self, name, artifact, trace):
         if not artifact.get("contexts"):
             raise ValueError("Evaluation requires saved evidence")
         from app.providers.ragas_compat import build_ragas_run_config, ensure_ragas_langchain_compat
@@ -30,9 +45,21 @@ class MetricEvaluator:
         for prompt in metric.get_prompts().values():
             original = prompt.generate_multiple
 
-            async def bounded(*args, _original=original, **kwargs):
+            async def bounded(*args, _original=original, _prompt=prompt, **kwargs):
                 kwargs["retries_left"] = min(kwargs.get("retries_left", 1), 1)
-                return await _original(*args, **kwargs)
+                invocation_id = uuid.uuid4().hex
+                trace.emit(
+                    "prompt",
+                    invocation_id=invocation_id,
+                    name=_prompt.name,
+                    instruction=_prompt.instruction,
+                    data=kwargs.get("data", args[0] if args else None),
+                )
+                outputs = await _original(*args, **kwargs)
+                trace.emit(
+                    "judgment", invocation_id=invocation_id, name=_prompt.name, outputs=outputs
+                )
+                return outputs
 
             prompt.generate_multiple = bounded
         result = evaluate(
@@ -45,6 +72,7 @@ class MetricEvaluator:
             run_config=build_ragas_run_config(),
             raise_exceptions=True,
             show_progress=False,
+            callbacks=[trace.callback()],
         )
         return validate_metrics(result.to_pandas().iloc[0].to_dict(), [name])
 
