@@ -7,6 +7,7 @@ COPY app/dashboard/pyproject.toml app/dashboard/uv.lock /app/app/dashboard/
 RUN uv sync --project app/dashboard --frozen --no-dev --python /usr/local/bin/python
 COPY app/*.py /app/app/
 COPY app/benchmark /app/app/benchmark
+COPY app/plots /app/app/plots
 COPY app/providers /app/app/providers
 COPY app/services /app/app/services
 COPY app/telegram /app/app/telegram

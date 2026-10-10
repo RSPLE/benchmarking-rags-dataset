@@ -1,1 +1,91 @@
-﻿id;question;ground_truth;source_book
+﻿question;faithfulness;answer_relevancy;context_precision;context_recall;answer_response_time_seconds;answer_input_tokens;answer_output_tokens;answer_total_tokens
+O que significa 'lógica de programação' em palavras simples?;1.0;0.9029294633642314;0.3333333333;1.0;3.694106;1257;586;1843
+A lógica existe no nosso dia a dia, fora da programação de computadores?;1.0;0.9180725150849639;0.9999999999666667;1.0;6.223801;1379;761;2140
+De um jeito bem direto: o que é um algoritmo?;1.0;0.7565862305048568;0.9999999999666667;0.0;2.467871;1342;768;2110
+Quais são as principais formas de representar um algoritmo?;1.0;0.8396516205427625;0.99999999995;0.0;4.185194;1337;573;1910
+O que é uma variável dentro de um algoritmo?;1.0;0.6687151534026929;0.9999999999;1.0;3.295069;1218;493;1711
+Quais regras um identificador (nome de variável) deve seguir?;1.0;0.985313821435717;0.99999999995;1.0;7.401978;1400;1392;2792
+O que é uma constante em um algoritmo?;1.0;0.8034799746060197;0.8333333332916666;1.0;5.411684;908;1103;2011
+Por que usamos aspas duplas ao escrever uma constante do tipo caractere?;1.0;1.0;0.9166666666361111;1.0;3.170916;1068;519;1587
+Qual é a diferença entre uma constante e uma variável?;1.0;0.9724064417830802;0.8333333332916666;1.0;4.266473;1163;819;1982
+Dê um exemplo que ajude a ilustrar a diferença entre uma constante e uma variável.;1.0;0.8872704675810538;0.99999999995;1.0;4.276551;1161;793;1954
+Quais são os tipos de dados primitivos usados na lógica de programação?;1.0;0.7052094627211004;0.9999999999;1.0;3.457989;1211;697;1908
+O que caracteriza o tipo de dado lógico?;1.0;0.9126477836493834;0.9999999999666667;0.0;2.424886;1306;374;1680
+Para que serve o comando 'leia' em um algoritmo?;1.0;0.8604768322148205;0.99999999995;1.0;2.708094;1135;369;1504
+De onde vêm os dados que o comando de entrada armazena nas variáveis?;1.0;1.0000000000000002;0.99999999998;0.5;3.235244;1231;575;1806
+Qual é a função do comando 'escreva' em um algoritmo?;1.0;0.8983821661531022;0.9999999999666667;1.0;10.133741;1334;832;2166
+É possível exibir mais de uma informação em um único comando 'escreva'?;1.0;0.9107863872088041;0.99999999995;1.0;5.298108;1423;932;2355
+Quais são os operadores aritméticos básicos usados em algoritmos?;1.0;0.9291880818626715;0.999999999975;1.0;4.171076;1118;384;1502
+Como a potenciação e a radiciação são representadas em pseudocódigo, já que os símbolos ^ e √ não são usados?;1.0;0.8943806240858078;0.8333333332916666;1.0;1.895778;1130;253;1383
+Para que servem os operadores relacionais?;1.0;0.8531387947108245;0.9999999999666667;1.0;3.473878;1283;644;1927
+De que tipo é sempre o resultado de uma comparação feita com um operador relacional?;0.5;0.9382693825248861;0.99999999995;1.0;2.245408;1317;194;1511
+Quais são os três operadores lógicos básicos e o que cada um faz?;0.8571428571428571;0.9581737808572636;0.9999999999;1.0;4.542437;938;1073;2011
+Em que situação o operador lógico 'e' entre duas condições resulta verdadeiro?;1.0;0.8523078333963993;0.7555555555303703;1.0;2.617012;1324;345;1669
+O que o comando de atribuição faz em um algoritmo?;1.0;0.7555694321148083;0.999999999975;0.0;4.945542;1358;907;2265
+O que deve existir do lado esquerdo do símbolo de atribuição?;0.75;0.0;0.0;0.0;2.17995;846;371;1217
+O que caracteriza a estrutura sequencial de um algoritmo?;1.0;0.8716786412628846;0.9999999999666667;1.0;3.431451;1385;770;2155
+Como as ações costumam ser separadas dentro da estrutura sequencial de um algoritmo?;0.5;0.0;0.0;0.0;5.113255;1172;1543;2715
+Qual é a ordem de prioridade entre parênteses, operadores aritméticos, operadores relacionais e operadores lógicos em uma expressão?;0.9411764705882353;0.7665406337524208;0.5833333333041666;1.0;4.621615;1096;1105;2201
+Entre os operadores lógicos não, e e ou, qual tem a maior prioridade na resolução de uma expressão?;1.0;0.9526784276619334;0.9166666666361111;1.0;2.337873;1175;360;1535
+Quais são os tipos de dados numéricos usados em Python e qual é a diferença entre eles?;1.0;0.949063158625817;0.9999999999;1.0;5.567779;1343;1007;2350
+Como Python representa os valores lógicos (booleanos)?;1.0;0.9432188449992829;0.5833333333041666;1.0;5.242427;1115;427;1542
+Como funciona a estrutura condicional simples (se-então) e quando o comando associado a ela é de fato executado?;1.0;0.9350613225596698;0.5333333333155555;1.0;5.19331;1232;1139;2371
+Qual é a diferença entre a estrutura condicional simples e a composta?;1.0;0.9467962671651052;0.5833333333041666;1.0;5.142347;1263;996;2259
+Em uma seleção composta, o que acontece se o resultado da condição for falso?;0.8;0.7211185064805519;0.41111111109740744;1.0;5.490874;1192;1013;2205
+O que caracteriza uma estrutura condicional encadeada (senão-se) e por que ela é chamada de heterogênea quando não há um padrão de construção identificável?;1.0;0.8587861877617922;0.9999999999;0.5;3.164671;730;787;1517
+Como um algoritmo pode usar comandos condicionais aninhados (um se dentro de outro) para refinar uma decisão já tomada, como na classificação da nota de aprovação de um aluno em faixas?;1.0;0.8044668878740958;0.9999999999;0.5;6.006054;1147;1386;2533
+Como a estrutura de repetição com pré-teste (enquanto) controla quantas vezes um trecho do algoritmo será executado?;1.0;0.8570835248799537;0.5833333333041666;1.0;4.035279;1063;768;1831
+Em uma estrutura enquanto, o que é preciso fazer para controlar o número de repetições, já que essa estrutura não oferece esse recurso por si só?;0.5;0.7466484742168354;0.5833333333041666;1.0;6.919896;1483;1650;3133
+Como funciona a estrutura de repetição para (com variável de controle) e o que a diferencia das outras estruturas de repetição?;0.75;0.7134191987815183;0.8333333333055556;1.0;7.963615;1354;1582;2936
+O que diferencia a estrutura repita...até das outras estruturas de repetição quanto ao momento em que a condição é testada?;1.0;0.7802242826773701;0.8333333333055556;1.0;3.334961;1158;699;1857
+Quando uma estrutura enquanto é substituída por uma estrutura repita para resolver o mesmo problema, o que precisa mudar na condição usada?;1.0;0.7519028663450228;0.249999999975;1.0;2.229778;1255;396;1651
+Em uma estrutura de repetição, o que é um contador e para que ele serve dentro do laço?;0.8;0.8084483289513137;0.8333333332916666;1.0;4.179544;1230;897;2127
+Qual é a diferença entre um contador e um acumulador usados dentro de estruturas de repetição?;1.0;0.0;0.0;0.0;8.852037;1192;1512;2704
+Por que um acumulador precisa ser inicializado com zero antes de entrar no laço de repetição?;0.8;0.7980882592835311;0.999999999975;0.5;3.686237;992;771;1763
+O que é um vetor (variável composta unidimensional) e como um elemento específico dentro dele é acessado?;1.0;0.7876186479128693;0.8666666666377778;1.0;3.126834;1312;847;2159
+Qual é a diferença entre o índice de um vetor e o elemento armazenado naquela posição?;1.0;0.7153600991129029;0.6388888888675925;1.0;2.05811;1463;188;1651
+Como o número total de elementos de um vetor é calculado a partir dos limites inicial e final definidos em sua declaração?;0.5;0.0;0.0;0.0;5.282679;1334;1077;2411
+O que é uma matriz (estrutura composta multidimensional) e o que a diferencia de um vetor comum?;0.9166666666666666;0.8683714416881995;0.9999999999666667;0.5;5.50163;1340;892;2232
+Como uma matriz bidimensional é declarada e como se calcula o número total de elementos que ela pode armazenar?;0.5454545454545454;0.7129385244624732;0.0;0.5;10.566934;1322;2046;3368
+Como duas cadeias de caracteres podem ser concatenadas (unidas) em um algoritmo e o que essa operação produz como resultado?;1.0;0.9727432745288729;0.999999999975;1.0;4.754982;1350;871;2221
+Como se descobre o número de caracteres (comprimento) armazenados em uma cadeia de caracteres e como é possível determinar se uma cadeia aparece dentro de outra?;1.0;0.7834221876841427;0.8333333332916666;1.0;6.410021;1192;1417;2609
+Como funciona a combinação de operadores lógicos (e, ou, não) com operadores relacionais em uma expressão lógica composta?;0.8333333333333334;0.8642989688310476;0.33333333331666665;0.5;7.154858;1424;1644;3068
+O que o operador módulo (resto da divisão) faz e como ele pode ser usado para verificar se um número é par ou ímpar?;1.0;0.9211121239532544;0.999999999975;0.5;5.860939;1396;1215;2611
+Por que é necessário usar laços de repetição aninhados (um dentro do outro) para simular algo como uma contagem regressiva de minutos e segundos?;1.0;0.0;0.9999999999;1.0;8.895188;1200;2505;3705
+Ao aninhar dois laços para percorrer uma matriz bidimensional, quantas vezes no total o laço mais interno é executado e do que isso depende?;1.0;0.7307321020993142;0.99999999995;1.0;9.776168;1269;2020;3289
+O que acontece quando uma estrutura de seleção (se-então-senão) é combinada com uma estrutura de repetição, como ao decidir a situação de aprovação/reprovação de vários alunos dentro do mesmo laço?;0.5;0.0;0.0;0.0;3.024865;1166;566;1732
+Como funciona uma estrutura de seleção múltipla (do tipo switch/case) usada dentro de um laço de repetição para contar ocorrências de diferentes categorias, como tipos de vinho lidos até um valor de término?;1.0;0.7214663708987162;0.9999999999;0.5;5.739778;1239;1755;2994
+Que tipo de estrutura de repetição é mais adequado quando já se sabe exatamente quantas vezes um trecho do algoritmo deve ser executado, como ao ler as notas de uma turma de tamanho fixo?;1.0;0.8734363957183632;0.699999999965;1.0;3.198942;1064;530;1594
+Em uma matriz unidimensional (vetor), qual é a vantagem operacional de usar essa estrutura em vez de declarar várias variáveis simples separadas para armazenar um conjunto de valores relacionados?;0.8333333333333334;0.0;0.8874999999778125;0.5;9.03834;1284;2170;3454
+Como as listas em Python podem ser percorridas usando um laço while e o que controla o acesso a cada posição durante essa repetição?;1.0;0.8682055056452964;0.6388888888675925;1.0;5.396064;1451;992;2443
+Qual é a relação entre a função len e os índices válidos de uma lista em Python?;1.0;0.771381409493798;0.99999999995;1.0;2.553126;1360;488;1848
+Qual é a diferença fundamental entre um procedimento e uma função como subprogramas?;1.0;0.8628125258090805;0.5833333333041666;0.0;3.599856;1360;723;2083
+No método de módulos de Forbellone, o que distingue um módulo com 'contexto de ação' de um módulo com 'contexto de resultado'?;1.0;0.558217290214655;0.99999999995;0.5;2.784666;1347;721;2068
+O que é o fator de carga de uma tabela hash e por que ele é usado como critério para redimensionar a tabela?;1.0;0.9909708663809901;0.9999999999666667;1.0;6.844752;715;1172;1887
+No exemplo com as sub-rotinas S2 (parâmetro por valor) e S3 (parâmetro por referência) do livro de Ascencio et al., o que acontece com as variáveis globais X e Y do programa principal após cada chamada?;0.6666666666666666;0.0;0.0;0.0;4.254717;1199;648;1847
+No exemplo de Forbellone sobre escopo de variáveis com módulos aninhados, o que acontece quando uma variável K é declarada tanto no início do algoritmo (global) quanto dentro de um módulo interno, com o mesmo nome?;0.5;0.0;0.0;0.0;4.727912;1392;852;2244
+Segundo Ascencio et al., qual é a diferença entre uma variável local e uma variável global em um algoritmo com sub-rotinas, e o que acontece com cada uma delas ao final da execução?;0.8666666666666667;0.7845279073736461;0.99999999998;1.0;14.218967;1472;1158;2630
+O que é recursão e por que toda função recursiva precisa de um caso base?;1.0;0.9526659361665475;0.8055555555287036;0.5;3.833616;1128;722;1850
+O que é a 'pilha de chamadas' e como ela se relaciona com a recursão?;1.0;0.7806854122679759;0.9999999999666667;1.0;3.857503;1191;1149;2340
+Como funciona a função fatorial recursiva e qual é o seu caso base?;0.7058823529411765;0.8224297178656323;0.7222222221981481;1.0;3.088542;1365;496;1861
+Ao calcular o fatorial de 3 usando a versão recursiva, o que acontece na pilha de chamadas enquanto a função ainda não retornou nenhum valor?;1.0;0.7243333324613833;0.4166666666458333;1.0;11.038356;1251;1774;3025
+Como funciona a busca simples (busca linear) e qual é o seu tempo de execução em notação Big O?;1.0;0.8727816803950169;0.0;0.0;8.549022;1255;1510;2765
+Diferentemente da busca binária, a busca simples exige que a lista esteja ordenada para funcionar?;0.6666666666666666;0.0;0.0;0.0;4.976051;1115;765;1880
+Como funciona a busca binária e qual é o seu pré-requisito em relação aos dados?;1.0;0.8348721781729118;0.499999999975;0.5;3.982615;1296;724;2020
+Qual é o tempo de execução da busca binária em notação Big O e por que ela é considerada muito mais rápida que a busca simples em listas grandes?;1.0;0.9269883275571756;0.5833333333041666;0.0;6.788976;1093;1112;2205
+Como funciona o algoritmo de ordenação por seleção?;1.0;0.0;0.0;0.0;9.111413;1151;1692;2843
+Qual é o tempo de execução da ordenação por seleção e por que ele continua sendo O(n²) mesmo que o número de elementos verificados a cada passagem diminua?;1.0;0.8814367822161069;0.5888888888692593;1.0;3.897425;1252;655;1907
+Como funciona o método de ordenação conhecido como bubble sort?;1.0;0.9411933894124415;0.7499999999625;1.0;2.710417;1234;1214;2448
+Qual é a diferença de estratégia entre a ordenação por seleção direta e o bubble sort?;0.8571428571428571;0.914002089696997;0.249999999975;0.0;5.91282;1246;1274;2520
+Como o quicksort aplica a estratégia de dividir para conquistar para ordenar um vetor?;1.0;0.7897607171272482;0.8333333332916666;1.0;5.118892;1066;1024;2090
+Por que o quicksort costuma ser mais rápido que o merge sort na prática, mesmo que ambos tenham o mesmo tempo médio de execução de O(n log n)?;1.0;0.8941689539328189;0.49999999995;1.0;3.878458;534;537;1071
+O que a notação Big O representa e por que ela não mede o tempo de execução de um algoritmo em segundos?;1.0;0.9335497979980408;0.249999999975;1.0;4.964298;1205;888;2093
+Por que a constante que acompanha o tempo de execução de um algoritmo costuma ser ignorada na notação Big O, mas em alguns casos pode fazer diferença?;0.9285714285714286;0.8894826905061542;0.8055555555287036;1.0;17.242892;1115;1289;2404
+O que caracteriza a estrutura de dados pilha e quais são as suas duas operações básicas?;0.8;0.9470488626015549;0.0;0.0;5.519458;888;1156;2044
+De que forma a pilha de chamadas do computador é um exemplo prático de como funciona uma pilha LIFO?;1.0;0.7646710193295472;0.8666666666377778;0.5;12.518582;1211;1960;3171
+O que caracteriza a estrutura de dados fila e quais são as suas duas operações básicas?;0.9285714285714286;0.9409500115989342;0.9999999999;0.5;6.573611;1230;1292;2522
+Por que a busca em largura em um grafo usa uma fila, em vez de uma pilha, para guardar os elementos a serem verificados?;0.75;0.0;0.0;0.0;2.447159;1140;252;1392
+O que é uma função hash e como ela permite que uma tabela hash encontre um valor com tempo de execução O(1)?;1.0;0.9972695511514011;0.9999999999;1.0;4.75169;910;1047;1957
+O que é uma colisão em uma tabela hash e qual é a solução mais simples para resolvê-la?;0.8571428571428571;0.0;0.0;0.0;8.529971;1122;695;1817
+O que é um registro (estrutura de dados heterogênea) e como ele difere de um vetor ou de uma matriz?;0.9333333333333333;0.7480876201974941;0.4499999999775;0.5;13.856183;1075;1366;2441
+Como um tipo registro é declarado e como um campo específico de uma variável desse tipo é acessado?;1.0;0.0;0.19999999998;0.5;5.186692;1094;1071;2165

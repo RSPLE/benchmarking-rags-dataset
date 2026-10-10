@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import sys
 from datetime import UTC, datetime
 from html import escape
@@ -20,6 +21,7 @@ from app.dashboard.execution import execution_view, pending_view
 from app.dashboard.judge import judge_view
 from app.dashboard.questions import question_results_view
 from app.dashboard.sessions import COOKIE_NAME, csrf_token, session_identity
+from app.plots.view import plots_view
 
 st.set_page_config(
     page_title="Observatório RAG · LogiBots",
@@ -36,6 +38,7 @@ SECTIONS = [
     "Baixar dados",
     "Juiz e reavaliação",
     "Gráficos originais",
+    "Gráficos metrics-rags",
     "Tokens e tempo",
     "Questões",
     "Chamadas e modelos",
@@ -192,6 +195,10 @@ def dashboard():
             "RAGs e repetições",
             list(by_id),
             default=defaults,
+            key=(
+                "experiment-selection-"
+                + hashlib.sha256("\n".join(by_id).encode()).hexdigest()[:12]
+            ),
             format_func=lambda key: (
                 f"{by_id[key]['project']} · {by_id[key]['external_id'][:12]} · {by_id[key]['model']}"
             ),
@@ -241,6 +248,8 @@ def dashboard():
         )
         if not comparison.empty:
             downloads("original", comparison, "metricas-originais")
+    elif section == "Gráficos metrics-rags":
+        plots_view(comparison)
     elif section == "Gráficos originais":
         choice = st.selectbox(
             "Tipo original",
