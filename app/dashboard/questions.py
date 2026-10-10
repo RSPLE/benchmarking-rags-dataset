@@ -72,7 +72,7 @@ def question_results(database, experiment_id=None, *, dataset=None):
             "id": question["id"],
             "status": STATUS.get(status, status),
             "question": question["question"],
-            "answer": result.get("answer") or artifact.get("answer"),
+            "answer": result.get("answer") or artifact.get("answer") or sample.get("answer"),
             "cost_usd": usage.get("cost"),
             "known_cost_calls": usage.get("known"),
             "total_calls": usage.get("calls"),

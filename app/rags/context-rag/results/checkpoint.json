@@ -1,10 +1,18 @@
 {
-  "version": 1,
+  "version": 2,
   "project": "context-rag",
-  "dataset": "/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/eval-dataset/qa_dataset_90.json",
+  "dataset": "/app/data/evaluation/qa_dataset_90.json",
   "dataset_sha256": "f3c3cbbfe0a89019e04465a661e7fde982089cd1fb64c36fb37b0dd02b9cea85",
+  "manifest_fingerprint": "43ac2a193b518e1b8f537e30550f76fe82ec5181a7b9532f9bb099b43f8c2d8b",
+  "required_metrics": [
+    "faithfulness",
+    "answer_relevancy",
+    "context_precision",
+    "context_recall"
+  ],
   "created_at": "2026-09-11T00:18:17.390638+00:00",
-  "updated_at": "2026-09-13T20:06:18.606348+00:00",
+  "updated_at": "2026-10-09T23:44:10.371592+00:00",
+  "operation": "idle",
   "items": {
     "Q001": {
       "status": "success",
@@ -25,6 +33,15 @@
         "answer_input_tokens": 1063,
         "answer_output_tokens": 816,
         "answer_total_tokens": 1879
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q002": {
@@ -46,6 +63,15 @@
         "answer_input_tokens": 1183,
         "answer_output_tokens": 905,
         "answer_total_tokens": 2088
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q003": {
@@ -67,6 +93,15 @@
         "answer_input_tokens": 1237,
         "answer_output_tokens": 1093,
         "answer_total_tokens": 2330
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q004": {
@@ -88,6 +123,15 @@
         "answer_input_tokens": 1205,
         "answer_output_tokens": 741,
         "answer_total_tokens": 1946
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q005": {
@@ -109,6 +153,15 @@
         "answer_input_tokens": 1005,
         "answer_output_tokens": 535,
         "answer_total_tokens": 1540
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q006": {
@@ -130,6 +183,15 @@
         "answer_input_tokens": 1107,
         "answer_output_tokens": 1375,
         "answer_total_tokens": 2482
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q007": {
@@ -151,6 +213,15 @@
         "answer_input_tokens": 776,
         "answer_output_tokens": 856,
         "answer_total_tokens": 1632
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q008": {
@@ -172,6 +243,15 @@
         "answer_input_tokens": 1014,
         "answer_output_tokens": 1565,
         "answer_total_tokens": 2579
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q009": {
@@ -193,6 +273,15 @@
         "answer_input_tokens": 1018,
         "answer_output_tokens": 1232,
         "answer_total_tokens": 2250
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q010": {
@@ -214,6 +303,15 @@
         "answer_input_tokens": 1131,
         "answer_output_tokens": 716,
         "answer_total_tokens": 1847
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q011": {
@@ -235,6 +333,15 @@
         "answer_input_tokens": 1036,
         "answer_output_tokens": 864,
         "answer_total_tokens": 1900
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q012": {
@@ -256,6 +363,15 @@
         "answer_input_tokens": 1131,
         "answer_output_tokens": 535,
         "answer_total_tokens": 1666
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q013": {
@@ -277,6 +393,15 @@
         "answer_input_tokens": 948,
         "answer_output_tokens": 437,
         "answer_total_tokens": 1385
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q014": {
@@ -298,6 +423,15 @@
         "answer_input_tokens": 851,
         "answer_output_tokens": 318,
         "answer_total_tokens": 1169
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q015": {
@@ -319,6 +453,15 @@
         "answer_input_tokens": 1049,
         "answer_output_tokens": 629,
         "answer_total_tokens": 1678
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q016": {
@@ -340,6 +483,15 @@
         "answer_input_tokens": 1257,
         "answer_output_tokens": 581,
         "answer_total_tokens": 1838
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q017": {
@@ -361,6 +513,15 @@
         "answer_input_tokens": 1020,
         "answer_output_tokens": 278,
         "answer_total_tokens": 1298
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q018": {
@@ -382,6 +543,15 @@
         "answer_input_tokens": 1280,
         "answer_output_tokens": 746,
         "answer_total_tokens": 2026
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q019": {
@@ -403,6 +573,15 @@
         "answer_input_tokens": 1049,
         "answer_output_tokens": 738,
         "answer_total_tokens": 1787
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q020": {
@@ -424,6 +603,15 @@
         "answer_input_tokens": 1063,
         "answer_output_tokens": 423,
         "answer_total_tokens": 1486
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q021": {
@@ -445,6 +633,15 @@
         "answer_input_tokens": 1139,
         "answer_output_tokens": 1103,
         "answer_total_tokens": 2242
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q022": {
@@ -466,6 +663,15 @@
         "answer_input_tokens": 1086,
         "answer_output_tokens": 348,
         "answer_total_tokens": 1434
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q023": {
@@ -487,6 +693,15 @@
         "answer_input_tokens": 1062,
         "answer_output_tokens": 1042,
         "answer_total_tokens": 2104
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q024": {
@@ -508,6 +723,15 @@
         "answer_input_tokens": 820,
         "answer_output_tokens": 660,
         "answer_total_tokens": 1480
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q025": {
@@ -529,6 +753,15 @@
         "answer_input_tokens": 1075,
         "answer_output_tokens": 1230,
         "answer_total_tokens": 2305
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q026": {
@@ -550,6 +783,15 @@
         "answer_input_tokens": 1158,
         "answer_output_tokens": 411,
         "answer_total_tokens": 1569
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q027": {
@@ -571,6 +813,15 @@
         "answer_input_tokens": 1086,
         "answer_output_tokens": 1213,
         "answer_total_tokens": 2299
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q028": {
@@ -592,6 +843,15 @@
         "answer_input_tokens": 1138,
         "answer_output_tokens": 453,
         "answer_total_tokens": 1591
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q029": {
@@ -613,6 +873,15 @@
         "answer_input_tokens": 1213,
         "answer_output_tokens": 1179,
         "answer_total_tokens": 2392
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q030": {
@@ -634,6 +903,15 @@
         "answer_input_tokens": 1125,
         "answer_output_tokens": 384,
         "answer_total_tokens": 1509
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q031": {
@@ -655,6 +933,15 @@
         "answer_input_tokens": 1028,
         "answer_output_tokens": 881,
         "answer_total_tokens": 1909
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q032": {
@@ -676,6 +963,15 @@
         "answer_input_tokens": 1194,
         "answer_output_tokens": 1145,
         "answer_total_tokens": 2339
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q033": {
@@ -697,6 +993,15 @@
         "answer_input_tokens": 1010,
         "answer_output_tokens": 780,
         "answer_total_tokens": 1790
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q034": {
@@ -718,6 +1023,15 @@
         "answer_input_tokens": 1147,
         "answer_output_tokens": 1066,
         "answer_total_tokens": 2213
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q035": {
@@ -739,6 +1053,15 @@
         "answer_input_tokens": 1242,
         "answer_output_tokens": 1381,
         "answer_total_tokens": 2623
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q036": {
@@ -760,6 +1083,15 @@
         "answer_input_tokens": 1082,
         "answer_output_tokens": 788,
         "answer_total_tokens": 1870
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q037": {
@@ -781,6 +1113,15 @@
         "answer_input_tokens": 1279,
         "answer_output_tokens": 1267,
         "answer_total_tokens": 2546
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q038": {
@@ -802,6 +1143,15 @@
         "answer_input_tokens": 1096,
         "answer_output_tokens": 1429,
         "answer_total_tokens": 2525
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q039": {
@@ -823,6 +1173,15 @@
         "answer_input_tokens": 979,
         "answer_output_tokens": 818,
         "answer_total_tokens": 1797
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q040": {
@@ -844,6 +1203,15 @@
         "answer_input_tokens": 1152,
         "answer_output_tokens": 1648,
         "answer_total_tokens": 2800
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q041": {
@@ -865,6 +1233,15 @@
         "answer_input_tokens": 1092,
         "answer_output_tokens": 840,
         "answer_total_tokens": 1932
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q042": {
@@ -886,6 +1263,15 @@
         "answer_input_tokens": 1132,
         "answer_output_tokens": 1321,
         "answer_total_tokens": 2453
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q043": {
@@ -907,6 +1293,15 @@
         "answer_input_tokens": 1185,
         "answer_output_tokens": 664,
         "answer_total_tokens": 1849
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q044": {
@@ -928,6 +1323,15 @@
         "answer_input_tokens": 1170,
         "answer_output_tokens": 862,
         "answer_total_tokens": 2032
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q045": {
@@ -949,6 +1353,15 @@
         "answer_input_tokens": 1218,
         "answer_output_tokens": 349,
         "answer_total_tokens": 1567
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q046": {
@@ -970,6 +1383,15 @@
         "answer_input_tokens": 1143,
         "answer_output_tokens": 748,
         "answer_total_tokens": 1891
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q047": {
@@ -991,6 +1413,15 @@
         "answer_input_tokens": 1114,
         "answer_output_tokens": 782,
         "answer_total_tokens": 1896
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q048": {
@@ -1012,6 +1443,15 @@
         "answer_input_tokens": 1159,
         "answer_output_tokens": 1121,
         "answer_total_tokens": 2280
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q049": {
@@ -1033,6 +1473,15 @@
         "answer_input_tokens": 1140,
         "answer_output_tokens": 1089,
         "answer_total_tokens": 2229
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q050": {
@@ -1054,6 +1503,15 @@
         "answer_input_tokens": 1190,
         "answer_output_tokens": 1273,
         "answer_total_tokens": 2463
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q051": {
@@ -1075,6 +1533,15 @@
         "answer_input_tokens": 1160,
         "answer_output_tokens": 1284,
         "answer_total_tokens": 2444
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q052": {
@@ -1096,6 +1563,15 @@
         "answer_input_tokens": 1321,
         "answer_output_tokens": 689,
         "answer_total_tokens": 2010
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q053": {
@@ -1117,6 +1593,15 @@
         "answer_input_tokens": 1234,
         "answer_output_tokens": 1922,
         "answer_total_tokens": 3156
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q054": {
@@ -1138,6 +1623,15 @@
         "answer_input_tokens": 1270,
         "answer_output_tokens": 950,
         "answer_total_tokens": 2220
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q055": {
@@ -1159,6 +1653,15 @@
         "answer_input_tokens": 1094,
         "answer_output_tokens": 590,
         "answer_total_tokens": 1684
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q056": {
@@ -1180,6 +1683,15 @@
         "answer_input_tokens": 1270,
         "answer_output_tokens": 1583,
         "answer_total_tokens": 2853
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q057": {
@@ -1201,6 +1713,15 @@
         "answer_input_tokens": 1009,
         "answer_output_tokens": 898,
         "answer_total_tokens": 1907
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q058": {
@@ -1222,6 +1743,15 @@
         "answer_input_tokens": 1111,
         "answer_output_tokens": 1428,
         "answer_total_tokens": 2539
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q059": {
@@ -1243,6 +1773,15 @@
         "answer_input_tokens": 1296,
         "answer_output_tokens": 897,
         "answer_total_tokens": 2193
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q060": {
@@ -1264,6 +1803,15 @@
         "answer_input_tokens": 1053,
         "answer_output_tokens": 731,
         "answer_total_tokens": 1784
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q061": {
@@ -1285,6 +1833,15 @@
         "answer_input_tokens": 1109,
         "answer_output_tokens": 959,
         "answer_total_tokens": 2068
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q062": {
@@ -1306,6 +1863,15 @@
         "answer_input_tokens": 1159,
         "answer_output_tokens": 670,
         "answer_total_tokens": 1829
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q063": {
@@ -1327,6 +1893,15 @@
         "answer_input_tokens": 837,
         "answer_output_tokens": 973,
         "answer_total_tokens": 1810
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q064": {
@@ -1348,6 +1923,15 @@
         "answer_input_tokens": 1350,
         "answer_output_tokens": 573,
         "answer_total_tokens": 1923
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q065": {
@@ -1369,6 +1953,15 @@
         "answer_input_tokens": 1256,
         "answer_output_tokens": 1335,
         "answer_total_tokens": 2591
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q066": {
@@ -1390,6 +1983,15 @@
         "answer_input_tokens": 1167,
         "answer_output_tokens": 1065,
         "answer_total_tokens": 2232
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q067": {
@@ -1411,6 +2013,15 @@
         "answer_input_tokens": 845,
         "answer_output_tokens": 657,
         "answer_total_tokens": 1502
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q068": {
@@ -1432,6 +2043,15 @@
         "answer_input_tokens": 922,
         "answer_output_tokens": 1513,
         "answer_total_tokens": 2435
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q069": {
@@ -1453,6 +2073,15 @@
         "answer_input_tokens": 1357,
         "answer_output_tokens": 966,
         "answer_total_tokens": 2323
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q070": {
@@ -1474,6 +2103,15 @@
         "answer_input_tokens": 1128,
         "answer_output_tokens": 1432,
         "answer_total_tokens": 2560
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q071": {
@@ -1495,6 +2133,15 @@
         "answer_input_tokens": 1071,
         "answer_output_tokens": 1618,
         "answer_total_tokens": 2689
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q072": {
@@ -1516,6 +2163,15 @@
         "answer_input_tokens": 1030,
         "answer_output_tokens": 620,
         "answer_total_tokens": 1650
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q073": {
@@ -1537,6 +2193,15 @@
         "answer_input_tokens": 1098,
         "answer_output_tokens": 1011,
         "answer_total_tokens": 2109
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q074": {
@@ -1558,6 +2223,15 @@
         "answer_input_tokens": 1033,
         "answer_output_tokens": 648,
         "answer_total_tokens": 1681
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q075": {
@@ -1579,6 +2253,15 @@
         "answer_input_tokens": 919,
         "answer_output_tokens": 833,
         "answer_total_tokens": 1752
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q076": {
@@ -1600,6 +2283,15 @@
         "answer_input_tokens": 1001,
         "answer_output_tokens": 964,
         "answer_total_tokens": 1965
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q077": {
@@ -1621,6 +2313,15 @@
         "answer_input_tokens": 1057,
         "answer_output_tokens": 973,
         "answer_total_tokens": 2030
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q078": {
@@ -1642,6 +2343,15 @@
         "answer_input_tokens": 1030,
         "answer_output_tokens": 743,
         "answer_total_tokens": 1773
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q079": {
@@ -1663,6 +2373,15 @@
         "answer_input_tokens": 841,
         "answer_output_tokens": 986,
         "answer_total_tokens": 1827
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q080": {
@@ -1684,6 +2403,15 @@
         "answer_input_tokens": 935,
         "answer_output_tokens": 96,
         "answer_total_tokens": 1031
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q081": {
@@ -1705,6 +2433,15 @@
         "answer_input_tokens": 1091,
         "answer_output_tokens": 657,
         "answer_total_tokens": 1748
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q082": {
@@ -1726,6 +2463,15 @@
         "answer_input_tokens": 1027,
         "answer_output_tokens": 781,
         "answer_total_tokens": 1808
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q083": {
@@ -1747,18 +2493,157 @@
         "answer_input_tokens": 1104,
         "answer_output_tokens": 537,
         "answer_total_tokens": 1641
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q084": {
-      "status": "failed",
-      "attempts": 13,
+      "status": "success",
+      "attempts": 16,
       "question": "De que forma a pilha de chamadas do computador é um exemplo prático de como funciona uma pilha LIFO?",
-      "started_at": "2026-09-13T19:58:22.978772+00:00",
-      "finished_at": "2026-09-13T20:06:18.603801+00:00",
-      "error_type": "LLMDidNotFinishException",
-      "error_message": "The LLM generation was not completed. Please increase the max_tokens and try again.",
-      "error": "LLMDidNotFinishException: The LLM generation was not completed. Please increase the max_tokens and try again.",
-      "traceback": "Traceback (most recent call last):\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/benchmark_runner.py\", line 304, in run_resumable_benchmark\n    evaluation = evaluate_question(ragas_item)\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/main.py\", line 448, in evaluate_question\n    result = run_ragas([ragas_item], eval_llm, embeddings)\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/main.py\", line 371, in run_ragas\n    result = evaluate(\n        dataset,\n    ...<4 lines>...\n        raise_exceptions=True,\n    )\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/_analytics.py\", line 278, in wrapper\n    result = func(*args, **kwargs)\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/evaluation.py\", line 484, in evaluate\n    return run(_async_wrapper())\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/async_utils.py\", line 156, in run\n    return asyncio.run(coro)\n           ~~~~~~~~~~~^^^^^^\n  File \"/var/home/martinianogomes/.local/share/uv/python/cpython-3.13.15-linux-x86_64-gnu/lib/python3.13/asyncio/runners.py\", line 196, in run\n    return runner.run(main)\n           ~~~~~~~~~~^^^^^^\n  File \"/var/home/martinianogomes/.local/share/uv/python/cpython-3.13.15-linux-x86_64-gnu/lib/python3.13/asyncio/runners.py\", line 119, in run\n    return self._loop.run_until_complete(task)\n           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^\n  File \"/var/home/martinianogomes/.local/share/uv/python/cpython-3.13.15-linux-x86_64-gnu/lib/python3.13/asyncio/base_events.py\", line 726, in run_until_complete\n    return future.result()\n           ~~~~~~~~~~~~~^^\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/evaluation.py\", line 457, in _async_wrapper\n    return await aevaluate(\n           ^^^^^^^^^^^^^^^^\n    ...<15 lines>...\n    )\n    ^\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/evaluation.py\", line 311, in aevaluate\n    raise e\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/evaluation.py\", line 287, in aevaluate\n    results = await executor.aresults()\n              ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/executor.py\", line 200, in aresults\n    results = await self._process_jobs()\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/executor.py\", line 131, in _process_jobs\n    await self._process_coroutines(\n        jobs_to_process, internal_pbar, results, max_workers\n    )\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/executor.py\", line 189, in _process_coroutines\n    raise result\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/async_utils.py\", line 114, in process_futures\n    result = await future\n             ^^^^^^^^^^^^\n  File \"/var/home/martinianogomes/.local/share/uv/python/cpython-3.13.15-linux-x86_64-gnu/lib/python3.13/asyncio/tasks.py\", line 634, in _wait_for_one\n    return f.result() if resolve else f\n           ~~~~~~~~^^\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/async_utils.py\", line 77, in sema_coro\n    return await coro\n           ^^^^^^^^^^\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/executor.py\", line 73, in wrapped_callable_async\n    raise e\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/executor.py\", line 69, in wrapped_callable_async\n    result = await callable(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/metrics/base.py\", line 488, in single_turn_ascore\n    raise e\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/metrics/base.py\", line 481, in single_turn_ascore\n    score = await asyncio.wait_for(\n            ^^^^^^^^^^^^^^^^^^^^^^^\n    ...<2 lines>...\n    )\n    ^\n  File \"/var/home/martinianogomes/.local/share/uv/python/cpython-3.13.15-linux-x86_64-gnu/lib/python3.13/asyncio/tasks.py\", line 507, in wait_for\n    return await fut\n           ^^^^^^^^^\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/metrics/_faithfulness.py\", line 200, in _single_turn_ascore\n    return await self._ascore(row, callbacks)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/metrics/_faithfulness.py\", line 213, in _ascore\n    verdicts = await self._create_verdicts(row, statements, callbacks)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/metrics/_faithfulness.py\", line 158, in _create_verdicts\n    verdicts = await self.nli_statements_prompt.generate(\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/prompt/pydantic_prompt.py\", line 177, in generate\n    output_single = await self.generate_multiple(\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<7 lines>...\n    )\n    ^\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/prompt/pydantic_prompt.py\", line 277, in generate_multiple\n    resp = await ragas_llm.generate(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<5 lines>...\n    )\n    ^\n  File \"/var/home/martinianogomes/Documentos/projetos/rsple/benchmarking-rags-dataset/rags/context-rag/.venv/lib/python3.13/site-packages/ragas/llms/base.py\", line 126, in generate\n    raise LLMDidNotFinishException()\nragas.exceptions.LLMDidNotFinishException: The LLM generation was not completed. Please increase the max_tokens and try again.\n"
+      "started_at": "2026-10-09T23:43:33.350649+00:00",
+      "finished_at": "2026-10-09T23:44:10.350022+00:00",
+      "metrics": {
+        "faithfulness": {
+          "status": "success",
+          "attempts": 1,
+          "input_sha256": "36a001546d1e2fb0fa4f5d839401b1e2451e0aaaf7f4cc821823832512471754",
+          "value": 1.0,
+          "seconds": 19.153632222965825
+        },
+        "answer_relevancy": {
+          "status": "success",
+          "attempts": 2,
+          "input_sha256": "36a001546d1e2fb0fa4f5d839401b1e2451e0aaaf7f4cc821823832512471754",
+          "error": "Limite BENCHMARK_MAX_QUESTION_TOKENS atingido na etapa judge: usado=11646, reservado=70442, próxima chamada=35221, limite=[REDACTED]. O progresso foi preservado.",
+          "value": 0.8472101891682716,
+          "seconds": 4.896161916025449
+        },
+        "context_precision": {
+          "status": "success",
+          "attempts": 1,
+          "input_sha256": "36a001546d1e2fb0fa4f5d839401b1e2451e0aaaf7f4cc821823832512471754",
+          "value": 0.4499999999775,
+          "seconds": 26.30921685299836
+        },
+        "context_recall": {
+          "status": "success",
+          "attempts": 1,
+          "input_sha256": "36a001546d1e2fb0fa4f5d839401b1e2451e0aaaf7f4cc821823832512471754",
+          "value": 0.0,
+          "seconds": 5.614357389975339
+        }
+      },
+      "stage_failures": {
+        "generation": 1,
+        "judge": 1
+      },
+      "retry_after": 1791588781.26475,
+      "provenance": {
+        "kind": "current_run",
+        "run_id": "6d4d5295c6b241b6a37ca5a68e317d58"
+      },
+      "failed_stage": "judge",
+      "artifact": {
+        "question": "De que forma a pilha de chamadas do computador é um exemplo prático de como funciona uma pilha LIFO?",
+        "answer": "Com base no contexto fornecido, a pilha de chamadas do computador reflete o funcionamento de uma pilha LIFO (Último a Entrar, Primeiro a Sair) da seguinte maneira:\n\n1. **Salvamento de funções:** A pilha de chamadas salva as funções de chamada (completadas até a metade, como um \"monte de caixas\") para serem analisadas. Ela opera com as ações básicas de uma pilha: push (inserir) e pop (remover e ler), que ocorrem no topo da estrutura.\n2. **Execução no topo:** A história dinâmica de como a execução chegou à sua posição atual (chamada de cadeia dinâmica ou de chamadas) determina que a execução atual \"está sempre no código do subprograma cuja instância de registro de ativação está no topo da pilha\". \n\nIsso demonstra na prática o conceito LIFO, pois o subprograma em execução é sempre aquele cujo registro de ativação está no topo, sendo a última chamada inserida a primeira a ser processada e removida (lida) da pilha.",
+        "contexts": [
+          "Neste ponto, a pilha de chamada se parece com isto: O “monte de caixas” é\nsalvo na pilha! Esta é uma pilha com as funções de chamada completadas até\na metade, cada uma com a sua lista de caixas, também completadas até a\nmetade, para ser analisadas. Utilizar a pilha é conveniente porque você não\nprecisa acompanhar o monte de caixas – a pilha faz isso para você. Usar a\npilha é bom, porém, existe um custo: salvar toda essa informação pode",
+          "Esta seção aborda a pilha de chamada (cal stack). Isto é um conceito\nimportante em programação e indispensável para entender a recursão.\nSuponha que você esteja fazendo um churrasco para os seus amigos. Você\ntem uma lista de afazeres em forma de uma pilha de notas adesivas.\nVocê se lembra de que, quando falamos de arrays e listas, também havia uma\nlista de afazeres? Podia adicionar itens em qualquer lugar da lista ou\nremover itens aleatórios. A pilha de notas adesivas é bem mais simples.\nQuando você insere um item, ele é colocado no topo da pilha. Quando você\nlê um item, lê apenas o item do topo da pilha e ele é retirado da lista. Logo,\nsua lista de afazeres contém apenas duas ações: push (inserir) e pop\n(remover e ler).",
+          "real. Suponha que você e um amigo estejam em uma la em uma parada de\nônibus. Se você está antes dele na la, entrará primeiro no ônibus. As las\nfuncionam da mesma maneira, tendo funcionamento similar ao das pilhas.\nPor isso não é possível acessar elementos aleatórios em uma la. Em vez\ndisso, apenas duas operações são possíveis: enqueue (en leirar) e dequeue\n(desen leirar).\nSe você en leirar dois itens na lista, o primeiro item adicionado será desen\nleirado antes do segundo item. Isso pode ser utilizado em sua lista de\npesquisas! Dessa forma, pessoas que foram adicionadas primeiro na lista\nserão desen leiradas e veri cadas primeiro.\nA la é uma estrutura de dados FIFO (acrônimo para First In, First Out, que\nem português signi ca Primeiro a Entrar, Primeiro a Sair). Já a pilha é uma",
+          "em português signi ca Primeiro a Entrar, Primeiro a Sair). Já a pilha é uma\nestrutura de dados LIFO (Last In, First Out, que em português signi ca\nÚltimo a Entrar, Primeiro a Sair).\nAgora que você sabe como uma la funciona, vamos implementar a pesquisa\nem largura!",
+          "424  Con ceitos de linguagens de programação\ncia de registro de ativação na pilha para funções main, como a mostrada na figura. En-\ntretanto, isso pode ser feito dessa forma, o que simplifica tanto a implementação quanto \nnossa discussão. Nesse exemplo e em todos os outros deste capítulo, supomos que a \npilha cresce do menor para o maior endereço, apesar de, em uma implementação em \nparticular, a pilha poder crescer na direção oposta.\nA coleção de ligações dinâmicas presentes na pilha em dado momento é chamada \nde cadeia dinâmica ou de cadeia de chamadas. Ela representa a história dinâmica de \ncomo a execução chegou à sua posição atual, que está sempre no código do subprograma \ncuja instância de registro de ativação está no topo da pilha. Referências a variáveis locais"
+        ],
+        "ground_truth": "Toda vez que uma função é chamada, o computador empilha uma nova entrada com o estado dessa chamada no topo da pilha; quando a função termina e retorna, apenas a entrada do topo é removida, devolvendo a execução à função que fez a chamada mais recente. Esse comportamento, em que a última chamada feita é sempre a primeira a terminar e ser removida, corresponde exatamente à lógica LIFO de uma pilha.",
+        "evidence_metadata": [
+          {
+            "source_sha256": "349f42d7cfb9989b8a0adb2f9b5f34ffe722f53a904134f632a0bf89185c5ae1",
+            "producer": "iLovePDF",
+            "total_pages": 273,
+            "creationdate": "",
+            "page": 37,
+            "page_label": "38",
+            "start_index": 0,
+            "moddate": "2026-05-01T19:31:30+00:00",
+            "creator": "PyPDF",
+            "source": "Entendendo-Algoritmos-_Aditya-Y.-Bhargava_-_z-library.sk_-1lib.sk_-z-lib.sk - Limpo [Utilizável].pdf"
+          },
+          {
+            "page_label": "29",
+            "page": 28,
+            "source": "Entendendo-Algoritmos-_Aditya-Y.-Bhargava_-_z-library.sk_-1lib.sk_-z-lib.sk - Limpo [Utilizável].pdf",
+            "creator": "PyPDF",
+            "source_sha256": "349f42d7cfb9989b8a0adb2f9b5f34ffe722f53a904134f632a0bf89185c5ae1",
+            "moddate": "2026-05-01T19:31:30+00:00",
+            "start_index": 0,
+            "creationdate": "",
+            "producer": "iLovePDF",
+            "total_pages": 273
+          },
+          {
+            "page_label": "115",
+            "source": "Entendendo-Algoritmos-_Aditya-Y.-Bhargava_-_z-library.sk_-1lib.sk_-z-lib.sk - Limpo [Utilizável].pdf",
+            "producer": "iLovePDF",
+            "moddate": "2026-05-01T19:31:30+00:00",
+            "creationdate": "",
+            "page": 114,
+            "source_sha256": "349f42d7cfb9989b8a0adb2f9b5f34ffe722f53a904134f632a0bf89185c5ae1",
+            "total_pages": 273,
+            "start_index": 0,
+            "creator": "PyPDF"
+          },
+          {
+            "creationdate": "",
+            "page_label": "115",
+            "total_pages": 273,
+            "start_index": 714,
+            "source_sha256": "349f42d7cfb9989b8a0adb2f9b5f34ffe722f53a904134f632a0bf89185c5ae1",
+            "producer": "iLovePDF",
+            "moddate": "2026-05-01T19:31:30+00:00",
+            "creator": "PyPDF",
+            "page": 114,
+            "source": "Entendendo-Algoritmos-_Aditya-Y.-Bhargava_-_z-library.sk_-1lib.sk_-z-lib.sk - Limpo [Utilizável].pdf"
+          },
+          {
+            "source_sha256": "5a4b42d7ac6ca3d6f90640cb4ed9594b2237da7ceec9c5edeb679e5d3d005d53",
+            "creator": "PyPDF",
+            "total_pages": 610,
+            "source": "Conceitos de Linguagens de Programação (Robert W. Sebesta) (z-library.sk, 1lib.sk, z-lib.sk) - Limpo [Utilizável].pdf",
+            "creationdate": "",
+            "page": 315,
+            "page_label": "316",
+            "producer": "iLovePDF",
+            "start_index": 0,
+            "moddate": "2026-05-01T19:27:50+00:00"
+          }
+        ],
+        "answer_response_time_seconds": 10.957501,
+        "answer_input_tokens": 913,
+        "answer_output_tokens": 2886,
+        "answer_total_tokens": 3799
+      },
+      "artifact_sha256": "36a001546d1e2fb0fa4f5d839401b1e2451e0aaaf7f4cc821823832512471754",
+      "generation_seconds": 201.73380396096036,
+      "generation_order": 1,
+      "result": {
+        "answer": "Com base no contexto fornecido, a pilha de chamadas do computador reflete o funcionamento de uma pilha LIFO (Último a Entrar, Primeiro a Sair) da seguinte maneira:\n\n1. **Salvamento de funções:** A pilha de chamadas salva as funções de chamada (completadas até a metade, como um \"monte de caixas\") para serem analisadas. Ela opera com as ações básicas de uma pilha: push (inserir) e pop (remover e ler), que ocorrem no topo da estrutura.\n2. **Execução no topo:** A história dinâmica de como a execução chegou à sua posição atual (chamada de cadeia dinâmica ou de chamadas) determina que a execução atual \"está sempre no código do subprograma cuja instância de registro de ativação está no topo da pilha\". \n\nIsso demonstra na prática o conceito LIFO, pois o subprograma em execução é sempre aquele cujo registro de ativação está no topo, sendo a última chamada inserida a primeira a ser processada e removida (lida) da pilha.",
+        "contexts_count": 5,
+        "answer_response_time_seconds": 10.957501,
+        "answer_input_tokens": 913,
+        "answer_output_tokens": 2886,
+        "answer_total_tokens": 3799,
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.8472101891682716,
+        "context_precision": 0.4499999999775,
+        "context_recall": 0.0
+      }
     },
     "Q085": {
       "status": "success",
@@ -1779,6 +2664,15 @@
         "answer_input_tokens": 868,
         "answer_output_tokens": 938,
         "answer_total_tokens": 1806
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q086": {
@@ -1800,6 +2694,15 @@
         "answer_input_tokens": 849,
         "answer_output_tokens": 493,
         "answer_total_tokens": 1342
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q087": {
@@ -1821,6 +2724,15 @@
         "answer_input_tokens": 863,
         "answer_output_tokens": 233,
         "answer_total_tokens": 1096
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q088": {
@@ -1842,6 +2754,15 @@
         "answer_input_tokens": 949,
         "answer_output_tokens": 1455,
         "answer_total_tokens": 2404
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q089": {
@@ -1863,6 +2784,15 @@
         "answer_input_tokens": 974,
         "answer_output_tokens": 2942,
         "answer_total_tokens": 3916
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     },
     "Q090": {
@@ -1884,7 +2814,115 @@
         "answer_input_tokens": 1127,
         "answer_output_tokens": 1327,
         "answer_total_tokens": 2454
+      },
+      "metrics": {},
+      "stage_failures": {},
+      "retry_after": 0,
+      "provenance": {
+        "kind": "legacy_v1",
+        "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+        "configuration": "unknown",
+        "evidence": "contexts_not_recorded"
       }
     }
-  }
+  },
+  "continuation": {
+    "source_version": 1,
+    "source_sha256": "94942e3077fa28cf74baa5ffdf1fbd6089a3bfa0d194155e9a8cc8cf081407aa",
+    "retained_success_ids": [
+      "Q001",
+      "Q002",
+      "Q003",
+      "Q004",
+      "Q005",
+      "Q006",
+      "Q007",
+      "Q008",
+      "Q009",
+      "Q010",
+      "Q011",
+      "Q012",
+      "Q013",
+      "Q014",
+      "Q015",
+      "Q016",
+      "Q017",
+      "Q018",
+      "Q019",
+      "Q020",
+      "Q021",
+      "Q022",
+      "Q023",
+      "Q024",
+      "Q025",
+      "Q026",
+      "Q027",
+      "Q028",
+      "Q029",
+      "Q030",
+      "Q031",
+      "Q032",
+      "Q033",
+      "Q034",
+      "Q035",
+      "Q036",
+      "Q037",
+      "Q038",
+      "Q039",
+      "Q040",
+      "Q041",
+      "Q042",
+      "Q043",
+      "Q044",
+      "Q045",
+      "Q046",
+      "Q047",
+      "Q048",
+      "Q049",
+      "Q050",
+      "Q051",
+      "Q052",
+      "Q053",
+      "Q054",
+      "Q055",
+      "Q056",
+      "Q057",
+      "Q058",
+      "Q059",
+      "Q060",
+      "Q061",
+      "Q062",
+      "Q063",
+      "Q064",
+      "Q065",
+      "Q066",
+      "Q067",
+      "Q068",
+      "Q069",
+      "Q070",
+      "Q071",
+      "Q072",
+      "Q073",
+      "Q074",
+      "Q075",
+      "Q076",
+      "Q077",
+      "Q078",
+      "Q079",
+      "Q080",
+      "Q081",
+      "Q082",
+      "Q083",
+      "Q085",
+      "Q086",
+      "Q087",
+      "Q088",
+      "Q089",
+      "Q090"
+    ],
+    "previous_configuration": "unknown",
+    "previous_evidence": "contexts_not_recorded"
+  },
+  "current_question": null,
+  "current_stage": null
 }

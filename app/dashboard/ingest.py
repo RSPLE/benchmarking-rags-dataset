@@ -60,6 +60,32 @@ def csv_rows(content):
     return rows
 
 
+def detailed_csv_rows(content):
+    if not content:
+        return {}
+    try:
+        text = content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = content.decode("latin-1")
+    reader = csv.DictReader(io.StringIO(text), delimiter=";")
+    required = {"id", "question", "answer"}
+    if not reader.fieldnames or required - set(reader.fieldnames):
+        raise ValueError("Detailed CSV lacks answer identity columns")
+    rows = {}
+    identifiers = set()
+    for row in reader:
+        identifier = row.get("id", "").strip()
+        question = row.get("question", "").strip()
+        answer = row.get("answer", "").strip()
+        if not identifier or not question or not answer:
+            raise ValueError("Invalid detailed CSV row")
+        if question in rows or identifier in identifiers:
+            raise ValueError("Duplicate row in detailed CSV")
+        identifiers.add(identifier)
+        rows[question] = {"id": identifier, "answer": answer}
+    return rows
+
+
 def json_lines(content):
     lines = content.decode().splitlines(keepends=True)
     rows = []
@@ -113,7 +139,8 @@ def source_paths(settings):
                 seen.add(digest)
 
 
-def sample_rows(rows, checkpoint):
+def sample_rows(rows, checkpoint, details=None):
+    details = details or {}
     by_question = {}
     for key, state in checkpoint.get("items", {}).items():
         question = (
@@ -125,6 +152,7 @@ def sample_rows(rows, checkpoint):
             by_question[question] = key
     result = {}
     for position, row in enumerate(rows):
+        detail = details.get(row["question"], {})
         question_id = (
             row.get("id")
             or by_question.get(row["question"])
@@ -132,7 +160,13 @@ def sample_rows(rows, checkpoint):
         )
         if question_id in result:
             raise ValueError("Duplicate question in the same experiment")
-        result[question_id] = {**row, "id": question_id, "position": position, "status": "success"}
+        result[question_id] = {
+            **row,
+            **({"answer": detail["answer"]} if detail else {}),
+            "id": question_id,
+            "position": position,
+            "status": "success",
+        }
     for position, (key, state) in enumerate(checkpoint.get("items", {}).items()):
         if key in result:
             continue
@@ -228,7 +262,11 @@ def store_source(db, path, boundary, project, origin):
     if manifest.get("continuation"):
         model = "Continuação: " + model + " · anteriores não registrados"
         judge = "Continuação: " + judge + " · anteriores não registrados"
-    samples = sample_rows(rows, checkpoint)
+    samples = sample_rows(
+        rows,
+        checkpoint,
+        detailed_csv_rows(files.get("results_detailed.csv", b"")),
+    )
     if not summary:
         counts = Counter(item["status"] for item in samples)
         summary = {
@@ -255,6 +293,10 @@ def store_source(db, path, boundary, project, origin):
         "manifest=excluded.manifest,summary=excluded.summary,revision=excluded.revision,imported_at=excluded.imported_at",
         values,
     )
+    # A changed snapshot replaces its dependent rows. This also removes legacy
+    # text-hash question IDs when a later checkpoint supplies canonical IDs.
+    for table in ("samples", "calls", "runs", "artifacts"):
+        db.execute(f"DELETE FROM {table} WHERE experiment_id=?", (identifier,))
     for row in samples:
         db.execute(
             "INSERT INTO samples VALUES (?,?,?,?,?,?) ON CONFLICT(experiment_id,question_id) DO UPDATE SET "

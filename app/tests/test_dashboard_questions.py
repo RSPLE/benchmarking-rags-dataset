@@ -112,6 +112,84 @@ class QuestionResultsTests(unittest.TestCase):
         self.assertTrue((frame["status"] == "Pendente").all())
         self.assertTrue(frame["cost_usd"].isna().all())
 
+    def test_legacy_detailed_csv_supplies_generated_answer(self):
+        import csv
+
+        from app.dashboard.database import connect
+        from app.dashboard.ingest import store_source
+        from app.dashboard.questions import question_results
+        from app.paths import DATASET_ROOT
+
+        directory = self.root / "detailed-only"
+        directory.mkdir()
+        (directory / "results.csv").write_bytes((self.root / "results.csv").read_bytes())
+        with (directory / "results_detailed.csv").open(
+            "w", encoding="utf-8-sig", newline=""
+        ) as output:
+            writer = csv.DictWriter(output, fieldnames=["id", "question", "answer"], delimiter=";")
+            writer.writeheader()
+            writer.writerow(
+                {
+                    "id": "Q001",
+                    "question": json.loads(
+                        (DATASET_ROOT / "qa_dataset_90.json").read_bytes()
+                    )[0]["question"],
+                    "answer": "Resposta recuperada do CSV detalhado",
+                }
+            )
+
+        with connect(self.database) as db, db:
+            store_source(db, directory / "results.csv", self.root, "self-rag", "legacy")
+            identifier = db.execute(
+                "SELECT id FROM experiments WHERE project='self-rag'"
+            ).fetchone()[0]
+        frame = question_results(self.database, identifier).set_index("id")
+        self.assertEqual(frame.loc["Q001", "answer"], "Resposta recuperada do CSV detalhado")
+
+    def test_checkpoint_upgrade_replaces_legacy_text_ids(self):
+        from app.dashboard.database import connect
+        from app.dashboard.ingest import store_source
+
+        directory = self.root / "checkpoint-upgrade"
+        directory.mkdir()
+        (directory / "results.csv").write_bytes((self.root / "results.csv").read_bytes())
+        with connect(self.database) as db, db:
+            store_source(
+                db,
+                directory / "results.csv",
+                self.root,
+                "knowledge-enhanced-rag",
+                "legacy",
+            )
+            identifier = db.execute(
+                "SELECT id FROM experiments WHERE project='knowledge-enhanced-rag'"
+            ).fetchone()[0]
+            first_ids = [
+                row[0]
+                for row in db.execute(
+                    "SELECT question_id FROM samples WHERE experiment_id=?", (identifier,)
+                )
+            ]
+        self.assertEqual(len(first_ids), 1)
+        self.assertTrue(first_ids[0].startswith("text:"))
+
+        (directory / "checkpoint.json").write_bytes((self.root / "checkpoint.json").read_bytes())
+        with connect(self.database) as db, db:
+            store_source(
+                db,
+                directory / "results.csv",
+                self.root,
+                "knowledge-enhanced-rag",
+                "legacy",
+            )
+            upgraded_ids = {
+                row[0]
+                for row in db.execute(
+                    "SELECT question_id FROM samples WHERE experiment_id=?", (identifier,)
+                )
+            }
+        self.assertEqual(upgraded_ids, {"Q001", "Q002"})
+
     def test_both_web_tables_render_and_switch_architectures(self):
         import pandas as pd
         from streamlit.testing.v1 import AppTest
