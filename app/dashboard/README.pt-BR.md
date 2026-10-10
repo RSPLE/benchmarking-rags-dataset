@@ -102,6 +102,13 @@ prompts, memória, recuperação, PDFs nem métricas dos RAGs.
 
 ## Persistência, backup e diagnóstico
 
+A tabela **Resultados por questão** termina com uma linha **TOTAL / MÉDIA**, também
+incluída no download CSV. Ela soma os tokens e tempos de resposta registrados e
+calcula cada média usando somente as notas disponíveis, incluindo zeros e métricas
+válidas de avaliações parciais. Valores ausentes não viram zero; a quantidade de
+questões considerada em cada coluna aparece abaixo da tabela. Esses totais de
+resposta não incluem preparação nem chamadas do juiz.
+
 A página **Juiz e reavaliação** permite ler a saída e as justificativas do juiz,
 auditar notas zero e reexecutar uma única métrica em questões escolhidas, preservando
 os resultados originais. Consulte [Justificativas e reavaliação](../docs/judge-review.pt-BR.md).

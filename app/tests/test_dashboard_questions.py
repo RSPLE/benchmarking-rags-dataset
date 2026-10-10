@@ -24,6 +24,7 @@ class QuestionResultsTests(unittest.TestCase):
         questions = json.loads((DATASET_ROOT / "qa_dataset_90.json").read_bytes())
         result = {"question": questions[0]["question"], "answer": "Resposta preservada"}
         result.update({metric: 0 for metric in METRICS})
+        result.update(answer_total_tokens=100, answer_response_time_seconds=10.5)
         checkpoint = {
             "items": {
                 "Q001": {
@@ -36,6 +37,8 @@ class QuestionResultsTests(unittest.TestCase):
                     "artifact": {
                         "question": questions[1]["question"],
                         "answer": "Avaliação incompleta",
+                        "answer_total_tokens": 50,
+                        "answer_response_time_seconds": 4.5,
                     },
                     "metrics": {"faithfulness": {"status": "success", "value": 0.5}},
                 },
@@ -110,6 +113,7 @@ class QuestionResultsTests(unittest.TestCase):
         self.assertTrue(frame["cost_usd"].isna().all())
 
     def test_both_web_tables_render_and_switch_architectures(self):
+        import pandas as pd
         from streamlit.testing.v1 import AppTest
 
         app = AppTest.from_string("""
@@ -124,12 +128,25 @@ question_results_view(st.session_state.database, experiments(st.session_state.da
             app.session_state.consumption_only = consumption_only
             app.run()
             self.assertFalse(app.exception)
-            self.assertEqual(len(app.dataframe[0].value), 90)
-            self.assertIn("cost_usd", app.dataframe[0].value)
-            self.assertEqual("faithfulness" in app.dataframe[0].value, not consumption_only)
+            table = app.dataframe[0].value
+            self.assertEqual(len(table), 90 if consumption_only else 91)
+            self.assertIn("cost_usd", table)
+            self.assertEqual("faithfulness" in table, not consumption_only)
+            if not consumption_only:
+                summary = table.iloc[-1]
+                self.assertEqual(summary["id"], "TOTAL / MÉDIA")
+                self.assertEqual(summary["answer_total_tokens"], 150)
+                self.assertEqual(summary["answer_response_time_seconds"], 15)
+                self.assertEqual(summary["faithfulness"], 0.25)
+                self.assertEqual(summary["context_recall"], 0)
+                self.assertTrue(any("Faithfulness: n=2" in item.value for item in app.caption))
             app.selectbox[0].select("self-rag").run()
             self.assertFalse(app.exception)
-            self.assertTrue((app.dataframe[0].value["status"] == "Pendente").all())
+            table = app.dataframe[0].value
+            self.assertTrue((table.iloc[:90]["status"] == "Pendente").all())
+            if not consumption_only:
+                for key in ("faithfulness", "answer_total_tokens", "answer_response_time_seconds"):
+                    self.assertTrue(pd.isna(table.iloc[-1][key]))
 
 
 if __name__ == "__main__":
