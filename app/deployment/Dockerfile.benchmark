@@ -13,7 +13,7 @@ COPY app/services /app/app/services
 COPY app/telegram /app/app/telegram
 COPY app/tools /app/app/tools
 COPY data /app/data
-RUN groupadd --gid 1000 benchmark && useradd --uid 1000 --gid 1000 --create-home benchmark && mkdir -p /state /run/benchmark /app/resultados && chown benchmark:benchmark /state /run/benchmark /app/resultados && for project in /app/app/rags/*; do mkdir -p "$project/chroma_v2"; chown benchmark:benchmark "$project/chroma_v2"; done
+RUN groupadd --gid 1000 benchmark && useradd --uid 1000 --gid 1000 --create-home benchmark && mkdir -p /state /run/benchmark /app/resultados /configuration && chown benchmark:benchmark /state /run/benchmark /app/resultados /configuration && for project in /app/app/rags/*; do mkdir -p "$project/chroma_v2"; chown benchmark:benchmark "$project/chroma_v2"; done
 USER benchmark
 ENV PATH=/app/.venv/bin:$PATH
 CMD ["python", "-m", "app.services.entrypoint", "control", "--from-environment"]

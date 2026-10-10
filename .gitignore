@@ -30,5 +30,6 @@ tmp/web-check/
 *.queue.db
 app/dashboard/state/
 backups/
+configuration/
 **/*.sqlite3-wal
 **/*.sqlite3-shm

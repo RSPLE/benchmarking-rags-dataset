@@ -17,6 +17,7 @@ from app.dashboard.database import connect
 from app.dashboard.downloads import downloads_view
 from app.dashboard.execution import execution_view, pending_view
 from app.dashboard.judge import judge_view
+from app.dashboard.parameters import parameters_view
 from app.dashboard.questions import question_results_view
 from app.dashboard.sessions import COOKIE_NAME, csrf_token, session_identity
 from app.plots.view import plots_view
@@ -35,6 +36,7 @@ SECTIONS = [
     "Baixar dados",
     "Juiz e reavaliação",
     "Gráficos",
+    "Parâmetros",
 ]
 st.markdown(
     """<style>
@@ -73,9 +75,12 @@ def login():
 
 
 def dashboard():
-    token, _ = login()
+    token, identity = login()
     records = experiments(settings.database)
     section = st.session_state.get("section", SECTIONS[0])
+    if section == "Parâmetros":
+        parameters_view(settings, identity)
+        return
     if section == "Executar e retomar":
         execution_view(settings, token, records)
         return

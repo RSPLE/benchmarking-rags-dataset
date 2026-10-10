@@ -101,6 +101,23 @@ class ComposeDashboardTests(unittest.TestCase):
                 self.assertIn("build", services[name])
                 self.assertEqual(services[name]["pull_policy"], "build")
 
+    def test_runtime_configuration_is_private_and_workers_mount_it_read_only(self):
+        services = self.configuration()["services"]
+        for name, read_only in (("dashboard", False), ("control", True), ("telegram", True)):
+            with self.subTest(service=name):
+                volume = next(
+                    item for item in services[name]["volumes"] if item["target"] == "/configuration"
+                )
+                self.assertEqual(volume["type"], "volume")
+                self.assertEqual(volume.get("read_only", False), read_only)
+                self.assertEqual(
+                    services[name]["environment"]["BENCHMARK_RUNTIME_CONFIG"],
+                    "/configuration/settings.json",
+                )
+        self.assertFalse(
+            any(item["target"] == "/configuration" for item in services["auth"]["volumes"])
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

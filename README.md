@@ -21,6 +21,24 @@ by setting `DASHBOARD_USERNAME`, `DASHBOARD_PASSWORD` and `DASHBOARD_PUBLIC_HOST
 The sidebar provides execution/resume and pending cases. All services start without
 profiles and application images build locally. There are no default credentials.
 
+### Runtime configuration in the web interface
+
+The **Parameters** tab manages OpenRouter generation, judge and embedding models;
+Neo4j and Telegram credentials; execution limits; enabled RAGs; the PDF corpus; and
+the question dataset. The model catalogue is read from OpenRouter's official models
+endpoint and can be filtered by provider, name, modalities, reasoning, tool/web-search
+support and structured output. Uploaded JSON datasets are validated for the required
+`id`, `question` and `ground_truth` fields and duplicate IDs. PDF type, name, size and
+content signature are validated before a content-addressed version is activated.
+
+Saved secrets are kept in the private `benchmark-configuration` volume in a mode
+`0600` file. The page never loads their existing values into the browser until the
+signed-in operator confirms the dashboard password; that temporary reveal expires
+after five minutes. Empty secret inputs preserve their current values. Changes apply
+to the next benchmark; an active run keeps the manifest with which it started.
+The root `.env` remains the bootstrap and recovery configuration for the dashboard,
+remote execution policy and initial deployment.
+
 A monorepo for comparing six Retrieval-Augmented Generation (RAG) architectures against one shared dataset of 90 questions and reference answers. It measures quality with RAGAS, latency, and token usage; uses Chroma for vector indexing; and supports OpenRouter as the default LLM and embedding provider. Every pipeline has its own `uv` environment and lockfile to prevent dependency conflicts.
 
 ## Repository contents
@@ -352,7 +370,15 @@ For valid comparisons, keep the generation model, embedding model, documents, an
 └── README.pt-BR.md
 ```
 
-Each pipeline directory also contains its own `pyproject.toml` and `uv.lock`. `/.env` is the only secrets configuration file; subdirectories do not keep duplicate `.env.example` files.
+Each pipeline directory also contains its own `pyproject.toml` and `uv.lock`. `/.env`
+bootstraps the deployment; operational values saved in the interface live only in the
+private configuration volume. Subdirectories do not keep duplicate `.env.example` files.
+
+## Future roadmap — not implemented
+
+Future research may add more RAG approaches, evaluation frameworks such as Phoenix
+and DeepEval, and broader evaluation and re-evaluation workflows. This is planning
+documentation only: none of those integrations is implemented in the current version.
 
 ## Methodology notes
 

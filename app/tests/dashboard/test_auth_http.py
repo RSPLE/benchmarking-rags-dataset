@@ -104,6 +104,15 @@ class AuthHttpTests(unittest.TestCase):
             self.assertEqual(response.headers["cache-control"], "no-store")
             self.assertNotIn(self.settings.password, response.text)
 
+    def test_login_has_accessible_password_visibility_control_and_restricted_script(self):
+        response = self.client.get("/auth/login")
+        self.assertIn('data-password-toggle', response.text)
+        self.assertIn('aria-label="Mostrar senha"', response.text)
+        self.assertIn('script-src \'self\'', response.headers["content-security-policy"])
+        script = self.client.get("/auth/login.js")
+        self.assertEqual(script.status_code, 200)
+        self.assertIn('password.type = showing ? "password" : "text"', script.text)
+
 
 if __name__ == "__main__":
     unittest.main()

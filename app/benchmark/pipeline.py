@@ -72,7 +72,7 @@ def frozen_answers(path, project, questions):
 
 def execute_pipeline(project, prepare=None):
     os.environ.setdefault("BENCHMARK_RETRY_COOLDOWN_SECONDS", "60")
-    dataset = DEFAULT_DATASET
+    dataset = Path(os.getenv("BENCHMARK_DATASET", str(DEFAULT_DATASET))).resolve()
     mode = os.getenv("BENCHMARK_MODE", "full")
     if mode not in {"full", "evaluate"}:
         raise ValueError("Invalid BENCHMARK_MODE")

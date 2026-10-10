@@ -11,6 +11,7 @@ import streamlit as st
 
 from app.cli import PROJECTS
 from app.dashboard.operations import build_command, request_control
+from app.runtime_config import read_runtime_config
 
 SELECTIONS = {
     "pending": "Somente pendentes",
@@ -236,15 +237,37 @@ def execution_view(settings, token, records):
     if st.button("Atualizar andamento"):
         st.rerun()
     target = st.session_state.get("resume_target")
+    try:
+        dataset_size = int(
+            (read_runtime_config(getattr(settings, "configuration", None)).get("dataset") or {}).get(
+                "questions", 90
+            )
+        )
+    except (OSError, ValueError, TypeError):
+        dataset_size = 90
     all_eligible = compatible_records(records)
     target_record = next((row for row in all_eligible if row["external_id"] == target), None)
     st.subheader("1. Escolha a pipeline")
-    projects = list(PROJECTS) + ["all"]
+    reported_projects = (
+        status["projects"]
+        if status is not None and "projects" in status
+        else list(PROJECTS)
+    )
+    configured_projects = [project for project in reported_projects if project in PROJECTS]
+    if not configured_projects:
+        st.warning("Nenhuma pipeline está habilitada. Selecione ao menos um RAG em Parâmetros.")
+        return
+    projects = configured_projects + (["all"] if len(configured_projects) > 1 else [])
+    selected_index = (
+        projects.index(target_record["project"])
+        if target_record and target_record["project"] in projects
+        else 0
+    )
     project = st.selectbox(
         "Pipeline RAG",
         projects,
-        index=projects.index(target_record["project"]) if target_record else 0,
-        format_func=lambda value: "Todos os seis RAGs · sequência" if value == "all" else value,
+        index=selected_index,
+        format_func=lambda value: "Todos os RAGs habilitados · sequência" if value == "all" else value,
     )
     st.caption(PROJECT_DESCRIPTIONS[project])
     eligible = compatible_records(records, project)
@@ -291,14 +314,14 @@ def execution_view(settings, token, records):
         st.caption(
             "O lote tenta somente as questões incompletas do experimento selecionado."
             if selected
-            else "Comece com 1 questão para verificar o fluxo. Depois, aumente até 90 questões por RAG."
+            else f"Comece com 1 questão para verificar o fluxo. Depois, aumente até {dataset_size} questões por RAG."
         )
         left, right = st.columns(2)
         questions = left.number_input(
             "Quantidade de questões por RAG",
             min_value=1,
-            max_value=90,
-            value=max(1, min(90, remaining)),
+            max_value=dataset_size,
+            value=max(1, min(dataset_size, remaining)),
             key="question-count-" + (selected["external_id"] if selected else project),
             step=1,
             help="Máximo de questões tentadas neste lote, incluindo as que falharem.",

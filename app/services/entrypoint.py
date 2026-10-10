@@ -5,6 +5,7 @@ import os
 import sys
 
 from app.paths import ROOT
+from app.runtime_config import runtime_environment
 
 SYSTEM_KEYS = {
     "PATH",
@@ -18,6 +19,7 @@ SYSTEM_KEYS = {
     "TMPDIR",
     "SSL_CERT_FILE",
     "SSL_CERT_DIR",
+    "BENCHMARK_RUNTIME_CONFIG",
     "REQUESTS_CA_BUNDLE",
     "UV_CACHE_DIR",
     "UV_NO_SYNC",
@@ -109,7 +111,7 @@ def main():
         from dotenv import load_dotenv
 
         load_dotenv(ROOT / ".env", override=False)
-    env = role_environment(args.role, os.environ)
+    env = role_environment(args.role, runtime_environment(os.environ))
     command = service_command(args.role, env)
     os.chdir(ROOT)
     os.execve(command[0], command, env)

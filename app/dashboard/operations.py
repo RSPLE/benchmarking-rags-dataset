@@ -6,6 +6,7 @@ import uuid
 from app.benchmark.control import call_control, parse_command
 from app.cli import PROJECTS
 from app.dashboard.sessions import session_identity
+from app.runtime_config import read_runtime_config
 
 OPTIONS = (
     "questions",
@@ -43,14 +44,23 @@ def request_control(settings, token, text, command_id=None):
     identity = session_identity(settings.database, token)
     if not identity:
         raise PermissionError("Sua sessão expirou. Entre novamente.")
-    if settings.control_user_id <= 0:
-        raise ValueError("Configure o usuário autorizado de controle na .env.")
+    control_user_id = settings.control_user_id
+    try:
+        configured = read_runtime_config(settings.configuration)["environment"].get(
+            "TELEGRAM_ALLOWED_USER_IDS", ""
+        )
+        if configured:
+            control_user_id = int(configured.split(",", 1)[0].strip())
+    except (ValueError, OSError):
+        pass
+    if control_user_id <= 0:
+        raise ValueError("Configure um usuário autorizado do Telegram em Parâmetros.")
     parse_command(text)
     identifier = command_id or "web:" + uuid.uuid4().hex
     return call_control(
         settings.control_socket,
         {
-            "user_id": settings.control_user_id,
+            "user_id": control_user_id,
             "command_id": identifier,
             "text": text,
         },

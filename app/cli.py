@@ -11,6 +11,7 @@ from pathlib import Path
 
 from app.benchmark.options import add_run_options, option_environment, validate_run_options
 from app.paths import ROOT
+from app.runtime_config import RUNTIME_ENV_KEYS, enabled_projects, runtime_environment
 from app.services.entrypoint import role_environment
 
 RAGS_ROOT = ROOT / "app" / "rags"
@@ -32,6 +33,8 @@ def load_environment() -> None:
             "Dependencias ausentes. Execute `uv sync` antes de rodar um benchmark."
         ) from exc
     load_dotenv(ROOT / ".env", override=False)
+    configured = runtime_environment(os.environ)
+    os.environ.update({key: configured[key] for key in RUNTIME_ENV_KEYS if key in configured})
 
 
 def uv_command() -> list[str]:
@@ -45,7 +48,7 @@ def uv_command() -> list[str]:
 
 def run_project(project: str, provider: str | None, questions: int | None = None) -> int:
     load_environment()
-    env = role_environment("worker", os.environ)
+    env = role_environment("worker", runtime_environment(os.environ))
 
     env.pop("VIRTUAL_ENV", None)
     if provider:
@@ -116,7 +119,7 @@ def run_all(
     provider: str | None,
     questions: int | None = None,
 ) -> int:
-    return run_projects(list(PROJECTS), provider, questions)
+    return run_projects(list(enabled_projects()), provider, questions)
 
 
 def show_projects() -> None:

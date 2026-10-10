@@ -13,7 +13,7 @@ COPY app/services /app/app/services
 COPY app/telegram /app/app/telegram
 COPY app/dashboard /app/app/dashboard
 COPY data/evaluation/qa_dataset_90.json /app/data/evaluation/qa_dataset_90.json
-RUN groupadd --gid 1000 benchmark && useradd --uid 1000 --gid 1000 --create-home benchmark && mkdir -p /state /backups && chown benchmark:benchmark /state /backups
+RUN groupadd --gid 1000 benchmark && useradd --uid 1000 --gid 1000 --create-home benchmark && mkdir -p /state /backups /configuration && chown benchmark:benchmark /state /backups /configuration
 USER benchmark
 ENV PATH=/app/app/dashboard/.venv/bin:$PATH PYTHONPATH=/app
 WORKDIR /app/app/dashboard

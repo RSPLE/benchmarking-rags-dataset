@@ -27,6 +27,7 @@ from app.dashboard.sessions import (
 
 CSRF_COOKIE = "rag_login_csrf"
 TEMPLATE = Path(__file__).with_name("login.html").read_text()
+LOGIN_SCRIPT = Path(__file__).with_name("login.js").read_text()
 
 
 def secure_request(request):
@@ -82,6 +83,9 @@ def create_app(settings=None):
 
     async def health(request):
         return PlainTextResponse("ok")
+
+    async def login_script(request):
+        return PlainTextResponse(LOGIN_SCRIPT, media_type="application/javascript")
 
     async def login(request: Request):
         if request.method == "GET":
@@ -150,6 +154,7 @@ def create_app(settings=None):
         lifespan=lifespan,
         routes=[
             Route("/_health", health),
+            Route("/auth/login.js", login_script),
             Route("/auth/login", login, methods=["GET", "POST"]),
             Route("/auth/verify", verify),
             Route("/auth/logout", logout, methods=["POST"]),
@@ -161,7 +166,7 @@ def create_app(settings=None):
         response.headers["Cache-Control"] = "no-store"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Content-Security-Policy"] = (
-            "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+            "default-src 'none'; style-src 'unsafe-inline'; script-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
         )
         response.headers["Referrer-Policy"] = "no-referrer"
         return response

@@ -20,6 +20,7 @@ class Settings:
     password: str = field(default="", repr=False)
     control_socket: Path = Path("/run/benchmark/control.sock")
     control_user_id: int = 0
+    configuration: Path = ROOT / "configuration/settings.json"
 
     @classmethod
     def from_environment(cls):
@@ -52,4 +53,5 @@ class Settings:
             values.get("DASHBOARD_PASSWORD", "") or "",
             path("BENCHMARK_CONTROL_SOCKET", "/run/benchmark/control.sock"),
             int(control_user),
+            path("BENCHMARK_RUNTIME_CONFIG", "configuration/settings.json"),
         )

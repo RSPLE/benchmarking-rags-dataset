@@ -21,6 +21,25 @@ preencher `DASHBOARD_USERNAME`, `DASHBOARD_PASSWORD` e `DASHBOARD_PUBLIC_HOST` n
 O menu lateral permite iniciar/retomar lotes e acompanhar pendências. Todos os serviços sobem
 sem perfis e as imagens da aplicação são construídas localmente. Não há credenciais padrão.
 
+### Configuração operacional pela interface
+
+A aba **Parâmetros** permite configurar os modelos de geração, juiz e embeddings do
+OpenRouter; credenciais do Neo4j e Telegram; limites de execução; RAGs habilitados;
+o corpus de PDFs; e o dataset de questões. O catálogo de modelos vem do endpoint
+oficial do OpenRouter e pode ser filtrado por empresa, nome, modalidades, raciocínio,
+suporte a ferramentas/busca web e saída estruturada. O JSON enviado é validado quanto
+aos campos obrigatórios `id`, `question` e `ground_truth` e a IDs duplicados. Nome,
+tamanho, assinatura e conteúdo dos PDFs são validados antes da ativação de uma versão
+identificada por hash.
+
+Os segredos salvos ficam no volume privado `benchmark-configuration`, em arquivo com
+permissão `0600`. A página não carrega os valores existentes no navegador até o usuário
+autenticado confirmar a senha do painel; a liberação temporária expira após cinco
+minutos. Campos secretos vazios preservam o valor atual. Alterações entram na próxima
+execução, enquanto um lote ativo mantém o manifesto com que foi iniciado. A `.env` da
+raiz continua sendo a configuração de inicialização e recuperação do painel, da política
+de execução remota e da primeira implantação.
+
 Monorepo para comparar seis arquiteturas de Retrieval-Augmented Generation (RAG) sobre um dataset comum de 90 perguntas e respostas de referência. O projeto mede qualidade com RAGAS, latência e consumo de tokens, usa Chroma como índice vetorial e oferece OpenRouter como provedor padrão de LLM e embeddings. Cada pipeline possui ambiente e lockfile `uv` próprios para impedir conflitos de dependências.
 
 ## O que existe neste repositório
@@ -389,7 +408,16 @@ Para cada pergunta, o RAGAS calcula `faithfulness`, `answer_relevancy`, `context
 └── README.pt-BR.md
 ```
 
-Cada diretório de pipeline contém ainda seu próprio `pyproject.toml` e `uv.lock`. O único arquivo de configuração de segredos é `/.env`; os subdiretórios não possuem cópias de `.env.example`.
+Cada diretório de pipeline contém ainda seu próprio `pyproject.toml` e `uv.lock`. A
+`/.env` inicializa a implantação; valores operacionais salvos pela interface ficam
+somente no volume privado de configuração. Os subdiretórios não possuem cópias de
+`.env.example`.
+
+## Planejamento futuro — ainda não implementado
+
+Futuramente serão estudadas mais opções de RAG, frameworks de avaliação como Phoenix
+e DeepEval e outras possibilidades de avaliação e reavaliação. Esta seção é apenas
+documentação de planejamento: nenhuma dessas integrações foi implementada agora.
 
 ## Observações metodológicas
 

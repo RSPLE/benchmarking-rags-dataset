@@ -15,6 +15,7 @@ from pathlib import Path
 from app.benchmark.control import call_control
 from app.benchmark.export import result_bytes
 from app.benchmark.storage import atomic_json, exclusive_lock, file_hash, fingerprint, now
+from app.runtime_config import read_runtime_config
 
 logger = logging.getLogger(__name__)
 
@@ -201,6 +202,26 @@ class Notifier:
         self.delivery_error = None
         self.db.commit()
 
+    def reconfigure(self, client, chat_id, send_files):
+        previous = self.chat_id
+        self.client, self.chat_id, self.send_files = client, str(chat_id), send_files
+        if previous != self.chat_id:
+            rows = self.db.execute(
+                "SELECT id,payload FROM outbox WHERE sent=0 AND method IN ('sendMessage','sendDocument')"
+            ).fetchall()
+            for identifier, encoded in rows:
+                try:
+                    payload = json.loads(encoded)
+                except (TypeError, ValueError):
+                    continue
+                if str(payload.get("chat_id")) == previous:
+                    payload["chat_id"] = self.chat_id
+                    self.db.execute(
+                        "UPDATE outbox SET payload=? WHERE id=?",
+                        (json.dumps(payload), identifier),
+                    )
+            self.db.commit()
+
     def enqueue_event(self, event):
         identifier = fingerprint({"chat": self.chat_id, "event": event["event_id"]})
         payload = {"chat_id": self.chat_id, "text": format_event(event)}
@@ -369,6 +390,33 @@ class Notifier:
             self.last_delivery = delivered
 
 
+def telegram_configuration():
+    values = dict(os.environ)
+    try:
+        values.update(read_runtime_config()["environment"])
+    except ValueError as exc:
+        logger.warning("Runtime configuration unavailable (%s)", type(exc).__name__)
+    allowed = []
+    try:
+        allowed = [
+            int(value.strip())
+            for value in values.get("TELEGRAM_ALLOWED_USER_IDS", "").split(",")
+            if value.strip()
+        ]
+    except ValueError:
+        allowed = []
+    return {
+        "enabled": values.get("TELEGRAM_ENABLED", "false").lower() == "true",
+        "token": values.get("TELEGRAM_BOT_TOKEN", ""),
+        "chat": values.get("TELEGRAM_RESULTS_CHAT_ID", ""),
+        "allowed": allowed,
+        "control": values.get("TELEGRAM_CONTROL_ENABLED", "false").lower() == "true",
+        "send_files": values.get("TELEGRAM_SEND_FINAL_FILES", "false").lower() == "true",
+        "interval": max(10, int(values.get("TELEGRAM_PROGRESS_INTERVAL_SECONDS", "15"))),
+        "socket": values.get("BENCHMARK_CONTROL_SOCKET", ""),
+    }
+
+
 def main():
     logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser()
@@ -384,44 +432,77 @@ def main():
         parser.error(
             "Use python -m app.services.entrypoint telegram to filter the shared configuration"
         )
-    if os.getenv("TELEGRAM_ENABLED", "false").lower() != "true":
+    if not telegram_configuration()["enabled"]:
         return
-    token, chat = os.getenv("TELEGRAM_BOT_TOKEN"), os.getenv("TELEGRAM_RESULTS_CHAT_ID")
-    if not token or not chat:
-        parser.error("Telegram token and destination are required")
-    interval = int(os.getenv("TELEGRAM_PROGRESS_INTERVAL_SECONDS", "15"))
-    if interval < 10:
-        parser.error("Progress interval must be at least 10 seconds")
     with exclusive_lock(args.database.with_suffix(".lock")):
-        notifier = Notifier(
-            args.root,
-            args.database,
-            TelegramClient(token),
-            chat,
-            send_files=os.getenv("TELEGRAM_SEND_FINAL_FILES", "false").lower() == "true",
-        )
-        gateway = None
-        socket_path = os.getenv("BENCHMARK_CONTROL_SOCKET")
-        allowed = [
-            int(value.strip())
-            for value in os.getenv("TELEGRAM_ALLOWED_USER_IDS", "").split(",")
-            if value.strip()
-        ]
-        if os.getenv("TELEGRAM_CONTROL_ENABLED") == "true":
-            from app.telegram.gateway import Gateway
-
-            gateway = Gateway(notifier, os.environ["BENCHMARK_CONTROL_SOCKET"], allowed)
-        notifier.enqueue_event(
-            {"event_id": uuid.uuid4().hex, "kind": "service_started", "at": now()}
-        )
-        notifier.db.commit()
+        notifier = gateway = None
+        signature = gateway_signature = None
         control_available = True
         try:
             while True:
-                control_error = None
-                if socket_path and allowed:
+                settings = telegram_configuration()
+                if not settings["enabled"]:
+                    if args.once:
+                        break
+                    time.sleep(settings["interval"])
+                    continue
+                if not settings["token"] or not settings["chat"]:
+                    logger.warning("Telegram is enabled but token or destination is missing")
+                    if args.once:
+                        break
+                    time.sleep(settings["interval"])
+                    continue
+                current_signature = (
+                    fingerprint(settings["token"]),
+                    settings["chat"],
+                    settings["send_files"],
+                )
+                if current_signature != signature:
                     try:
-                        notifier.scan_control(socket_path, allowed[0])
+                        client = TelegramClient(settings["token"])
+                    except ValueError:
+                        logger.warning("Telegram token has an invalid format")
+                        if args.once:
+                            break
+                        time.sleep(settings["interval"])
+                        continue
+                    if notifier is None:
+                        notifier = Notifier(
+                            args.root,
+                            args.database,
+                            client,
+                            settings["chat"],
+                            send_files=settings["send_files"],
+                        )
+                    else:
+                        notifier.reconfigure(
+                            client, settings["chat"], settings["send_files"]
+                        )
+                    notifier.enqueue_event(
+                        {"event_id": uuid.uuid4().hex, "kind": "service_started", "at": now()}
+                    )
+                    notifier.db.commit()
+                    signature = current_signature
+                    gateway_signature = None
+                current_gateway_signature = (
+                    settings["control"],
+                    settings["socket"],
+                    tuple(settings["allowed"]),
+                    current_signature,
+                )
+                if current_gateway_signature != gateway_signature:
+                    gateway = None
+                    if settings["control"] and settings["socket"] and settings["allowed"]:
+                        from app.telegram.gateway import Gateway
+
+                        gateway = Gateway(
+                            notifier, settings["socket"], settings["allowed"]
+                        )
+                    gateway_signature = current_gateway_signature
+                control_error = None
+                if settings["socket"] and settings["allowed"]:
+                    try:
+                        notifier.scan_control(settings["socket"], settings["allowed"][0])
                         if not control_available:
                             notifier.enqueue_event(
                                 {
@@ -450,18 +531,19 @@ def main():
                         logger.warning("Telegram commands unavailable (%s)", type(exc).__name__)
                 notifier.scan()
                 notifier.deliver()
-                if socket_path:
+                if settings["socket"]:
                     try:
                         notifier.health(
-                            Path(socket_path).with_name("telegram-status.json"), control_error
+                            Path(settings["socket"]).with_name("telegram-status.json"), control_error
                         )
                     except OSError:
                         logger.warning("Cannot publish Telegram delivery status")
                 if args.once:
                     break
-                time.sleep(interval)
+                time.sleep(settings["interval"])
         finally:
-            notifier.db.close()
+            if notifier is not None:
+                notifier.db.close()
 
 
 if __name__ == "__main__":

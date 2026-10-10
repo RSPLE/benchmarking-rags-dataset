@@ -20,6 +20,7 @@ from pathlib import Path
 from app.benchmark.options import CommandParser, add_run_options, option_environment
 from app.benchmark.storage import exclusive_lock, fingerprint, now, sanitize
 from app.cli import PROJECTS, ROOT, resolve_projects, uv_command
+from app.runtime_config import enabled_projects, runtime_environment
 from app.services.entrypoint import role_environment
 
 MAX_MESSAGE = 65536
@@ -112,6 +113,7 @@ def parse_command(text):
             "questions": options.get("questions", 90),
             "budget": budget,
             "options": options,
+            "all": action == "executar" and "all" in targets,
         }
     sizes = {
         "status": (0, 2),
@@ -139,7 +141,7 @@ class Control:
         self.database = Path(database).resolve()
         self.database.parent.mkdir(parents=True, exist_ok=True)
         self.allowed = set(allowed)
-        if not self.allowed or any(type(value) is not int or value <= 0 for value in self.allowed):
+        if any(type(value) is not int or value <= 0 for value in self.allowed):
             raise ValueError("Explicit numeric authorized user IDs are required")
         if not math.isfinite(max_budget) or max_budget < 0:
             raise ValueError("Invalid server budget cap")
@@ -202,6 +204,14 @@ class Control:
         )
 
     def handle(self, request):
+        try:
+            configured = runtime_environment(os.environ).get("TELEGRAM_ALLOWED_USER_IDS", "")
+            if configured:
+                allowed = {int(value.strip()) for value in configured.split(",")}
+                if allowed and all(value > 0 for value in allowed):
+                    self.allowed = allowed
+        except (ValueError, OSError):
+            pass
         user = request.get("user_id")
         if type(user) is not int or user not in self.allowed:
             raise PermissionError("Unauthorized user")
@@ -272,6 +282,15 @@ class Control:
             if self.db.execute("SELECT 1 FROM jobs WHERE state IN ('queued','running')").fetchone():
                 raise ValueError("A job is already queued or running")
             projects = command.get("projects", [command["project"]])
+            configured_projects = set(enabled_projects())
+            if command.get("all"):
+                projects = [project for project in projects if project in configured_projects]
+                if not projects:
+                    raise ValueError("Nenhum RAG está habilitado em Parâmetros")
+            elif action != "reavaliar" and any(
+                project not in configured_projects for project in projects
+            ):
+                raise ValueError("Este RAG está desabilitado em Parâmetros")
             jobs = []
             for index, project in enumerate(projects):
                 configured = self.profiles.get(project)
@@ -385,7 +404,7 @@ class Control:
                 "jobs": jobs,
                 "experiments": summaries[-10:],
                 "enabled": self.enabled,
-                "projects": list(self.profiles),
+                "projects": [project for project in self.profiles if project in enabled_projects()],
             }
         directory = self.directory(*args[:2])
         if action == "pausar":
@@ -604,9 +623,10 @@ class Worker:
                 f"Detalhe: {exc.strerror or type(exc).__name__}"
             ) from exc
         profile = command["profile"]
-        reserve = float(os.getenv("BENCHMARK_RESERVE_COST_USD", "0"))
+        runtime_source = runtime_environment(os.environ)
+        reserve = float(runtime_source.get("BENCHMARK_RESERVE_COST_USD", "0"))
         caps = [
-            float(os.getenv(name, "0"))
+            float(runtime_source.get(name, "0"))
             for name in (
                 "BENCHMARK_MAX_COST_USD",
                 "BENCHMARK_MAX_QUESTION_COST_USD",
@@ -623,7 +643,7 @@ class Worker:
             raise ValueError(
                 "Configure a positive per-call reservation when enabling a monetary limit"
             )
-        env = role_environment("worker", os.environ)
+        env = role_environment("worker", runtime_source)
         env.pop("VIRTUAL_ENV", None)
         env.update(
             BENCHMARK_OUTPUT_DIR=str(self.control.root),
@@ -749,7 +769,11 @@ def main():
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--profiles", type=Path)
     args = parser.parse_args()
-    allowed = [int(value) for value in os.environ["TELEGRAM_ALLOWED_USER_IDS"].split(",")]
+    allowed = [
+        int(value.strip())
+        for value in os.getenv("TELEGRAM_ALLOWED_USER_IDS", "").split(",")
+        if value.strip()
+    ]
     args.socket.parent.mkdir(parents=True, exist_ok=True)
     with exclusive_lock(args.database.with_suffix(".lock")):
         control = Control(
