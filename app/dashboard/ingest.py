@@ -82,8 +82,18 @@ def detailed_csv_rows(content):
         if question in rows or identifier in identifiers:
             raise ValueError("Duplicate row in detailed CSV")
         identifiers.add(identifier)
-        rows[question] = {"id": identifier, "answer": answer}
+        rows[question] = {
+            "id": identifier,
+            "answer": answer,
+            "ground_truth": row.get("ground_truth", "").strip(),
+            "source_book": row.get("source_book", "").strip(),
+        }
     return rows
+
+
+def result_identity(content):
+    """Identify equivalent result tables independently of CSV line endings."""
+    return fingerprint(csv_rows(content))
 
 
 def json_lines(content):
@@ -124,8 +134,15 @@ def load_source(path, boundary):
 
 
 def source_paths(settings):
+    current = []
+    current_digests = set()
     for path in sorted(settings.results.glob("*/*/results.csv")):
-        yield path, settings.results, path.parents[1].name, "v2"
+        project = path.parents[1].name
+        digest = result_identity(path.read_bytes())
+        current.append((path, project))
+        current_digests.add((project, digest))
+    for path, project in current:
+        yield path, settings.results, project, "v2"
     for directory in sorted(settings.legacy.glob("*/results*")):
         if not directory.is_dir():
             continue
@@ -133,10 +150,44 @@ def source_paths(settings):
         paths = [primary] if primary.exists() else sorted(directory.glob("*-rag-run-*.csv"))
         seen = set()
         for path in paths:
-            digest = hashlib.sha256(path.read_bytes()).hexdigest()
-            if digest not in seen:
-                yield path, settings.legacy, directory.parent.name, "legacy"
+            digest = result_identity(path.read_bytes())
+            project = directory.parent.name
+            if digest not in seen and (project, digest) not in current_digests:
+                yield path, settings.legacy, project, "legacy"
                 seen.add(digest)
+
+
+def remove_duplicate_experiments(db):
+    """Delete legacy imports whose results.csv is identical to a current experiment."""
+    results = list(
+        db.execute(
+            "SELECT e.id,e.project,e.origin,a.content FROM experiments e "
+            "JOIN artifacts a ON a.experiment_id=e.id AND a.name='results.csv'"
+        )
+    )
+    current = {
+        (row["project"], result_identity(bytes(row["content"])))
+        for row in results
+        if row["origin"] != "legacy"
+    }
+    duplicates = [
+        row["id"]
+        for row in results
+        if row["origin"] == "legacy"
+        and (row["project"], result_identity(bytes(row["content"]))) in current
+    ]
+    for identifier in duplicates:
+        for table in (
+            "hidden_experiments",
+            "samples",
+            "calls",
+            "runs",
+            "artifacts",
+            "revisions",
+        ):
+            db.execute(f"DELETE FROM {table} WHERE experiment_id=?", (identifier,))
+        db.execute("DELETE FROM experiments WHERE id=?", (identifier,))
+    return len(duplicates)
 
 
 def sample_rows(rows, checkpoint, details=None):
@@ -374,5 +425,6 @@ def synchronize(settings):
                         ),
                     )
         with db:
+            changed += remove_duplicate_experiments(db)
             db.execute("INSERT OR REPLACE INTO metadata VALUES ('last_sync',?)", (now(),))
     return changed

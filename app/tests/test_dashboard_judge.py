@@ -73,11 +73,60 @@ judge_view(SimpleNamespace(database='unused'), 'session', [record])
 
     def test_shows_zero_rationale_and_evidence_difference_without_launching_work(self):
         self.assertFalse(self.app.exception)
+        self.assertEqual(self.app.metric[0].label, "Notas originais")
         self.assertEqual(self.app.metric[0].value, "2")
+        self.assertEqual(self.app.metric[1].label, "Notas zero")
         self.assertEqual(self.app.metric[1].value, "2")
+        self.assertEqual(self.app.metric[2].label, "Justificativas gravadas")
+        self.assertEqual(self.app.metric[2].value, "1")
+        self.assertEqual(self.app.metric[3].label, "Elegíveis para reavaliação")
+        self.assertEqual(self.app.metric[3].value, "2")
         self.assertTrue(any("Justificativa" in item.value for item in self.app.dataframe))
         self.assertIn("Trecho insuficiente", str([item.value for item in self.app.dataframe]))
         self.assertEqual(self.requests, [])
+
+    def test_legacy_csv_fields_are_shown_without_inventing_rejudging_evidence(self):
+        from app.dashboard.judge import audit_rows, display_artifact, merge_saved_results
+
+        checkpoint = {
+            "items": {
+                "Q001": {
+                    "status": "success",
+                    "question": "Pergunta antiga",
+                    "result": {"context_recall": 0.25},
+                }
+            }
+        }
+        merge_saved_results(
+            checkpoint,
+            [
+                {
+                    "id": "Q001",
+                    "question": "Pergunta antiga",
+                    "status": "success",
+                    "answer": "Resposta preservada no CSV",
+                    "context_recall": 0.25,
+                }
+            ],
+            {
+                "Pergunta antiga": {
+                    "id": "Q001",
+                    "answer": "Resposta preservada no CSV",
+                    "ground_truth": "Gabarito preservado no CSV",
+                    "source_book": "Livro",
+                }
+            },
+        )
+        artifact = display_artifact(checkpoint["items"]["Q001"])
+        frame = audit_rows(checkpoint, {}, [], "context_recall")
+
+        self.assertEqual(artifact["answer"], "Resposta preservada no CSV")
+        self.assertEqual(artifact["ground_truth"], "Gabarito preservado no CSV")
+        self.assertEqual(frame.iloc[0]["Nota original"], 0.25)
+        self.assertFalse(frame.iloc[0]["Justificativa gravada"])
+        self.assertFalse(frame.iloc[0]["Pode reavaliar"])
+        self.assertIn("Nota registrada", frame.iloc[0]["Dados disponíveis"])
+        self.assertIn("Justificativa não gravada", frame.iloc[0]["Dados disponíveis"])
 
     def test_batch_targets_only_selected_metric_and_explicit_generation_evidence(self):
         self.app.radio[0].set_value("generation").run()

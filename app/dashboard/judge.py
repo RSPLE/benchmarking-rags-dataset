@@ -11,6 +11,7 @@ from app.benchmark.judge_audit import read_events
 from app.benchmark.review import EVIDENCE_MODES
 from app.benchmark.storage import fingerprint
 from app.dashboard.database import connect
+from app.dashboard.ingest import detailed_csv_rows
 from app.dashboard.operations import build_review_command, request_control
 from app.dashboard.questions import LABELS
 
@@ -21,15 +22,75 @@ def judge_data(database, experiment):
             row["name"]: row["content"]
             for row in db.execute(
                 "SELECT name,content FROM artifacts WHERE experiment_id=? "
-                "AND name IN ('checkpoint.json','judge_responses.jsonl','judge_reviews.jsonl')",
+                "AND name IN ('checkpoint.json','results_detailed.csv',"
+                "'judge_responses.jsonl','judge_reviews.jsonl')",
                 (experiment,),
             )
         }
+        samples = [
+            json.loads(row["payload"])
+            for row in db.execute(
+                "SELECT payload FROM samples WHERE experiment_id=? ORDER BY position",
+                (experiment,),
+            )
+        ]
     checkpoint = json.loads(files.get("checkpoint.json", b"{}"))
+    merge_saved_results(
+        checkpoint,
+        samples,
+        detailed_csv_rows(files.get("results_detailed.csv", b"")),
+    )
     traces = {}
     for event in read_events(files.get("judge_responses.jsonl", b"")):
         traces.setdefault(event["trace_id"], []).append(event)
     return checkpoint, traces, read_events(files.get("judge_reviews.jsonl", b""))
+
+
+def merge_saved_results(checkpoint, samples, details):
+    """Expose saved CSV fields without pretending legacy evidence can be rejudged."""
+    items = checkpoint.setdefault("items", {})
+    by_question = {
+        state.get("question")
+        or (state.get("result") or {}).get("question")
+        or (state.get("artifact") or {}).get("question"): identifier
+        for identifier, state in items.items()
+    }
+    by_question.pop(None, None)
+    for sample in samples:
+        question = sample.get("question")
+        detail = details.get(question, {})
+        identifier = by_question.get(question) or detail.get("id") or sample.get("id")
+        if not identifier:
+            continue
+        state = items.setdefault(identifier, {})
+        state.setdefault("status", sample.get("status", "success"))
+        state.setdefault("question", question)
+        result = state.get("result")
+        if not isinstance(result, dict):
+            result = {}
+            state["result"] = result
+        for key, value in sample.items():
+            if value is not None:
+                result.setdefault(key, value)
+        state["_dashboard_detail"] = {
+            **sample,
+            **detail,
+            "id": identifier,
+            "question": question,
+        }
+    return checkpoint
+
+
+def display_artifact(state):
+    """Merge display-only CSV data while preserving the original audit artifact."""
+    artifact = dict(state.get("artifact") or {})
+    detail = state.get("_dashboard_detail") or {}
+    result = state.get("result") or {}
+    for key in ("question", "answer", "ground_truth"):
+        value = artifact.get(key) or detail.get(key) or result.get(key)
+        if value is not None:
+            artifact[key] = value
+    return artifact
 
 
 def original_score(state, metric):
@@ -37,15 +98,15 @@ def original_score(state, metric):
     return (
         entry.get("value")
         if entry.get("status") == "success"
-        else state.get("result", {}).get(metric)
+        else (state.get("result") or {}).get(metric)
     )
 
 
 def audit_rows(checkpoint, traces, reviews, metric):
     rows = []
     for identifier, state in sorted(checkpoint.get("items", {}).items()):
-        artifact = state.get("artifact") or {}
-        generation = "\n".join(artifact.get("generation_contexts") or [])
+        saved_artifact = state.get("artifact") or {}
+        generation = "\n".join(saved_artifact.get("generation_contexts") or [])
         matching = [
             events
             for events in traces.values()
@@ -59,22 +120,37 @@ def audit_rows(checkpoint, traces, reviews, metric):
             and r["metric"] == metric
         ]
         latest = attempts[-1] if attempts else {}
+        score = original_score(state, metric)
+        rationale_saved = any(
+            e["kind"] in {"response", "judgment"} for events in matching for e in events
+        )
+        can_review = bool(
+            saved_artifact.get("answer")
+            and saved_artifact.get("contexts")
+            and saved_artifact.get("ground_truth")
+        )
         rows.append(
             {
                 "Questão": identifier,
-                "Nota original": original_score(state, metric),
+                "Nota original": score,
+                "Nota registrada": score is not None,
                 "Última reavaliação": latest.get("value"),
                 "Estado da reavaliação": latest.get("status", "Sem reavaliação"),
                 "Evidência da reavaliação": EVIDENCE_MODES.get(latest.get("evidence"), "—"),
-                "Juiz registrado": any(
-                    e["kind"] in {"response", "judgment"} for events in matching for e in events
-                ),
+                "Justificativa gravada": rationale_saved,
                 "Contextos diferentes": bool(generation)
-                and any(c not in generation for c in artifact.get("contexts", [])),
-                "Pode reavaliar": bool(
-                    artifact.get("answer")
-                    and artifact.get("contexts")
-                    and artifact.get("ground_truth")
+                and any(c not in generation for c in saved_artifact.get("contexts", [])),
+                "Pode reavaliar": can_review,
+                "Dados disponíveis": " · ".join(
+                    (
+                        "Nota registrada" if score is not None else "Nota ausente",
+                        "Justificativa gravada"
+                        if rationale_saved
+                        else "Justificativa não gravada",
+                        "Reavaliação disponível"
+                        if can_review
+                        else "Reavaliação indisponível: faltam evidências completas",
+                    )
                 ),
                 "Falha na métrica": state.get("metrics", {}).get(metric, {}).get("status")
                 == "failed"
@@ -149,7 +225,12 @@ def show_trace(events):
 
 def judge_view(settings, token, records):
     st.write(
-        "Inspecione justificativas, compare contextos e reavalie somente a métrica e as questões escolhidas."
+        "Consulte as notas originais, as justificativas que foram efetivamente gravadas e "
+        "reavalie apenas questões que preservam resposta, gabarito e contextos originais."
+    )
+    st.caption(
+        "Nota e justificativa são dados distintos: a nota pode existir no CSV/checkpoint mesmo "
+        "quando a resposta textual do juiz não foi armazenada em judge_responses.jsonl."
     )
     if not records:
         st.info("Ainda não há experimentos importados.")
@@ -177,23 +258,47 @@ def judge_view(settings, token, records):
     if frame.empty:
         st.info("Este experimento ainda não tem questões registradas no checkpoint.")
         return
-    a, b, c = st.columns(3)
-    a.metric("Notas zero", int((frame["Nota original"] == 0).sum()))
-    b.metric("Contextos diferentes", int(frame["Contextos diferentes"].sum()))
-    c.metric("Questões com saída do juiz", int(frame["Juiz registrado"].sum()))
+    score_count = int(frame["Nota registrada"].sum())
+    rationale_count = int(frame["Justificativa gravada"].sum())
+    eligible_count = int(frame["Pode reavaliar"].sum())
+    a, b, c, d = st.columns(4)
+    a.metric("Notas originais", score_count)
+    b.metric("Notas zero", int((frame["Nota original"] == 0).sum()))
+    c.metric("Justificativas gravadas", rationale_count)
+    d.metric("Elegíveis para reavaliação", eligible_count)
+    if score_count > rationale_count:
+        st.warning(
+            f"Há {score_count} nota(s) original(is), mas somente {rationale_count} "
+            "justificativa(s) bruta(s) foi(ram) gravada(s). As justificativas ausentes não "
+            "podem ser reconstruídas a partir das notas; uma nova reavaliação cria um novo registro."
+        )
+    if eligible_count < len(frame):
+        st.info(
+            f"{len(frame) - eligible_count} questão(ões) não pode(m) ser reavaliada(s) porque "
+            "a execução original não preservou resposta, gabarito e contextos completos."
+        )
     st.caption(
         "Contextos diferentes indica trechos avaliados que não aparecem nas evidências de geração salvas. É um sinal para revisão, não uma confirmação automática de erro."
     )
     scope = st.selectbox(
         "Filtrar questões",
-        ["Todas", "Notas zero", "Falha na métrica", "Contextos diferentes", "Sem registro do juiz"],
+        [
+            "Todas",
+            "Notas zero",
+            "Falha na métrica",
+            "Contextos diferentes",
+            "Sem justificativa gravada",
+            "Elegíveis para reavaliação",
+        ],
         key="judge-filter",
     )
     visible = frame
     if scope == "Notas zero":
         visible = frame[frame["Nota original"] == 0]
-    elif scope == "Sem registro do juiz":
-        visible = frame[~frame["Juiz registrado"]]
+    elif scope == "Sem justificativa gravada":
+        visible = frame[~frame["Justificativa gravada"]]
+    elif scope == "Elegíveis para reavaliação":
+        visible = frame[frame["Pode reavaliar"]]
     elif scope != "Todas":
         visible = frame[frame[scope]]
     st.dataframe(visible, hide_index=True, width="stretch")
@@ -213,7 +318,7 @@ def judge_view(settings, token, records):
         key=f"judge-detail-{identifier}-{metric}-{scope}",
     )
     state = checkpoint["items"][selected]
-    artifact = state.get("artifact") or {}
+    artifact = display_artifact(state)
     st.write(artifact.get("question") or state.get("question", selected))
     with st.expander("Resposta, gabarito e comparação dos contextos"):
         st.write("Resposta gerada")
