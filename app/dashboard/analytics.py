@@ -11,7 +11,10 @@ def experiments(database):
     with connect(database) as db:
         rows = [
             dict(row)
-            for row in db.execute("SELECT * FROM experiments ORDER BY project, imported_at DESC")
+            for row in db.execute(
+                "SELECT * FROM experiments WHERE id NOT IN "
+                "(SELECT experiment_id FROM hidden_experiments) ORDER BY project, imported_at DESC"
+            )
         ]
         source_hashes = {
             row["experiment_id"]: row["sha256"]

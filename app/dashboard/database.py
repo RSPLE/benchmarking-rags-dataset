@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS experiments (
     manifest TEXT NOT NULL, summary TEXT NOT NULL, revision TEXT NOT NULL,
     imported_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS hidden_experiments (
+    experiment_id TEXT PRIMARY KEY REFERENCES experiments(id),
+    reason TEXT NOT NULL, hidden_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS samples (
     experiment_id TEXT NOT NULL REFERENCES experiments(id), question_id TEXT NOT NULL,
     position INTEGER NOT NULL, question TEXT NOT NULL, status TEXT NOT NULL,

@@ -15,6 +15,7 @@ from app.dashboard.analytics import common_questions, experiments, extrema, fram
 from app.dashboard.charts import render
 from app.dashboard.config import Settings
 from app.dashboard.database import connect
+from app.dashboard.downloads import backups_view, downloads_view
 from app.dashboard.execution import execution_view, pending_view
 from app.dashboard.judge import judge_view
 from app.dashboard.questions import question_results_view
@@ -32,12 +33,13 @@ SECTIONS = [
     "Executar e retomar",
     "Pendências e falhas",
     "Resultados por questão",
+    "Baixar dados",
     "Juiz e reavaliação",
     "Gráficos originais",
     "Tokens e tempo",
     "Questões",
     "Chamadas e modelos",
-    "Arquivos e backups",
+    "Backups",
 ]
 st.markdown(
     """<style>
@@ -149,6 +151,12 @@ def dashboard():
         )
     if section == "Resultados por questão":
         question_results_view(settings.database, records)
+        return
+    if section == "Baixar dados":
+        downloads_view(settings.database, records)
+        return
+    if section == "Backups":
+        backups_view(settings.database)
         return
     if section == "Tokens e tempo":
         question_results_view(settings.database, records, consumption_only=True)
@@ -362,45 +370,17 @@ def dashboard():
             st.caption(
                 f"{int(calls['cost'].isna().sum())} chamada(s) sem custo informado. Valores desconhecidos não equivalem a gratuidade. Tempos HTTP somados não equivalem a tempo de parede quando há concorrência."
             )
-    else:
-        st.subheader("Resultados e preservação")
-        experiment = st.selectbox(
-            "Baixar de",
-            chosen,
-            format_func=lambda key: f"{by_id[key]['project']} · {by_id[key]['external_id'][:12]}",
-        )
-        with connect(settings.database) as db:
-            artifacts = db.execute(
-                "SELECT name,content,sha256 FROM artifacts WHERE experiment_id=? AND name IN ('results.csv','results_detailed.csv','summary.json','manifest.json','checkpoint.json','usage.jsonl','judge_responses.jsonl','judge_reviews.jsonl') ORDER BY name",
-                (experiment,),
-            ).fetchall()
-            backups = pd.read_sql_query(
-                "SELECT id,created_at,sha256 FROM backups ORDER BY created_at DESC LIMIT 20", db
-            )
-        for row in artifacts:
-            st.download_button(
-                row["name"],
-                row["content"],
-                row["name"],
-                key="artifact-" + row["name"],
-                on_click="ignore",
-                width="stretch",
-            )
-        st.caption(
-            "Arquivos completos são restritos a usuários autenticados. Os originais continuam nos volumes de resultados."
-        )
-        st.subheader("Cópias verificadas do SQLite")
-        st.dataframe(backups, hide_index=True, width="stretch")
-        st.caption(
-            "Cópia online local e cópias ao encerrar rodadas. O ZIP enviado ao Telegram contém resultados públicos e hashes; não contém senhas, checkpoints privados ou chaves."
-        )
 
 
 token, identity = login()
 if "navigate_to" in st.session_state:
     st.session_state["section"] = st.session_state.pop("navigate_to")
+if st.session_state.get("section") == "Arquivos e backups":
+    st.session_state["section"] = "Backups"
 if "section" not in st.session_state:
     saved = st.query_params.get("view", "Visão geral")
+    if saved == "Arquivos e backups":
+        saved = "Backups"
     st.session_state["section"] = saved if saved in SECTIONS else "Visão geral"
 with st.sidebar:
     st.markdown('<p class="eyebrow">LOGIBOTS / PESQUISA</p>', unsafe_allow_html=True)

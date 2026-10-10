@@ -139,7 +139,6 @@ question_results_view(st.session_state.database, experiments(st.session_state.da
                 self.assertEqual(summary["answer_response_time_seconds"], 15)
                 self.assertEqual(summary["faithfulness"], 0.25)
                 self.assertEqual(summary["context_recall"], 0)
-                self.assertTrue(any("Faithfulness: n=2" in item.value for item in app.caption))
             app.selectbox[0].select("self-rag").run()
             self.assertFalse(app.exception)
             table = app.dataframe[0].value

@@ -102,6 +102,16 @@ prompts, memória, recuperação, PDFs nem métricas dos RAGs.
 
 ## Persistência, backup e diagnóstico
 
+**Baixar dados** lista os RAGs concluídos de todos os protocolos, com opção de
+mostrar execuções incompletas. Selecione o RAG e a execução para baixar o CSV,
+um ZIP com todos os artefatos disponíveis e hashes, ou um arquivo específico.
+**Backups** fica separado e mostra as cópias verificadas do banco.
+
+Para retirar uma execução descartada das listas, sem apagar resultados ou permitir
+que ela reapareça na sincronização, use `python -m app.dashboard.manage hide-experiment
+RAG ID_COMPLETO --reason 'Motivo'` no serviço monitor. `show-experiment RAG ID_COMPLETO`
+reverte a ocultação. Execuções em andamento não podem ser ocultadas.
+
 A tabela **Resultados por questão** termina com uma linha **TOTAL / MÉDIA**, também
 incluída no download CSV. Ela soma os tokens e tempos de resposta registrados e
 calcula cada média usando somente as notas disponíveis, incluindo zeros e métricas

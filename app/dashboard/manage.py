@@ -8,6 +8,7 @@ from pathlib import Path
 
 from app.benchmark.archive import restore_archive
 from app.dashboard.auth import set_password
+from app.dashboard.catalog import set_visibility
 from app.dashboard.config import Settings
 from app.dashboard.database import backup_database, connect
 from app.dashboard.ingest import synchronize
@@ -21,6 +22,11 @@ def main():
         commands.add_parser(command).add_argument("username")
     commands.add_parser("sync")
     commands.add_parser("backup")
+    for command in ("hide-experiment", "show-experiment"):
+        visibility = commands.add_parser(command)
+        visibility.add_argument("project")
+        visibility.add_argument("experiment")
+        visibility.add_argument("--reason", default="Solicitado pelo operador")
     restore = commands.add_parser("restore-db")
     restore.add_argument("source", type=Path)
     restore.add_argument("destination", type=Path)
@@ -51,6 +57,17 @@ def main():
         checkpoint_database(settings)
     elif args.command == "backup":
         print(checkpoint_database(settings))
+    elif args.command in {"hide-experiment", "show-experiment"}:
+        print(
+            set_visibility(
+                settings.database,
+                args.project,
+                args.experiment,
+                hidden=args.command == "hide-experiment",
+                reason=args.reason,
+            )
+        )
+        checkpoint_database(settings)
     elif args.command == "restore-db":
         if args.destination.exists() or not args.source.is_file():
             parser.error("Use an existing backup and a new destination")
