@@ -47,6 +47,11 @@ class MetricsRagsPlotTests(unittest.TestCase):
     def test_catalog_matches_reference_collection(self):
         self.assertEqual(len(CHARTS), 9)
         self.assertEqual(chart("efficiency").stem("pt"), "01_tempo_raciocinio_tokens_vs_tempo")
+        self.assertEqual(chart("faithfulness").title("pt"), "Fidelidade")
+        self.assertEqual(
+            chart("faithfulness_by_question").title("pt"), "Fidelidade por questão"
+        )
+        self.assertEqual(chart("faithfulness").title("en"), "Faithfulness")
         self.assertEqual(
             chart("context_recall_by_question").stem("en"),
             "09_barras_context_recall_por_questao_en",

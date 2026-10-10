@@ -44,7 +44,7 @@ CHARTS = (
         "Tokens e tempo de raciocínio",
         "Tokens and reasoning time",
     ),
-    Chart("faithfulness", 2, "faithfulness", "overall", "Faithfulness", "Faithfulness"),
+    Chart("faithfulness", 2, "faithfulness", "overall", "Fidelidade", "Faithfulness"),
     Chart(
         "answer_relevancy",
         3,
@@ -74,7 +74,7 @@ CHARTS = (
         6,
         "faithfulness",
         "question",
-        "Faithfulness por questão",
+        "Fidelidade por questão",
         "Faithfulness by question",
     ),
     Chart(
