@@ -165,21 +165,6 @@ def question_results_view(database, records, *, consumption_only=False):
         height=600,
         key=prefix + "-table",
     )
-    st.caption(
-        "Role a tabela para ver todas as colunas. Clique duas vezes na célula para ler o texto completo."
-    )
-    if not consumption_only:
-        coverage = " · ".join(
-            f"{LABELS[key]}: n={frame[key].count()}"
-            for key in (*METRICS, "answer_total_tokens", "answer_response_time_seconds")
-        )
-        st.caption(
-            "Linha TOTAL / MÉDIA: soma dos tokens e tempos de resposta registrados e média "
-            "das notas disponíveis de cada métrica, inclusive avaliações parciais. Notas zero "
-            "entram na média; valores ausentes são ignorados. O tempo é a soma das durações "
-            "das respostas, sem preparação nem avaliação do juiz."
-        )
-        st.caption("Quantidade de questões com valores registrados — " + coverage)
     st.download_button(
         "Baixar tabela CSV",
         table.rename(columns=LABELS).to_csv(index=False, sep=";").encode("utf-8-sig"),
